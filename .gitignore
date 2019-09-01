@@ -1,0 +1,7 @@
+.vscode/
+assets/
+target/
+temp/
+
+*.rs.bk
+.DS_Store
