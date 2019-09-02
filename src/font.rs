@@ -1,5 +1,8 @@
-use crate::table::{head::Table_head, hhea::Table_hhea, maxp::Table_maxp};
-use crate::util::Buffer;
+use crate::table::{
+    cmap::Table_cmap, head::Table_head, hhea::Table_hhea, hmtx::Table_hmtx, maxp::Table_maxp,
+    name::Table_name, os_2::Table_OS_2, post::Table_post,
+};
+use crate::util::{Buffer, Tag};
 use std::collections::HashMap;
 
 #[allow(non_snake_case)]
@@ -8,22 +11,22 @@ pub struct Font {
     subtype: Subtype,
 
     // Required Tables
-    // cmap: Option<Table_cmap>, // Character to glyph mapping
-    head: Option<Table_head>, // Font header
-    hhea: Option<Table_hhea>, // Horizontal header
-    // hmtx: Option<Table_hmtx>, // Horizontal metrics
-    maxp: Option<Table_maxp>, // Maximum profile
-    // name: Option<Table_name>, // Naming table
-    // OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
-    // post: Option<Table_post>, // PostScript information
+    pub head: Option<Table_head>, // Font header
+    pub hhea: Option<Table_hhea>, // Horizontal header
+    pub maxp: Option<Table_maxp>, // Maximum profile
+    pub hmtx: Option<Table_hmtx>, // Horizontal metrics
+    pub cmap: Option<Table_cmap>, // Character to glyph mapping
+    pub name: Option<Table_name>, // Naming table
+    pub OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
+    pub post: Option<Table_post>, // PostScript information
 
     // // Tables Related to TrueType Outlines
-    // cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
-    // fpgm: Option<Table_fpgm>, // Font program (optional table)
-    // glyf: Option<Table_glyf>, // Glyph data
-    // loca: Option<Table_loca>, // Index to location
-    // prep: Option<Table_prep>, // CVT Program (optional table)
-    // gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
+    // pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
+    // pub fpgm: Option<Table_fpgm>, // Font program (optional table)
+    // pub glyf: Option<Table_glyf>, // Glyph data
+    // pub loca: Option<Table_loca>, // Index to location
+    // pub prep: Option<Table_prep>, // CVT Program (optional table)
+    // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
 
     // // Tables Related to CFF Outlines
     // CFF_: Option<Table_CFF_>, // Compact Font Format 1.0
@@ -81,6 +84,11 @@ impl Font {
             head: None,
             hhea: None,
             maxp: None,
+            hmtx: None,
+            cmap: None,
+            name: None,
+            OS_2: None,
+            post: None,
         }
     }
 }
@@ -102,63 +110,12 @@ pub trait FontTable {
     fn parse(buffer: &mut Buffer, record: &TableRecord) -> Self;
 }
 
-// struct Table_cmap {}
-
-// struct Table_hhea {}
-// struct Table_hmtx {}
-// struct Table_maxp {}
-// struct Table_name {}
-// struct Table_OS_2 {}
-// struct Table_post {}
-// struct Table_cvt_ {}
-// struct Table_fpgm {}
-// struct Table_glyf {}
-// struct Table_loca {}
-// struct Table_prep {}
-// struct Table_gasp {}
-// struct Table_CFF_ {}
-// struct Table_CFF2 {}
-// struct Table_VORG {}
-// struct Table_EBDT {}
-// struct Table_EBLC {}
-// struct Table_EBSC {}
-// struct Table_CBDT {}
-// struct Table_CBLC {}
-// struct Table_sbix {}
-// struct Table_BASE {}
-// struct Table_GDEF {}
-// struct Table_GPOS {}
-// struct Table_GSUB {}
-// struct Table_JSTF {}
-// struct Table_MATH {}
-// struct Table_avar {}
-// struct Table_cvar {}
-// struct Table_fvar {}
-// struct Table_gvar {}
-// struct Table_HVAR {}
-// struct Table_MVAR {}
-// struct Table_STAT {}
-// struct Table_VVAR {}
-// struct Table_COLR {}
-// struct Table_CPAL {}
-// struct Table_SVG_ {}
-// struct Table_DSIG {}
-// struct Table_hdmx {}
-// struct Table_kern {}
-// struct Table_LTSH {}
-// struct Table_MERG {}
-// struct Table_meta {}
-// struct Table_PCLT {}
-// struct Table_VDMX {}
-// struct Table_vhea {}
-// struct Table_vmtx {}
-
 pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     // Offset Table
-    let num_tables = buffer.read_u16();
-    let search_range = buffer.read_u16();
-    let entry_selector = buffer.read_u16();
-    let range_shift = buffer.read_u16();
+    let num_tables = buffer.read::<u16>();
+    let search_range = buffer.read::<u16>();
+    let entry_selector = buffer.read::<u16>();
+    let range_shift = buffer.read::<u16>();
     println!(
         "\tnumTables: {}\n\tsearchRange: {}\n\tentrySelector: {}\n\trangeShift: {}",
         num_tables, search_range, entry_selector, range_shift
@@ -174,27 +131,24 @@ pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     let mut records = HashMap::new();
     for _ in 0..num_tables {
         records.insert(
-            buffer.read_tag(),
+            buffer.read::<Tag>().to_string(),
             TableRecord {
-                check_sum: buffer.read_u32(),
-                offset: buffer.read_u32(),
-                length: buffer.read_u32(),
+                check_sum: buffer.read::<u32>(),
+                offset: buffer.read::<u32>(),
+                length: buffer.read::<u32>(),
             },
         );
     }
 
-    font.head = Some(Table_head::parse(buffer, records.get("head").unwrap()));
-    font.hhea = Some(Table_hhea::parse(buffer, records.get("hhea").unwrap()));
-    // font.hmtx = Some(Table_hmtx::parse(buffer, records.get("hmtx").unwrap()));
-    font.maxp = Some(Table_maxp::parse(buffer, records.get("maxp").unwrap()));
+    font.parse_head(buffer, records.get("head").unwrap());
+    font.parse_hhea(buffer, records.get("hhea").unwrap());
+    font.parse_maxp(buffer, records.get("maxp").unwrap());
+    font.parse_hmtx(buffer, records.get("hmtx").unwrap());
+    font.parse_cmap(buffer, records.get("cmap").unwrap());
+    font.parse_name(buffer, records.get("name").unwrap());
+    font.parse_OS_2(buffer, records.get("OS/2").unwrap());
+    font.parse_post(buffer, records.get("post").unwrap());
 
-    // for r in records {
-    //     match r.table_tag.as_ref() {
-    //         "head" => font.head = Some(Table_head::parse(buffer, &r)),
-    //         "hhea" => font.hhea = Some(Table_hhea::parse(buffer, &r)),
-    //         _ => (),
-    //     }
-    // }
     // println!(
     //     "\ttableTag: {}\n\t\tcheckSum: [{}, {}]\n\t\toffset: {}\n\t\tlength: {}",
     //     table_tag,
@@ -204,17 +158,17 @@ pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     //     length
     // );
 
-    println!("{:?}", font);
+    println!("\t{:#?}", font);
 }
 
 pub fn read_ttc(buffer: &mut Buffer) {
     // TTC Header
-    let major_version = buffer.read_u16();
-    let minor_version = buffer.read_u16();
-    let num_fonts = buffer.read_u32();
+    let major_version = buffer.read::<u16>();
+    let minor_version = buffer.read::<u16>();
+    let num_fonts = buffer.read::<u32>();
     let mut offset_table: Vec<u32> = Vec::new();
     for _ in 0..num_fonts {
-        offset_table.push(buffer.read_u32());
+        offset_table.push(buffer.read::<u32>());
     }
 
     println!(
@@ -223,9 +177,9 @@ pub fn read_ttc(buffer: &mut Buffer) {
     );
 
     if major_version == 2 {
-        let dsig_tag = buffer.read_u32();
-        let dsig_length = buffer.read_u32();
-        let dsig_offset = buffer.read_u32();
+        let dsig_tag = buffer.read::<u32>();
+        let dsig_length = buffer.read::<u32>();
+        let dsig_offset = buffer.read::<u32>();
         println!(
             "\tdsigTag: {}\n\tdsigLength: {}\n\tdsigOffset: {}",
             dsig_tag, dsig_length, dsig_offset
@@ -234,37 +188,37 @@ pub fn read_ttc(buffer: &mut Buffer) {
 }
 
 pub fn read_woff(buffer: &mut Buffer) {
-    let flavor = buffer.read_u32();
-    let length = buffer.read_u32();
-    let num_tables = buffer.read_u16();
-    let reserved = buffer.read_u16();
-    let total_sfnt_size = buffer.read_u32();
-    let major_version = buffer.read_u16();
-    let minor_version = buffer.read_u16();
-    let meta_offset = buffer.read_u32();
-    let meta_length = buffer.read_u32();
-    let meta_orig_length = buffer.read_u32();
-    let priv_offset = buffer.read_u32();
-    let priv_length = buffer.read_u32();
+    let flavor = buffer.read::<u32>();
+    let length = buffer.read::<u32>();
+    let num_tables = buffer.read::<u16>();
+    let reserved = buffer.read::<u16>();
+    let total_sfnt_size = buffer.read::<u32>();
+    let major_version = buffer.read::<u16>();
+    let minor_version = buffer.read::<u16>();
+    let meta_offset = buffer.read::<u32>();
+    let meta_length = buffer.read::<u32>();
+    let meta_orig_length = buffer.read::<u32>();
+    let priv_offset = buffer.read::<u32>();
+    let priv_length = buffer.read::<u32>();
     println!(
         "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
         flavor, length, num_tables, reserved, total_sfnt_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);
 }
 
 pub fn read_woff2(buffer: &mut Buffer) {
-    let flavor = buffer.read_u32();
-    let length = buffer.read_u32();
-    let num_tables = buffer.read_u16();
-    let reserved = buffer.read_u16();
-    let total_sfnt_size = buffer.read_u32();
-    let total_compressed_size = buffer.read_u32();
-    let major_version = buffer.read_u16();
-    let minor_version = buffer.read_u16();
-    let meta_offset = buffer.read_u32();
-    let meta_length = buffer.read_u32();
-    let meta_orig_length = buffer.read_u32();
-    let priv_offset = buffer.read_u32();
-    let priv_length = buffer.read_u32();
+    let flavor = buffer.read::<u32>();
+    let length = buffer.read::<u32>();
+    let num_tables = buffer.read::<u16>();
+    let reserved = buffer.read::<u16>();
+    let total_sfnt_size = buffer.read::<u32>();
+    let total_compressed_size = buffer.read::<u32>();
+    let major_version = buffer.read::<u16>();
+    let minor_version = buffer.read::<u16>();
+    let meta_offset = buffer.read::<u32>();
+    let meta_length = buffer.read::<u32>();
+    let meta_orig_length = buffer.read::<u32>();
+    let priv_offset = buffer.read::<u32>();
+    let priv_length = buffer.read::<u32>();
     println!(
         "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\ttotalCompressedSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
         flavor, length, num_tables, reserved, total_sfnt_size, total_compressed_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);

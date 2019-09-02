@@ -1,6 +1,15 @@
 mod font;
-mod table;
 mod util;
+mod table {
+    pub mod cmap;
+    pub mod head;
+    pub mod hhea;
+    pub mod hmtx;
+    pub mod maxp;
+    pub mod name;
+    pub mod os_2;
+    pub mod post;
+}
 
 use std::error;
 use std::fs;
@@ -19,12 +28,9 @@ pub fn parse_args(args: &[String]) -> Result<&str, &str> {
 pub fn run(font_file_name: &str) -> Result<(), Box<dyn error::Error>> {
     println!("{:?}", font_file_name);
 
-    let mut buffer = Buffer {
-        buffer: fs::read(font_file_name)?,
-        offset: 0,
-    };
+    let mut buffer = Buffer::new(fs::read(font_file_name)?);
 
-    let signature = buffer.read_u32();
+    let signature = buffer.read::<u32>();
     // println!("{:08X}", signature);
 
     match signature {
