@@ -1,5 +1,5 @@
 use crate::font::{Font, TableRecord};
-use crate::util;
+use crate::util::{Buffer, ReadFromBuffer, U16_SIZE};
 
 /// ## `hmtx` &mdash; Horizontal Metrics Table
 ///
@@ -19,26 +19,13 @@ pub struct Table_hmtx {
 }
 
 impl Font {
-    pub fn parse_hmtx(&mut self, buffer: &mut util::Buffer, record: &TableRecord) {
+    pub fn parse_hmtx(&mut self, buffer: &mut Buffer, record: &TableRecord) {
         buffer.offset = record.offset;
-        let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics;
-        let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs;
-        let mut hor_metrics: Vec<LongHorMetric> = Vec::new();
-        for _ in 0..num_hor_metrics {
-            let hor_metric = LongHorMetric {
-                advance_width: buffer.read::<u16>(),
-                left_side_bearing: buffer.read::<i16>(),
-            };
-            hor_metrics.push(hor_metric);
-        }
-        let mut left_side_bearings: Vec<i16> = Vec::new();
-        for _ in 0..(num_glyphs - num_hor_metrics) {
-            let left_side_bearing = buffer.read::<i16>();
-            left_side_bearings.push(left_side_bearing);
-        }
+        let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics as u32;
+        let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as u32;
         self.hmtx = Some(Table_hmtx {
-            hor_metrics,
-            left_side_bearings,
+            hor_metrics: buffer.read_vec::<LongHorMetric>(num_hor_metrics),
+            left_side_bearings: buffer.read_vec::<i16>(num_glyphs),
         });
     }
 }
@@ -47,4 +34,13 @@ impl Font {
 pub struct LongHorMetric {
     advance_width: u16,
     left_side_bearing: i16,
+}
+
+impl ReadFromBuffer for LongHorMetric {
+    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+        Self {
+            advance_width: u16::read_from_buffer(_buffer, _offset),
+            left_side_bearing: i16::read_from_buffer(_buffer, _offset + U16_SIZE),
+        }
+    }
 }

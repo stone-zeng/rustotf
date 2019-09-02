@@ -2,7 +2,7 @@ use crate::table::{
     cmap::Table_cmap, head::Table_head, hhea::Table_hhea, hmtx::Table_hmtx, maxp::Table_maxp,
     name::Table_name, os_2::Table_OS_2, post::Table_post,
 };
-use crate::util::{Buffer, Tag};
+use crate::util::{Buffer, Offset32, ReadFromBuffer, Tag, OFFSET32_SIZE, U32_SIZE};
 use std::collections::HashMap;
 
 #[allow(non_snake_case)]
@@ -102,12 +102,18 @@ enum Subtype {
 #[derive(Debug)]
 pub struct TableRecord {
     pub check_sum: u32,
-    pub offset: u32,
+    pub offset: Offset32,
     pub length: u32,
 }
 
-pub trait FontTable {
-    fn parse(buffer: &mut Buffer, record: &TableRecord) -> Self;
+impl ReadFromBuffer for TableRecord {
+    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+        Self {
+            check_sum: u32::read_from_buffer(_buffer, _offset),
+            offset: Offset32::read_from_buffer(_buffer, _offset + U32_SIZE),
+            length: u32::read_from_buffer(_buffer, _offset + OFFSET32_SIZE),
+        }
+    }
 }
 
 pub fn read_otf(buffer: &mut Buffer, signature: u32) {
@@ -132,11 +138,7 @@ pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     for _ in 0..num_tables {
         records.insert(
             buffer.read::<Tag>().to_string(),
-            TableRecord {
-                check_sum: buffer.read::<u32>(),
-                offset: buffer.read::<u32>(),
-                length: buffer.read::<u32>(),
-            },
+            buffer.read::<TableRecord>(),
         );
     }
 
@@ -166,10 +168,7 @@ pub fn read_ttc(buffer: &mut Buffer) {
     let major_version = buffer.read::<u16>();
     let minor_version = buffer.read::<u16>();
     let num_fonts = buffer.read::<u32>();
-    let mut offset_table: Vec<u32> = Vec::new();
-    for _ in 0..num_fonts {
-        offset_table.push(buffer.read::<u32>());
-    }
+    let offset_table = buffer.read_vec::<Offset32>(num_fonts);
 
     println!(
         "\tmajorVersion: {}\n\tminorVersion: {}\n\tnumFonts: {}\n\toffsetTable: {:?}",

@@ -51,7 +51,7 @@ impl Font {
             max_component_depth: None,
         };
         // Version 1.0
-        if table._version == 0x00010000 {
+        if table._version == 0x0001_0000 {
             table.max_points = Some(buffer.read::<u16>());
             table.max_contours = Some(buffer.read::<u16>());
             table.max_composite_points = Some(buffer.read::<u16>());

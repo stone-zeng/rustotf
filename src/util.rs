@@ -1,7 +1,6 @@
 // extern crate byteorder;
 
-use std::fmt;
-use std::mem;
+use std::{fmt, mem};
 
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
@@ -44,19 +43,6 @@ impl Buffer {
         v
     }
 
-    // pub fn read_arr<T: ReadFromBuffer>(&mut self, n: u32) -> [T; n] {
-    //     let mut _offset = self.offset as usize;
-    //     let _size = mem::size_of::<T>();
-    //     let mut v: Vec<T> = Vec::new();
-    //     for _ in 0..n {
-    //         let elem = ReadFromBuffer::read_from_buffer(&self._buffer, _offset);
-    //         _offset += _size;
-    //         v.push(elem);
-    //     }
-    //     self.offset = _offset as u32;
-    //     v
-    // }
-
     /// Skip `n` * `size_of<T>` bytes for `offset`.
     pub fn skip<T>(&mut self, n: u32) {
         self.offset += n * mem::size_of::<T>() as u32;
@@ -81,6 +67,25 @@ impl ReadFromBuffer for u8 {
         _buffer[_offset]
     }
 }
+
+/// The following data types are used in the OpenType font file. All OpenType
+/// fonts use Motorola-style byte ordering (Big Endian):
+///
+/// - `uint8`
+/// - `int8`
+/// - `uint16`
+/// - `int16`
+/// - `uint24`
+/// - `uint32`
+/// - `int32`
+/// - `Fixed`
+/// - `FWord`
+/// - `UFWord`
+/// - `F2Dot14`
+/// - `LongDateTime`
+/// - `Tag`
+/// - `Offset16`
+/// - `Offset32`
 
 // Implement `ReadFromBuffer` for `u16`, `u32`, etc.
 macro_rules! _generate_read_from_buffer {
@@ -177,7 +182,7 @@ impl ReadFromBuffer for LongDateTime {
 /// Array of four `uint8`s (length = 32 bits) used to identify a table,
 /// design-variation axis, script, language system, feature, or baseline.
 ///
-/// Note: In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
+/// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
 pub struct Tag {
     _u8_arr: [u8; 4],
@@ -206,10 +211,30 @@ impl ReadFromBuffer for Tag {
         Self {
             _u8_arr: [
                 u8::read_from_buffer(_buffer, _offset),
-                u8::read_from_buffer(_buffer, _offset + 1),
-                u8::read_from_buffer(_buffer, _offset + 2),
-                u8::read_from_buffer(_buffer, _offset + 3),
+                u8::read_from_buffer(_buffer, _offset + 1 * U8_SIZE),
+                u8::read_from_buffer(_buffer, _offset + 2 * U8_SIZE),
+                u8::read_from_buffer(_buffer, _offset + 3 * U8_SIZE),
             ],
         }
     }
 }
+
+pub type FWord = i16;
+pub type UFWord = u16;
+// pub type Offset16 = u16;
+pub type Offset32 = u32;
+
+// pub const I8_SIZE: usize = mem::size_of::<i8>();
+// pub const I16_SIZE: usize = mem::size_of::<i16>();
+// pub const I32_SIZE: usize = mem::size_of::<i32>();
+pub const U8_SIZE: usize = mem::size_of::<u8>();
+pub const U16_SIZE: usize = mem::size_of::<u16>();
+pub const U32_SIZE: usize = mem::size_of::<u32>();
+// pub const FIXED_SIZE: usize = mem::size_of::<Fixed>();
+// pub const FWORD_SIZE: usize = mem::size_of::<FWord>();
+// pub const UFWORD_SIZE: usize = mem::size_of::<UFWord>();
+// pub const F2DOT14_SIZE: usize = mem::size_of::<F2Dot14>();
+// pub const LONG_DATE_TIME_SIZE: usize = mem::size_of::<LongDateTime>();
+// pub const TAG_SIZE: usize = mem::size_of::<Tag>();
+// pub const OFFSET16_SIZE: usize = mem::size_of::<Offset16>();
+pub const OFFSET32_SIZE: usize = mem::size_of::<Offset32>();

@@ -35,7 +35,7 @@ pub fn run(font_file_name: &str) -> Result<(), Box<dyn error::Error>> {
 
     match signature {
         // 'OTTO' | .. | 'true' | 'typ1'
-        0x4F54_544F | 0x000_10000 | 0x7472_7565 | 0x7479_7031 => read_otf(&mut buffer, signature),
+        0x4F54_544F | 0x0001_0000 | 0x7472_7565 | 0x7479_7031 => read_otf(&mut buffer, signature),
         // 'ttcf'
         0x7474_6366 => read_ttc(&mut buffer),
         // 'wOFF'

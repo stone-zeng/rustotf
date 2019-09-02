@@ -1,5 +1,5 @@
 use crate::font::{Font, TableRecord};
-use crate::util::{get_version_string, Buffer};
+use crate::util::{get_version_string, Buffer, FWord, UFWord};
 
 /// ## hhea &mdash; Horizontal Header Table
 ///
@@ -15,16 +15,17 @@ use crate::util::{get_version_string, Buffer};
 #[derive(Debug)]
 pub struct Table_hhea {
     _version: String,
-    pub ascender: i16,
-    pub descender: i16,
-    pub line_gap: i16,
-    pub advance_width_max: u16,
-    pub min_left_side_bearing: i16,
-    pub min_right_side_bearing: i16,
-    pub x_max_extent: i16,
+    pub ascender: FWord,
+    pub descender: FWord,
+    pub line_gap: FWord,
+    pub advance_width_max: UFWord,
+    pub min_left_side_bearing: FWord,
+    pub min_right_side_bearing: FWord,
+    pub x_max_extent: FWord,
     pub caret_slope_rise: i16,
     pub caret_slope_run: i16,
     pub caret_offset: i16,
+    // Reserved 4 * `int16` here.
     pub metric_data_format: i16,
     pub num_hor_metrics: u16,
 }
@@ -34,13 +35,13 @@ impl Font {
         buffer.offset = record.offset;
         self.hhea = Some(Table_hhea {
             _version: get_version_string(buffer.read::<u16>(), buffer.read::<u16>()),
-            ascender: buffer.read::<i16>(),
-            descender: buffer.read::<i16>(),
-            line_gap: buffer.read::<i16>(),
-            advance_width_max: buffer.read::<u16>(),
-            min_left_side_bearing: buffer.read::<i16>(),
-            min_right_side_bearing: buffer.read::<i16>(),
-            x_max_extent: buffer.read::<i16>(),
+            ascender: buffer.read::<FWord>(),
+            descender: buffer.read::<FWord>(),
+            line_gap: buffer.read::<FWord>(),
+            advance_width_max: buffer.read::<UFWord>(),
+            min_left_side_bearing: buffer.read::<FWord>(),
+            min_right_side_bearing: buffer.read::<FWord>(),
+            x_max_extent: buffer.read::<FWord>(),
             caret_slope_rise: buffer.read::<i16>(),
             caret_slope_run: buffer.read::<i16>(),
             caret_offset: buffer.read::<i16>(),
