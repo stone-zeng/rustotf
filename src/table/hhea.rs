@@ -32,24 +32,24 @@ pub struct Table_hhea {
 
 impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset;
+        buffer.offset = record.offset as usize;
         self.hhea = Some(Table_hhea {
-            _version: get_version_string(buffer.read::<u16>(), buffer.read::<u16>()),
-            ascender: buffer.read::<FWord>(),
-            descender: buffer.read::<FWord>(),
-            line_gap: buffer.read::<FWord>(),
-            advance_width_max: buffer.read::<UFWord>(),
-            min_left_side_bearing: buffer.read::<FWord>(),
-            min_right_side_bearing: buffer.read::<FWord>(),
-            x_max_extent: buffer.read::<FWord>(),
-            caret_slope_rise: buffer.read::<i16>(),
-            caret_slope_run: buffer.read::<i16>(),
-            caret_offset: buffer.read::<i16>(),
+            _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
+            ascender: buffer.get::<FWord>(),
+            descender: buffer.get::<FWord>(),
+            line_gap: buffer.get::<FWord>(),
+            advance_width_max: buffer.get::<UFWord>(),
+            min_left_side_bearing: buffer.get::<FWord>(),
+            min_right_side_bearing: buffer.get::<FWord>(),
+            x_max_extent: buffer.get::<FWord>(),
+            caret_slope_rise: buffer.get::<i16>(),
+            caret_slope_run: buffer.get::<i16>(),
+            caret_offset: buffer.get::<i16>(),
             metric_data_format: {
                 buffer.skip::<i16>(4);
-                buffer.read::<i16>()
+                buffer.get::<i16>()
             },
-            num_hor_metrics: buffer.read::<u16>(),
+            num_hor_metrics: buffer.get::<u16>(),
         });
     }
 }

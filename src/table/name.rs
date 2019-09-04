@@ -28,6 +28,6 @@ pub struct Table_name {}
 
 impl Font {
     pub fn parse_name(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset;
+        buffer.offset = record.offset as usize;
     }
 }

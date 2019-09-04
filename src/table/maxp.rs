@@ -32,10 +32,10 @@ pub struct Table_maxp {
 
 impl Font {
     pub fn parse_maxp(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset;
+        buffer.offset = record.offset as usize;
         let mut table = Table_maxp {
-            _version: buffer.read::<Fixed>(),
-            num_glyphs: buffer.read::<u16>(),
+            _version: buffer.get::<Fixed>(),
+            num_glyphs: buffer.get::<u16>(),
             max_points: None,
             max_contours: None,
             max_composite_points: None,
@@ -52,19 +52,19 @@ impl Font {
         };
         // Version 1.0
         if table._version == 0x0001_0000 {
-            table.max_points = Some(buffer.read::<u16>());
-            table.max_contours = Some(buffer.read::<u16>());
-            table.max_composite_points = Some(buffer.read::<u16>());
-            table.max_composite_contours = Some(buffer.read::<u16>());
-            table.max_zones = Some(buffer.read::<u16>());
-            table.max_twilight_points = Some(buffer.read::<u16>());
-            table.max_storage = Some(buffer.read::<u16>());
-            table.max_function_defs = Some(buffer.read::<u16>());
-            table.max_instruction_defs = Some(buffer.read::<u16>());
-            table.max_stack_elements = Some(buffer.read::<u16>());
-            table.max_size_of_instructions = Some(buffer.read::<u16>());
-            table.max_component_elements = Some(buffer.read::<u16>());
-            table.max_component_depth = Some(buffer.read::<u16>());
+            table.max_points = Some(buffer.get::<u16>());
+            table.max_contours = Some(buffer.get::<u16>());
+            table.max_composite_points = Some(buffer.get::<u16>());
+            table.max_composite_contours = Some(buffer.get::<u16>());
+            table.max_zones = Some(buffer.get::<u16>());
+            table.max_twilight_points = Some(buffer.get::<u16>());
+            table.max_storage = Some(buffer.get::<u16>());
+            table.max_function_defs = Some(buffer.get::<u16>());
+            table.max_instruction_defs = Some(buffer.get::<u16>());
+            table.max_stack_elements = Some(buffer.get::<u16>());
+            table.max_size_of_instructions = Some(buffer.get::<u16>());
+            table.max_component_elements = Some(buffer.get::<u16>());
+            table.max_component_depth = Some(buffer.get::<u16>());
         }
         self.maxp = Some(table);
     }

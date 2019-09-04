@@ -30,7 +30,7 @@ pub fn run(font_file_name: &str) -> Result<(), Box<dyn error::Error>> {
 
     let mut buffer = Buffer::new(fs::read(font_file_name)?);
 
-    let signature = buffer.read::<u32>();
+    let signature = buffer.get::<u32>();
     // println!("{:08X}", signature);
 
     match signature {

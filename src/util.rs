@@ -11,7 +11,7 @@ pub fn get_version_string(major: u16, minor: u16) -> String {
 
 pub struct Buffer {
     _buffer: Vec<u8>,
-    pub offset: u32,
+    pub offset: usize,
 }
 
 impl Buffer {
@@ -24,28 +24,29 @@ impl Buffer {
     }
 
     /// Get a value as type `T` from the buffer.
-    pub fn read<T: ReadFromBuffer>(&mut self) -> T {
-        let _offset = self.offset as usize;
-        self.offset += mem::size_of::<T>() as u32;
-        ReadFromBuffer::read_from_buffer(&self._buffer, _offset)
+    pub fn get<T: Read>(&mut self) -> T {
+        // let _offset = self.offset as usize;
+        // self.offset += mem::size_of::<T>() as u32;
+        Read::read(self)
     }
 
-    pub fn read_vec<T: ReadFromBuffer>(&mut self, n: usize) -> Vec<T> {
-        let mut _offset = self.offset as usize;
-        let _size = mem::size_of::<T>();
-        let mut v: Vec<T> = Vec::new();
-        for _ in 0..n {
-            let elem = ReadFromBuffer::read_from_buffer(&self._buffer, _offset);
-            _offset += _size;
-            v.push(elem);
-        }
-        self.offset = _offset as u32;
-        v
+    pub fn get_vec<T: Read>(&mut self, n: usize) -> Vec<T> {
+        // let mut _offset = self.offset as usize;
+        // let _size = mem::size_of::<T>();
+        // let mut v: Vec<T> = Vec::new();
+        // for _ in 0..n {
+        //     let elem = Read::read(&self._buffer, _offset);
+        //     _offset += _size;
+        //     v.push(elem);
+        // }
+        // self.offset = _offset as u32;
+        // v
+        (0..n).map(|_| Read::read(self)).collect()
     }
 
     /// Skip `n` * `size_of<T>` bytes for `offset`.
-    pub fn skip<T>(&mut self, n: u32) {
-        self.offset += n * mem::size_of::<T>() as u32;
+    pub fn skip<T>(&mut self, n: usize) {
+        self.offset += n * mem::size_of::<T>();
     }
     // pub fn calc_check_sum(&self, offset: u32, length: u32) -> u32 {
     //     let _offset = offset as usize;
@@ -58,8 +59,9 @@ impl Buffer {
     // }
 }
 
-pub trait ReadFromBuffer {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self;
+pub trait Read {
+    // fn read(_buffer: &Vec<u8>, _offset: usize) -> Self;
+    fn read(buffer: &mut Buffer) -> Self;
 }
 
 /// The following data types are used in the OpenType font file. All OpenType
@@ -81,35 +83,41 @@ pub trait ReadFromBuffer {
 /// - `Offset16`
 /// - `Offset32`
 
-impl ReadFromBuffer for u8 {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
-        _buffer[_offset]
+impl Read for u8 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let offset = buffer.offset;
+        buffer.offset += mem::size_of::<u8>();
+        buffer._buffer[offset]
     }
 }
 
-impl ReadFromBuffer for i8 {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
-        _buffer[_offset] as i8
+impl Read for i8 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let offset = buffer.offset;
+        buffer.offset += mem::size_of::<i8>();
+        buffer._buffer[offset] as i8
     }
 }
 
-// Implement `ReadFromBuffer` for `u16`, `u32`, etc.
-macro_rules! _generate_read_from_buffer {
+// Implement `Read` for `u16`, `u32`, etc.
+macro_rules! _generate_read {
     ($t:ty, $f:expr) => {
-        impl ReadFromBuffer for $t {
-            fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
-                $f(&_buffer[_offset.._offset + mem::size_of::<$t>()])
+        impl Read for $t {
+            fn read(buffer: &mut Buffer) -> Self {
+                let offset = buffer.offset;
+                buffer.offset += mem::size_of::<$t>();
+                $f(&buffer._buffer[offset..buffer.offset])
             }
         }
     };
 }
 
-_generate_read_from_buffer!(u16, BigEndian::read_u16);
-_generate_read_from_buffer!(u32, BigEndian::read_u32);
-_generate_read_from_buffer!(u64, BigEndian::read_u64);
-_generate_read_from_buffer!(i16, BigEndian::read_i16);
-_generate_read_from_buffer!(i32, BigEndian::read_i32);
-_generate_read_from_buffer!(i64, BigEndian::read_i64);
+_generate_read!(u16, BigEndian::read_u16);
+_generate_read!(u32, BigEndian::read_u32);
+_generate_read!(u64, BigEndian::read_u64);
+_generate_read!(i16, BigEndian::read_i16);
+_generate_read!(i32, BigEndian::read_i32);
+_generate_read!(i64, BigEndian::read_i64);
 
 /// 32-bit signed fixed-point number (16.16).
 pub struct Fixed {
@@ -128,10 +136,10 @@ impl PartialEq<i32> for Fixed {
     }
 }
 
-impl ReadFromBuffer for Fixed {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+impl Read for Fixed {
+    fn read(buffer: &mut Buffer) -> Self {
         Self {
-            _num: i32::read_from_buffer(_buffer, _offset),
+            _num: buffer.get::<i32>(),
         }
     }
 }
@@ -153,10 +161,10 @@ impl ReadFromBuffer for Fixed {
 //     }
 // }
 
-// impl ReadFromBuffer for F2Dot14 {
-//     fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+// impl Read for F2Dot14 {
+//     fn read(_buffer: &Vec<u8>, _offset: usize) -> Self {
 //         Self {
-//             _num: i16::read_from_buffer(_buffer, _offset),
+//             _num: i16::read(_buffer, _offset),
 //         }
 //     }
 // }
@@ -177,10 +185,10 @@ impl fmt::Debug for LongDateTime {
     }
 }
 
-impl ReadFromBuffer for LongDateTime {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+impl Read for LongDateTime {
+    fn read(buffer: &mut Buffer) -> Self {
         Self {
-            _num: i64::read_from_buffer(_buffer, _offset),
+            _num: buffer.get::<i64>(),
         }
     }
 }
@@ -212,14 +220,14 @@ impl fmt::Debug for Tag {
     }
 }
 
-impl ReadFromBuffer for Tag {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+impl Read for Tag {
+    fn read(buffer: &mut Buffer) -> Self {
         Self {
             _u8_arr: [
-                u8::read_from_buffer(_buffer, _offset),
-                u8::read_from_buffer(_buffer, _offset + 1 * U8_SIZE),
-                u8::read_from_buffer(_buffer, _offset + 2 * U8_SIZE),
-                u8::read_from_buffer(_buffer, _offset + 3 * U8_SIZE),
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
             ],
         }
     }
@@ -233,9 +241,9 @@ pub type Offset32 = u32;
 // pub const I8_SIZE: usize = mem::size_of::<i8>();
 // pub const I16_SIZE: usize = mem::size_of::<i16>();
 // pub const I32_SIZE: usize = mem::size_of::<i32>();
-pub const U8_SIZE: usize = mem::size_of::<u8>();
-pub const U16_SIZE: usize = mem::size_of::<u16>();
-pub const U32_SIZE: usize = mem::size_of::<u32>();
+// pub const U8_SIZE: usize = mem::size_of::<u8>();
+// pub const U16_SIZE: usize = mem::size_of::<u16>();
+// pub const U32_SIZE: usize = mem::size_of::<u32>();
 // pub const FIXED_SIZE: usize = mem::size_of::<Fixed>();
 // pub const FWORD_SIZE: usize = mem::size_of::<FWord>();
 // pub const UFWORD_SIZE: usize = mem::size_of::<UFWord>();
@@ -243,4 +251,4 @@ pub const U32_SIZE: usize = mem::size_of::<u32>();
 // pub const LONG_DATE_TIME_SIZE: usize = mem::size_of::<LongDateTime>();
 // pub const TAG_SIZE: usize = mem::size_of::<Tag>();
 // pub const OFFSET16_SIZE: usize = mem::size_of::<Offset16>();
-pub const OFFSET32_SIZE: usize = mem::size_of::<Offset32>();
+// pub const OFFSET32_SIZE: usize = mem::size_of::<Offset32>();

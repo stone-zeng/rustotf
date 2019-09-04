@@ -2,7 +2,7 @@ use crate::table::{
     cmap::Table_cmap, head::Table_head, hhea::Table_hhea, hmtx::Table_hmtx, maxp::Table_maxp,
     name::Table_name, os_2::Table_OS_2, post::Table_post,
 };
-use crate::util::{Buffer, Offset32, ReadFromBuffer, Tag, OFFSET32_SIZE, U32_SIZE};
+use crate::util::{Buffer, Offset32, Read, Tag};
 use std::collections::HashMap;
 
 #[allow(non_snake_case)]
@@ -106,26 +106,26 @@ pub struct TableRecord {
     pub length: u32,
 }
 
-impl ReadFromBuffer for TableRecord {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+impl Read for TableRecord {
+    fn read(buffer: &mut Buffer) -> Self {
         Self {
-            check_sum: u32::read_from_buffer(_buffer, _offset),
-            offset: Offset32::read_from_buffer(_buffer, _offset + U32_SIZE),
-            length: u32::read_from_buffer(_buffer, _offset + OFFSET32_SIZE),
+            check_sum: buffer.get::<u32>(),
+            offset: buffer.get::<Offset32>(),
+            length: buffer.get::<u32>(),
         }
     }
 }
 
 pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     // Offset Table
-    let num_tables = buffer.read::<u16>();
-    let search_range = buffer.read::<u16>();
-    let entry_selector = buffer.read::<u16>();
-    let range_shift = buffer.read::<u16>();
-    println!(
-        "\tnumTables: {}\n\tsearchRange: {}\n\tentrySelector: {}\n\trangeShift: {}",
-        num_tables, search_range, entry_selector, range_shift
-    );
+    let num_tables = buffer.get::<u16>();
+    let search_range = buffer.get::<u16>();
+    let entry_selector = buffer.get::<u16>();
+    let range_shift = buffer.get::<u16>();
+    // println!(
+    //     "\tnumTables: {}\n\tsearchRange: {}\n\tentrySelector: {}\n\trangeShift: {}",
+    //     num_tables, search_range, entry_selector, range_shift
+    // );
 
     let mut font = Font::new(match signature {
         // 'OTTO'
@@ -136,39 +136,29 @@ pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     // Table Record entries
     let mut records = HashMap::new();
     for _ in 0..num_tables {
-        records.insert(
-            buffer.read::<Tag>().to_string(),
-            buffer.read::<TableRecord>(),
-        );
+        records.insert(buffer.get::<Tag>().to_string(), buffer.get::<TableRecord>());
     }
 
-    font.parse_head(buffer, records.get("head").unwrap());
-    font.parse_hhea(buffer, records.get("hhea").unwrap());
-    font.parse_maxp(buffer, records.get("maxp").unwrap());
-    font.parse_hmtx(buffer, records.get("hmtx").unwrap());
-    font.parse_cmap(buffer, records.get("cmap").unwrap());
-    font.parse_name(buffer, records.get("name").unwrap());
-    font.parse_OS_2(buffer, records.get("OS/2").unwrap());
-    font.parse_post(buffer, records.get("post").unwrap());
+    // println!("{:#?}", records);
 
-    // println!(
-    //     "\ttableTag: {}\n\t\tcheckSum: [{}, {}]\n\t\toffset: {}\n\t\tlength: {}",
-    //     table_tag,
-    //     check_sum,
-    //     buffer.calc_check_sum(offset, length),
-    //     offset,
-    //     length
-    // );
+    // font.parse_head(buffer, records.get("head").unwrap());
+    // font.parse_hhea(buffer, records.get("hhea").unwrap());
+    // font.parse_maxp(buffer, records.get("maxp").unwrap());
+    // font.parse_hmtx(buffer, records.get("hmtx").unwrap());
+    font.parse_cmap(buffer, records.get("cmap").unwrap());
+    // font.parse_name(buffer, records.get("name").unwrap());
+    // font.parse_OS_2(buffer, records.get("OS/2").unwrap());
+    // font.parse_post(buffer, records.get("post").unwrap());
 
     println!("\t{:#?}", font);
 }
 
 pub fn read_ttc(buffer: &mut Buffer) {
     // TTC Header
-    let major_version = buffer.read::<u16>();
-    let minor_version = buffer.read::<u16>();
-    let num_fonts = buffer.read::<u32>();
-    let offset_table = buffer.read_vec::<Offset32>(num_fonts as usize);
+    let major_version = buffer.get::<u16>();
+    let minor_version = buffer.get::<u16>();
+    let num_fonts = buffer.get::<u32>();
+    let offset_table = buffer.get_vec::<Offset32>(num_fonts as usize);
 
     println!(
         "\tmajorVersion: {}\n\tminorVersion: {}\n\tnumFonts: {}\n\toffsetTable: {:?}",
@@ -176,9 +166,9 @@ pub fn read_ttc(buffer: &mut Buffer) {
     );
 
     if major_version == 2 {
-        let dsig_tag = buffer.read::<u32>();
-        let dsig_length = buffer.read::<u32>();
-        let dsig_offset = buffer.read::<u32>();
+        let dsig_tag = buffer.get::<u32>();
+        let dsig_length = buffer.get::<u32>();
+        let dsig_offset = buffer.get::<u32>();
         println!(
             "\tdsigTag: {}\n\tdsigLength: {}\n\tdsigOffset: {}",
             dsig_tag, dsig_length, dsig_offset
@@ -187,37 +177,37 @@ pub fn read_ttc(buffer: &mut Buffer) {
 }
 
 pub fn read_woff(buffer: &mut Buffer) {
-    let flavor = buffer.read::<u32>();
-    let length = buffer.read::<u32>();
-    let num_tables = buffer.read::<u16>();
-    let reserved = buffer.read::<u16>();
-    let total_sfnt_size = buffer.read::<u32>();
-    let major_version = buffer.read::<u16>();
-    let minor_version = buffer.read::<u16>();
-    let meta_offset = buffer.read::<u32>();
-    let meta_length = buffer.read::<u32>();
-    let meta_orig_length = buffer.read::<u32>();
-    let priv_offset = buffer.read::<u32>();
-    let priv_length = buffer.read::<u32>();
+    let flavor = buffer.get::<u32>();
+    let length = buffer.get::<u32>();
+    let num_tables = buffer.get::<u16>();
+    let reserved = buffer.get::<u16>();
+    let total_sfnt_size = buffer.get::<u32>();
+    let major_version = buffer.get::<u16>();
+    let minor_version = buffer.get::<u16>();
+    let meta_offset = buffer.get::<u32>();
+    let meta_length = buffer.get::<u32>();
+    let meta_orig_length = buffer.get::<u32>();
+    let priv_offset = buffer.get::<u32>();
+    let priv_length = buffer.get::<u32>();
     println!(
         "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
         flavor, length, num_tables, reserved, total_sfnt_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);
 }
 
 pub fn read_woff2(buffer: &mut Buffer) {
-    let flavor = buffer.read::<u32>();
-    let length = buffer.read::<u32>();
-    let num_tables = buffer.read::<u16>();
-    let reserved = buffer.read::<u16>();
-    let total_sfnt_size = buffer.read::<u32>();
-    let total_compressed_size = buffer.read::<u32>();
-    let major_version = buffer.read::<u16>();
-    let minor_version = buffer.read::<u16>();
-    let meta_offset = buffer.read::<u32>();
-    let meta_length = buffer.read::<u32>();
-    let meta_orig_length = buffer.read::<u32>();
-    let priv_offset = buffer.read::<u32>();
-    let priv_length = buffer.read::<u32>();
+    let flavor = buffer.get::<u32>();
+    let length = buffer.get::<u32>();
+    let num_tables = buffer.get::<u16>();
+    let reserved = buffer.get::<u16>();
+    let total_sfnt_size = buffer.get::<u32>();
+    let total_compressed_size = buffer.get::<u32>();
+    let major_version = buffer.get::<u16>();
+    let minor_version = buffer.get::<u16>();
+    let meta_offset = buffer.get::<u32>();
+    let meta_length = buffer.get::<u32>();
+    let meta_orig_length = buffer.get::<u32>();
+    let priv_offset = buffer.get::<u32>();
+    let priv_length = buffer.get::<u32>();
     println!(
         "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\ttotalCompressedSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
         flavor, length, num_tables, reserved, total_sfnt_size, total_compressed_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);

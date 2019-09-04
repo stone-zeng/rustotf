@@ -33,25 +33,25 @@ pub struct Table_head {
 
 impl Font {
     pub fn parse_head(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset;
+        buffer.offset = record.offset as usize;
         self.head = Some(Table_head {
-            _version: get_version_string(buffer.read::<u16>(), buffer.read::<u16>()),
-            font_revision: buffer.read::<Fixed>(),
-            check_sum_adjustment: buffer.read::<u32>(),
-            magic_number: buffer.read::<u32>(),
-            flags: buffer.read::<u16>(),
-            units_per_em: buffer.read::<u16>(),
-            created: buffer.read::<LongDateTime>(),
-            modified: buffer.read::<LongDateTime>(),
-            x_min: buffer.read::<i16>(),
-            y_min: buffer.read::<i16>(),
-            x_max: buffer.read::<i16>(),
-            y_max: buffer.read::<i16>(),
-            mac_style: buffer.read::<u16>(),
-            lowest_rec_ppem: buffer.read::<u16>(),
-            font_direction_hint: buffer.read::<i16>(),
-            index_to_loc_format: buffer.read::<i16>(),
-            glyph_data_format: buffer.read::<i16>(),
+            _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
+            font_revision: buffer.get::<Fixed>(),
+            check_sum_adjustment: buffer.get::<u32>(),
+            magic_number: buffer.get::<u32>(),
+            flags: buffer.get::<u16>(),
+            units_per_em: buffer.get::<u16>(),
+            created: buffer.get::<LongDateTime>(),
+            modified: buffer.get::<LongDateTime>(),
+            x_min: buffer.get::<i16>(),
+            y_min: buffer.get::<i16>(),
+            x_max: buffer.get::<i16>(),
+            y_max: buffer.get::<i16>(),
+            mac_style: buffer.get::<u16>(),
+            lowest_rec_ppem: buffer.get::<u16>(),
+            font_direction_hint: buffer.get::<i16>(),
+            index_to_loc_format: buffer.get::<i16>(),
+            glyph_data_format: buffer.get::<i16>(),
         });
     }
 }
