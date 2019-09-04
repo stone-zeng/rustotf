@@ -168,7 +168,7 @@ pub fn read_ttc(buffer: &mut Buffer) {
     let major_version = buffer.read::<u16>();
     let minor_version = buffer.read::<u16>();
     let num_fonts = buffer.read::<u32>();
-    let offset_table = buffer.read_vec::<Offset32>(num_fonts);
+    let offset_table = buffer.read_vec::<Offset32>(num_fonts as usize);
 
     println!(
         "\tmajorVersion: {}\n\tminorVersion: {}\n\tnumFonts: {}\n\toffsetTable: {:?}",

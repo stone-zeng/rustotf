@@ -30,7 +30,7 @@ impl Buffer {
         ReadFromBuffer::read_from_buffer(&self._buffer, _offset)
     }
 
-    pub fn read_vec<T: ReadFromBuffer>(&mut self, n: u32) -> Vec<T> {
+    pub fn read_vec<T: ReadFromBuffer>(&mut self, n: usize) -> Vec<T> {
         let mut _offset = self.offset as usize;
         let _size = mem::size_of::<T>();
         let mut v: Vec<T> = Vec::new();
@@ -62,12 +62,6 @@ pub trait ReadFromBuffer {
     fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self;
 }
 
-impl ReadFromBuffer for u8 {
-    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
-        _buffer[_offset]
-    }
-}
-
 /// The following data types are used in the OpenType font file. All OpenType
 /// fonts use Motorola-style byte ordering (Big Endian):
 ///
@@ -86,6 +80,18 @@ impl ReadFromBuffer for u8 {
 /// - `Tag`
 /// - `Offset16`
 /// - `Offset32`
+
+impl ReadFromBuffer for u8 {
+    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+        _buffer[_offset]
+    }
+}
+
+impl ReadFromBuffer for i8 {
+    fn read_from_buffer(_buffer: &Vec<u8>, _offset: usize) -> Self {
+        _buffer[_offset] as i8
+    }
+}
 
 // Implement `ReadFromBuffer` for `u16`, `u32`, etc.
 macro_rules! _generate_read_from_buffer {
