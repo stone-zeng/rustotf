@@ -119,6 +119,27 @@ _generate_read!(i16, BigEndian::read_i16);
 _generate_read!(i32, BigEndian::read_i32);
 _generate_read!(i64, BigEndian::read_i64);
 
+#[allow(non_camel_case_types)]
+pub struct u24 {
+    _internal: [u8; 3],
+}
+
+impl fmt::Debug for u24 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let num =
+            4 * self._internal[0] as u32 + 2 * self._internal[1] as u32 + self._internal[2] as u32;
+        write!(f, "{}", num)
+    }
+}
+
+impl Read for u24 {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self {
+            _internal: [buffer.get::<u8>(), buffer.get::<u8>(), buffer.get::<u8>()],
+        }
+    }
+}
+
 /// 32-bit signed fixed-point number (16.16).
 pub struct Fixed {
     _num: i32,
