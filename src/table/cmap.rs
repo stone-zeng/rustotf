@@ -15,260 +15,400 @@ use std::collections::HashMap;
 #[derive(Debug)]
 pub struct Table_cmap {
     _version: u16,
-    pub num_tables: u16,
-    pub encoding_records: Vec<EncodingRecord>,
-    pub subtables: HashMap<Offset32, CmapSubtable>,
-
-    pub data: HashMap<u32, String>,
-}
-
-impl Table_cmap {
-    pub fn format(&self) {}
+    _num_tables: u16,
+    _encodings: Vec<Encoding>,
+    _subtables: HashMap<Offset32, CmapSubtable>,
+    pub mappings: HashMap<Encoding, HashMap<u32, u32>>,
 }
 
 impl Font {
     pub fn parse_cmap(&mut self, buffer: &mut Buffer, record: &TableRecord) {
         buffer.offset = record.offset as usize;
         let _version = buffer.get::<u16>();
-        let num_tables = buffer.get::<u16>();
-        let encoding_records = buffer.get_vec::<EncodingRecord>(num_tables as usize);
-        let mut subtables: HashMap<Offset32, CmapSubtable> = HashMap::new();
-        for i in &encoding_records {
-            buffer.offset = (record.offset + i.offset) as usize;
-            subtables
-                .entry(i.offset)
+        let _num_tables = buffer.get::<u16>();
+        let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
+
+        let mut _subtables: HashMap<Offset32, CmapSubtable> = HashMap::new();
+        for i in &_encodings {
+            buffer.offset = (record.offset + i._offset) as usize;
+            _subtables
+                .entry(i._offset)
                 .or_insert(buffer.get::<CmapSubtable>());
         }
 
-        let data = HashMap::new();
+        let mut mappings: HashMap<Encoding, HashMap<u32, u32>> = HashMap::new();
 
         self.cmap = Some(Table_cmap {
             _version,
-            num_tables,
-            encoding_records,
-            subtables,
-            data,
+            _num_tables,
+            _encodings,
+            _subtables,
+            mappings,
         });
-        self.cmap.as_ref().unwrap().format();
+
+        // let mappings = HashMap::new();
+
+        // self.cmap = Some(Table_cmap {
+        //     _version,
+        //     _num_tables,
+        //     _encodings,
+        //     subtables,
+        //     mappings,
+        // });
+        // self.cmap.as_ref().unwrap();
     }
 }
 
-#[derive(Debug)]
-pub struct EncodingRecord {
-    platform_id: u16,
-    encoding_id: u16,
-    offset: Offset32,
+#[derive(Debug, Eq, Hash, PartialEq)]
+pub struct Encoding {
+    _offset: Offset32,
+    pub platform_id: u16,
+    pub encoding_id: u16,
 }
 
-impl Read for EncodingRecord {
+impl Read for Encoding {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             platform_id: buffer.get::<u16>(),
             encoding_id: buffer.get::<u16>(),
-            offset: buffer.get::<Offset32>(),
+            _offset: buffer.get::<Offset32>(),
         }
     }
 }
 
 #[derive(Debug)]
-pub struct CmapSubtable {
-    format: u16,
-    // Format 0: Byte encoding table
-    length: Option<u16>,
-    language: Option<u16>,
-    glyph_id_array_u8: Option<Vec<u8>>,
-    // Format 2: High-byte mapping through table
-    sub_header_keys: Option<Vec<u16>>,
-    sub_headers: Option<Vec<SubHeader>>,
-    glyph_id_array: Option<Vec<u16>>,
-    // Format 4: Segment mapping to delta values
-    seg_count_x2: Option<u16>,
-    search_range: Option<u16>,
-    entry_selector: Option<u16>,
-    range_shift: Option<u16>,
-    end_code: Option<Vec<u16>>,
-    // reserved_pad: u16,
-    start_code: Option<Vec<u16>>,
-    id_delta: Option<Vec<i16>>,
-    id_range_offset: Option<Vec<u16>>,
-    // Format 6: Trimmed table mapping
-    first_code: Option<u16>,
-    entry_count: Option<u16>,
-    // Format 8: mixed 16-bit and 32-bit coverage
-    length_u32: Option<u32>,
-    language_u32: Option<u32>,
-    is_32: Option<Vec<u8>>,
-    num_groups: Option<u32>,
-    sequential_map_groups: Option<Vec<SequentialMapGroup>>,
-    // Format 10: Trimmed array
-    start_char_code: Option<u32>,
-    num_chars: Option<u32>,
-    glyphs: Option<Vec<u16>>,
-    // Format 12: Segmented coverage
-    // * The same structure as Format 8
-    // Format 13: Many-to-one range mappings
-    constant_map_groups: Option<Vec<ConstantMapGroup>>,
-    // Format 14: Unicode Variation Sequences
-    num_var_selector_records: Option<u32>,
-    var_selector: Option<Vec<VariationSelector>>,
+struct CmapSubtable {
+    _format: u16,
+    _format_0_data: Option<CmapFormat0>,
+    _format_2_data: Option<CmapFormat2>,
+    _format_4_data: Option<CmapFormat4>,
+    _format_6_data: Option<CmapFormat6>,
+    _format_8_data: Option<CmapFormat8>,
+    _format_10_data: Option<CmapFormat10>,
+    _format_12_data: Option<CmapFormat12>,
+    _format_13_data: Option<CmapFormat13>,
+    _format_14_data: Option<CmapFormat14>,
 }
 
 impl Read for CmapSubtable {
     fn read(buffer: &mut Buffer) -> Self {
-        let mut table = Self {
-            format: buffer.get::<u16>(),
-            length: None,
-            language: None,
-            glyph_id_array_u8: None,
-            sub_header_keys: None,
-            sub_headers: None,
-            glyph_id_array: None,
-            seg_count_x2: None,
-            search_range: None,
-            entry_selector: None,
-            range_shift: None,
-            end_code: None,
-            start_code: None,
-            id_delta: None,
-            id_range_offset: None,
-            first_code: None,
-            entry_count: None,
-            is_32: None,
-            num_groups: None,
-            sequential_map_groups: None,
-            start_char_code: None,
-            num_chars: None,
-            glyphs: None,
-            length_u32: None,
-            language_u32: None,
-            constant_map_groups: None,
-            num_var_selector_records: None,
-            var_selector: None,
+        let mut subtable = CmapSubtable {
+            _format: buffer.get::<u16>(),
+            _format_0_data: None,
+            _format_2_data: None,
+            _format_4_data: None,
+            _format_6_data: None,
+            _format_8_data: None,
+            _format_10_data: None,
+            _format_12_data: None,
+            _format_13_data: None,
+            _format_14_data: None,
         };
-        match table.format {
-            0 => {
-                table.length = Some(buffer.get::<u16>());
-                table.language = Some(buffer.get::<u16>());
-                table.glyph_id_array_u8 = Some(buffer.get_vec::<u8>(256));
-            }
-            2 => {
-                table.length = Some(buffer.get::<u16>());
-                table.language = Some(buffer.get::<u16>());
-                table.sub_header_keys = Some(buffer.get_vec::<u16>(256));
-                let max_sub_header_key = *(table
-                    .sub_header_keys
-                    .as_ref()
-                    .unwrap()
-                    .iter()
-                    .max()
-                    .unwrap()) as usize;
-                let mut sub_headers: Vec<SubHeader> = Vec::new();
-                for _ in 0..max_sub_header_key / 8 {
-                    let first_code = buffer.get::<u16>();
-                    let entry_count = buffer.get::<u16>();
-                    let id_delta = buffer.get::<i16>();
-                    let id_range_offset = buffer.get::<u16>();
-                    let offset = buffer.offset;
-                    buffer.offset += id_range_offset as usize - 2;
-                    let glyph_id_list = buffer
-                        .get_vec::<u16>(entry_count as usize)
-                        .iter()
-                        .map(|x| x + id_delta as u16)
-                        .collect();
-                    sub_headers.push(SubHeader {
-                        first_code,
-                        entry_count,
-                        id_delta,
-                        id_range_offset,
-                        glyph_id_list,
-                    });
-                    buffer.offset = offset;
-                }
-                table.sub_headers = Some(sub_headers);
-            }
-            4 => {
-                table.length = Some(buffer.get::<u16>());
-                table.language = Some(buffer.get::<u16>());
-                table.seg_count_x2 = Some(buffer.get::<u16>());
-                table.search_range = Some(buffer.get::<u16>());
-                table.entry_selector = Some(buffer.get::<u16>());
-                table.range_shift = Some(buffer.get::<u16>());
-                let seg_count = table.seg_count_x2.unwrap() as usize / 2;
-                table.end_code = Some(buffer.get_vec::<u16>(seg_count));
-                buffer.skip::<u16>(1);
-                table.start_code = Some(buffer.get_vec::<u16>(seg_count));
-                table.id_delta = Some(buffer.get_vec::<i16>(seg_count));
-                table.id_range_offset = Some(buffer.get_vec::<u16>(seg_count));
-                // TODO: length not explicitly specified in OTF-SPEC
-                table.glyph_id_array = Some(buffer.get_vec::<u16>(1));
-            }
-            6 => {
-                table.length = Some(buffer.get::<u16>());
-                table.language = Some(buffer.get::<u16>());
-                table.first_code = Some(buffer.get::<u16>());
-                table.entry_count = Some(buffer.get::<u16>());
-                table.glyph_id_array =
-                    Some(buffer.get_vec::<u16>(table.entry_count.unwrap() as usize));
-            }
-            8 => {
-                buffer.skip::<u16>(1);
-                table.length_u32 = Some(buffer.get::<u32>());
-                table.language_u32 = Some(buffer.get::<u32>());
-                table.is_32 = Some(buffer.get_vec::<u8>(8192));
-                table.num_groups = Some(buffer.get::<u32>());
-                table.sequential_map_groups =
-                    Some(buffer.get_vec::<SequentialMapGroup>(table.num_groups.unwrap() as usize));
-            }
-            10 => {
-                buffer.skip::<u16>(1);
-                table.length_u32 = Some(buffer.get::<u32>());
-                table.language_u32 = Some(buffer.get::<u32>());
-                table.start_char_code = Some(buffer.get::<u32>());
-                table.num_chars = Some(buffer.get::<u32>());
-                table.glyphs = Some(buffer.get_vec::<u16>(table.num_chars.unwrap() as usize));
-            }
-            12 => {
-                buffer.skip::<u16>(1);
-                table.length_u32 = Some(buffer.get::<u32>());
-                table.language_u32 = Some(buffer.get::<u32>());
-                table.num_groups = Some(buffer.get::<u32>());
-                table.sequential_map_groups =
-                    Some(buffer.get_vec::<SequentialMapGroup>(table.num_groups.unwrap() as usize));
-            }
-            13 => {
-                buffer.skip::<u16>(1);
-                table.length_u32 = Some(buffer.get::<u32>());
-                table.language_u32 = Some(buffer.get::<u32>());
-                table.num_groups = Some(buffer.get::<u32>());
-                table.constant_map_groups =
-                    Some(buffer.get_vec::<ConstantMapGroup>(table.num_groups.unwrap() as usize));
-            }
-            14 => {
-                table.length = Some(buffer.get::<u16>());
-                table.num_var_selector_records = Some(buffer.get::<u32>());
-                table.var_selector =
-                    Some(buffer.get_vec::<VariationSelector>(
-                        table.num_var_selector_records.unwrap() as usize,
-                    ));
-            }
+        match subtable._format {
+            0 => subtable._format_0_data = Some(buffer.get::<CmapFormat0>()),
+            2 => subtable._format_2_data = Some(buffer.get::<CmapFormat2>()),
+            4 => subtable._format_4_data = Some(buffer.get::<CmapFormat4>()),
+            6 => subtable._format_6_data = Some(buffer.get::<CmapFormat6>()),
+            8 => subtable._format_8_data = Some(buffer.get::<CmapFormat8>()),
+            10 => subtable._format_10_data = Some(buffer.get::<CmapFormat10>()),
+            12 => subtable._format_12_data = Some(buffer.get::<CmapFormat12>()),
+            13 => subtable._format_13_data = Some(buffer.get::<CmapFormat13>()),
+            14 => subtable._format_14_data = Some(buffer.get::<CmapFormat14>()),
             _ => (),
         }
-        table
+        subtable
     }
 }
 
 #[derive(Debug)]
-pub struct SubHeader {
+struct CmapFormat0 {
+    length: u16,
+    language: u16,
+    gid_array: Vec<u8>, // glyphIdArray[256]
+}
+
+impl Read for CmapFormat0 {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self {
+            length: buffer.get::<u16>(),
+            language: buffer.get::<u16>(),
+            gid_array: buffer.get_vec::<u8>(256),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat2 {
+    length: u16,
+    language: u16,
+    sub_header_keys: Vec<u16>, // subHeaderKeys[256]
+    sub_headers: Vec<SubHeader>,
+    // glyphIndexArray[] is in `SubHeader`
+}
+
+impl Read for CmapFormat2 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let length = buffer.get::<u16>();
+        let language = buffer.get::<u16>();
+        let sub_header_keys = buffer.get_vec::<u16>(256);
+        let max_sub_header_key = sub_header_keys.iter().max().unwrap();
+        let mut sub_headers: Vec<SubHeader> = Vec::new();
+        for _ in 0..max_sub_header_key / 8 {
+            let first_code = buffer.get::<u16>();
+            let entry_count = buffer.get::<u16>();
+            let id_delta = buffer.get::<i16>();
+            let id_range_offset = buffer.get::<u16>();
+            let offset = buffer.offset;
+            buffer.offset += id_range_offset as usize - 2;
+            let gid_array = buffer
+                .get_vec::<u16>(entry_count as usize)
+                .iter()
+                .map(|x| x + id_delta as u16)
+                .collect();
+            sub_headers.push(SubHeader {
+                first_code,
+                entry_count,
+                id_delta,
+                id_range_offset,
+                gid_array,
+            });
+            buffer.offset = offset;
+        }
+        Self {
+            length,
+            language,
+            sub_header_keys,
+            sub_headers,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat4 {
+    length: u16,
+    language: u16,
+    seg_count_x2: u16,
+    search_range: u16,
+    entry_selector: u16,
+    range_shift: u16,
+    end_char_code: Vec<u16>,   // endCode[segCount]
+    start_char_code: Vec<u16>, // startCode[segCount]
+    id_delta: Vec<i16>,
+    id_range_offset: Vec<u16>,
+    gid_seg_array: Vec<Vec<u16>>,
+}
+
+impl Read for CmapFormat4 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let length = buffer.get::<u16>();
+        let language = buffer.get::<u16>();
+        let seg_count_x2 = buffer.get::<u16>();
+        let search_range = buffer.get::<u16>();
+        let entry_selector = buffer.get::<u16>();
+        let range_shift = buffer.get::<u16>();
+        let seg_count = seg_count_x2 as usize / 2;
+        let end_char_code = buffer.get_vec::<u16>(seg_count);
+        buffer.skip::<u16>(1);
+        let start_char_code = buffer.get_vec::<u16>(seg_count);
+        let id_delta = buffer.get_vec::<i16>(seg_count);
+        let offset = buffer.offset;
+        let id_range_offset = buffer.get_vec::<u16>(seg_count);
+
+        let mut gid_seg_array: Vec<Vec<u16>> = Vec::new();
+        for i in 0..seg_count - 1 {
+            let len = (end_char_code[i] - start_char_code[i]) as usize + 1;
+            if id_range_offset[i] != 0 {
+                buffer.offset = offset + 2 * i + id_range_offset[i] as usize;
+                gid_seg_array.push(
+                    buffer
+                        .get_vec::<u16>(len)
+                        .iter()
+                        .map(|x| (*x as i16 + id_delta[i]) as u16)
+                        .collect(),
+                );
+            } else {
+                gid_seg_array.push(
+                    (start_char_code[i]..=end_char_code[i])
+                        .map(|x| (x as i16 + id_delta[i]) as u16)
+                        .collect(),
+                );
+            }
+        }
+        Self {
+            length,
+            language,
+            seg_count_x2,
+            search_range,
+            entry_selector,
+            range_shift,
+            end_char_code,
+            start_char_code,
+            id_delta,
+            id_range_offset,
+            gid_seg_array,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat6 {
+    length: u16,
+    language: u16,
+    start_char_code: u16, // firstCode
+    entry_count: u16,
+    gid_array: Vec<u16>,
+}
+
+impl Read for CmapFormat6 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let length = buffer.get::<u16>();
+        let language = buffer.get::<u16>();
+        let start_char_code = buffer.get::<u16>();
+        let entry_count = buffer.get::<u16>();
+        let gid_array = buffer.get_vec::<u16>(entry_count as usize);
+        Self {
+            length,
+            language,
+            start_char_code,
+            entry_count,
+            gid_array,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat8 {
+    length: u32,
+    language: u32,
+    is_32: Vec<u8>,
+    num_groups: u32,
+    groups: Vec<SequentialMapGroup>,
+}
+
+impl Read for CmapFormat8 {
+    fn read(buffer: &mut Buffer) -> Self {
+        buffer.skip::<u16>(1);
+        let length = buffer.get::<u32>();
+        let language = buffer.get::<u32>();
+        let is_32 = buffer.get_vec::<u8>(8192);
+        let num_groups = buffer.get::<u32>();
+        let groups = buffer.get_vec::<SequentialMapGroup>(num_groups as usize);
+        Self {
+            length,
+            language,
+            is_32,
+            num_groups,
+            groups,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat10 {
+    length: u32,
+    language: u32,
+    start_char_code: u32,
+    entry_count: u32,    // numChars
+    gid_array: Vec<u16>, // glyphs[]
+}
+
+impl Read for CmapFormat10 {
+    fn read(buffer: &mut Buffer) -> Self {
+        buffer.skip::<u16>(1);
+        let length = buffer.get::<u32>();
+        let language = buffer.get::<u32>();
+        let start_char_code = buffer.get::<u32>();
+        let entry_count = buffer.get::<u32>();
+        let gid_array = buffer.get_vec::<u16>(entry_count as usize);
+        Self {
+            length,
+            language,
+            start_char_code,
+            entry_count,
+            gid_array,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat12 {
+    length: u32,
+    language: u32,
+    num_groups: u32,
+    groups: Vec<SequentialMapGroup>,
+}
+
+impl Read for CmapFormat12 {
+    fn read(buffer: &mut Buffer) -> Self {
+        buffer.skip::<u16>(1);
+        let length = buffer.get::<u32>();
+        let language = buffer.get::<u32>();
+        let num_groups = buffer.get::<u32>();
+        let groups = buffer.get_vec::<SequentialMapGroup>(num_groups as usize);
+        Self {
+            length,
+            language,
+            num_groups,
+            groups,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat13 {
+    length: u32,
+    language: u32,
+    num_groups: u32,
+    groups: Vec<ConstantMapGroup>,
+}
+
+impl Read for CmapFormat13 {
+    fn read(buffer: &mut Buffer) -> Self {
+        buffer.skip::<u16>(1);
+        let length = buffer.get::<u32>();
+        let language = buffer.get::<u32>();
+        let num_groups = buffer.get::<u32>();
+        let groups = buffer.get_vec::<ConstantMapGroup>(num_groups as usize);
+        Self {
+            length,
+            language,
+            num_groups,
+            groups,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CmapFormat14 {
+    length: u32,
+    num_var_selectors: u32,
+    var_selectors: Vec<VariationSelector>,
+}
+
+impl Read for CmapFormat14 {
+    fn read(buffer: &mut Buffer) -> Self {
+        let length = buffer.get::<u32>();
+        let num_var_selectors = buffer.get::<u32>();
+        let var_selectors = buffer.get_vec::<VariationSelector>(num_var_selectors as usize);
+        Self {
+            length,
+            num_var_selectors,
+            var_selectors,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct SubHeader {
     first_code: u16,
     entry_count: u16,
     id_delta: i16,
     id_range_offset: u16,
-    // As fonttools
-    glyph_id_list: Vec<u16>,
+    gid_array: Vec<u16>, // As fonttools
 }
 
 #[derive(Debug)]
-pub struct SequentialMapGroup {
+struct SequentialMapGroup {
     start_char_code: u32,
     end_char_code: u32,
     start_glyph_id: u32,
@@ -285,7 +425,7 @@ impl Read for SequentialMapGroup {
 }
 
 #[derive(Debug)]
-pub struct ConstantMapGroup {
+struct ConstantMapGroup {
     start_char_code: u32,
     end_char_code: u32,
     glyph_id: u32,
@@ -302,7 +442,7 @@ impl Read for ConstantMapGroup {
 }
 
 #[derive(Debug)]
-pub struct VariationSelector {
+struct VariationSelector {
     var_selector: u24,
     default_uvs_offset: Offset32,
     non_default_uvs_offset: Offset32,
