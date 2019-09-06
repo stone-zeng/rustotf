@@ -10,6 +10,8 @@ use std::collections::HashMap;
 /// This table defines the mapping of character codes to the glyph index values
 /// used in the font. It may contain more than one subtable, in order to support
 /// more than one character encoding scheme.
+///
+/// TODO: map is planned to be a `HashMap` of `cid` => `gid`. Not finished yet.
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
@@ -18,7 +20,7 @@ pub struct Table_cmap {
     _num_tables: u16,
     _encodings: Vec<Encoding>,
     _subtables: HashMap<Offset32, CmapSubtable>,
-    pub mappings: HashMap<Encoding, HashMap<u32, u32>>,
+    pub maps: HashMap<Encoding, Map>,
 }
 
 impl Font {
@@ -36,14 +38,14 @@ impl Font {
                 .or_insert(buffer.get::<CmapSubtable>());
         }
 
-        let mut mappings: HashMap<Encoding, HashMap<u32, u32>> = HashMap::new();
+        let mut maps: HashMap<Encoding, Map> = HashMap::new();
 
         self.cmap = Some(Table_cmap {
             _version,
             _num_tables,
             _encodings,
             _subtables,
-            mappings,
+            maps,
         });
 
         // let mappings = HashMap::new();
@@ -125,14 +127,23 @@ struct CmapFormat0 {
     length: u16,
     language: u16,
     gid_array: Vec<u8>, // glyphIdArray[256]
+    map: Map,
 }
 
 impl Read for CmapFormat0 {
     fn read(buffer: &mut Buffer) -> Self {
+        let length = buffer.get::<u16>();
+        let language = buffer.get::<u16>();
+        let gid_array = buffer.get_vec::<u8>(256);
+        let mut map: Map = HashMap::new();
+        for (cid, gid) in (0..256).zip(gid_array.iter()) {
+            map.entry(cid).or_insert(*gid as u32);
+        }
         Self {
-            length: buffer.get::<u16>(),
-            language: buffer.get::<u16>(),
-            gid_array: buffer.get_vec::<u8>(256),
+            length,
+            language,
+            gid_array,
+            map,
         }
     }
 }
@@ -144,6 +155,7 @@ struct CmapFormat2 {
     sub_header_keys: Vec<u16>, // subHeaderKeys[256]
     sub_headers: Vec<SubHeader>,
     // glyphIndexArray[] is in `SubHeader`
+    map: Map,
 }
 
 impl Read for CmapFormat2 {
@@ -179,6 +191,7 @@ impl Read for CmapFormat2 {
             language,
             sub_header_keys,
             sub_headers,
+            map: Map::new(),
         }
     }
 }
@@ -196,6 +209,7 @@ struct CmapFormat4 {
     id_delta: Vec<i16>,
     id_range_offset: Vec<u16>,
     gid_seg_array: Vec<Vec<u16>>,
+    map: Map,
 }
 
 impl Read for CmapFormat4 {
@@ -215,25 +229,28 @@ impl Read for CmapFormat4 {
         let id_range_offset = buffer.get_vec::<u16>(seg_count);
 
         let mut gid_seg_array: Vec<Vec<u16>> = Vec::new();
+        let mut map: Map = HashMap::new();
         for i in 0..seg_count - 1 {
-            let len = (end_char_code[i] - start_char_code[i]) as usize + 1;
-            if id_range_offset[i] != 0 {
+            let mut char_range = start_char_code[i]..=end_char_code[i];
+            let gid_seg: &Vec<u16> = &if id_range_offset[i] != 0 {
                 buffer.offset = offset + 2 * i + id_range_offset[i] as usize;
-                gid_seg_array.push(
-                    buffer
-                        .get_vec::<u16>(len)
-                        .iter()
-                        .map(|x| (*x as i16 + id_delta[i]) as u16)
-                        .collect(),
-                );
+                buffer
+                    .get_vec::<u16>(char_range.len())
+                    .iter()
+                    .map(|x| (*x as i16 + id_delta[i]) as u16)
+                    .collect()
             } else {
-                gid_seg_array.push(
-                    (start_char_code[i]..=end_char_code[i])
-                        .map(|x| (x as i16 + id_delta[i]) as u16)
-                        .collect(),
-                );
+                char_range
+                    .by_ref()
+                    .map(|x| (x as i16 + id_delta[i]) as u16)
+                    .collect()
+            };
+            gid_seg_array.push(gid_seg.to_vec());
+            for (cid, gid) in char_range.zip(gid_seg.iter()) {
+                map.entry(cid as u32).or_insert(*gid as u32);
             }
         }
+
         Self {
             length,
             language,
@@ -246,6 +263,7 @@ impl Read for CmapFormat4 {
             id_delta,
             id_range_offset,
             gid_seg_array,
+            map,
         }
     }
 }
@@ -257,6 +275,7 @@ struct CmapFormat6 {
     start_char_code: u16, // firstCode
     entry_count: u16,
     gid_array: Vec<u16>,
+    map: Map,
 }
 
 impl Read for CmapFormat6 {
@@ -272,6 +291,7 @@ impl Read for CmapFormat6 {
             start_char_code,
             entry_count,
             gid_array,
+            map: Map::new(),
         }
     }
 }
@@ -283,6 +303,7 @@ struct CmapFormat8 {
     is_32: Vec<u8>,
     num_groups: u32,
     groups: Vec<SequentialMapGroup>,
+    map: Map,
 }
 
 impl Read for CmapFormat8 {
@@ -299,6 +320,7 @@ impl Read for CmapFormat8 {
             is_32,
             num_groups,
             groups,
+            map: Map::new(),
         }
     }
 }
@@ -310,6 +332,7 @@ struct CmapFormat10 {
     start_char_code: u32,
     entry_count: u32,    // numChars
     gid_array: Vec<u16>, // glyphs[]
+    map: Map,
 }
 
 impl Read for CmapFormat10 {
@@ -326,6 +349,7 @@ impl Read for CmapFormat10 {
             start_char_code,
             entry_count,
             gid_array,
+            map: Map::new(),
         }
     }
 }
@@ -336,6 +360,7 @@ struct CmapFormat12 {
     language: u32,
     num_groups: u32,
     groups: Vec<SequentialMapGroup>,
+    map: Map,
 }
 
 impl Read for CmapFormat12 {
@@ -350,6 +375,7 @@ impl Read for CmapFormat12 {
             language,
             num_groups,
             groups,
+            map: Map::new(),
         }
     }
 }
@@ -360,6 +386,7 @@ struct CmapFormat13 {
     language: u32,
     num_groups: u32,
     groups: Vec<ConstantMapGroup>,
+    map: Map,
 }
 
 impl Read for CmapFormat13 {
@@ -374,6 +401,7 @@ impl Read for CmapFormat13 {
             language,
             num_groups,
             groups,
+            map: Map::new(),
         }
     }
 }
@@ -383,6 +411,7 @@ struct CmapFormat14 {
     length: u32,
     num_var_selectors: u32,
     var_selectors: Vec<VariationSelector>,
+    map: Map,
 }
 
 impl Read for CmapFormat14 {
@@ -394,6 +423,7 @@ impl Read for CmapFormat14 {
             length,
             num_var_selectors,
             var_selectors,
+            map: Map::new(),
         }
     }
 }
@@ -457,3 +487,5 @@ impl Read for VariationSelector {
         }
     }
 }
+
+type Map = HashMap<u32, u32>;
