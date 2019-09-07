@@ -48,6 +48,11 @@ impl Buffer {
     pub fn skip<T>(&mut self, n: usize) {
         self.offset += n * mem::size_of::<T>();
     }
+
+    pub fn slice(&mut self, start: usize, end: usize) -> &[u8] {
+        &self._buffer[self.offset + start..self.offset + end]
+    }
+
     // pub fn calc_check_sum(&self, offset: u32, length: u32) -> u32 {
     //     let _offset = offset as usize;
     //     let padded_length = ((length + 3) & !3) as usize;
@@ -256,7 +261,7 @@ impl Read for Tag {
 
 pub type FWord = i16;
 pub type UFWord = u16;
-// pub type Offset16 = u16;
+pub type Offset16 = u16;
 pub type Offset32 = u32;
 
 // pub const I8_SIZE: usize = mem::size_of::<i8>();

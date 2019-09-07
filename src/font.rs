@@ -141,14 +141,14 @@ pub fn read_otf(buffer: &mut Buffer, signature: u32) {
 
     // println!("{:#?}", records);
 
-    // font.parse_head(buffer, records.get("head").unwrap());
-    // font.parse_hhea(buffer, records.get("hhea").unwrap());
-    // font.parse_maxp(buffer, records.get("maxp").unwrap());
-    // font.parse_hmtx(buffer, records.get("hmtx").unwrap());
+    font.parse_head(buffer, records.get("head").unwrap());
+    font.parse_hhea(buffer, records.get("hhea").unwrap());
+    font.parse_maxp(buffer, records.get("maxp").unwrap());
+    font.parse_hmtx(buffer, records.get("hmtx").unwrap());
     font.parse_cmap(buffer, records.get("cmap").unwrap());
-    // font.parse_name(buffer, records.get("name").unwrap());
-    // font.parse_OS_2(buffer, records.get("OS/2").unwrap());
-    // font.parse_post(buffer, records.get("post").unwrap());
+    font.parse_name(buffer, records.get("name").unwrap());
+    font.parse_OS_2(buffer, records.get("OS/2").unwrap());
+    font.parse_post(buffer, records.get("post").unwrap());
 
     println!("\t{:#?}", font);
 }
