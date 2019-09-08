@@ -1,4 +1,4 @@
-use crate::font::{Font, TableRecord};
+use crate::font::Font;
 use crate::util::{Buffer, FWord, Fixed};
 
 /// ## `post` &mdash; PostScript Table
@@ -31,8 +31,7 @@ pub struct Table_post {
 }
 
 impl Font {
-    pub fn parse_post(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_post(&mut self, buffer: &mut Buffer) {
         let mut table = Table_post {
             _version: buffer.get::<Fixed>(),
             italic_angle: buffer.get::<Fixed>(),

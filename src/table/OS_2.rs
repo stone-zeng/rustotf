@@ -1,4 +1,4 @@
-use crate::font::{Font, TableRecord};
+use crate::font::Font;
 use crate::util::{Buffer, Tag};
 
 /// ## `OS/2` &mdash; OS/2 and Windows Metrics Table
@@ -68,8 +68,9 @@ pub struct Table_OS_2 {
 
 impl Font {
     #[allow(non_snake_case)]
-    pub fn parse_OS_2(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_OS_2(&mut self, buffer: &mut Buffer) {
+        // TODO: make it more elegant.
+        let os_2_length = self.get_record("OS/2").length;
         // Version 0
         let mut table = Table_OS_2 {
             _version: buffer.get::<u16>(),
@@ -113,7 +114,7 @@ impl Font {
             us_upper_optical_point_size: None,
         };
         // Version 0 (Microsoft)
-        if record.length >= 78 {
+        if os_2_length >= 78 {
             table.s_typo_ascender = Some(buffer.get::<i16>());
             table.s_typo_descender = Some(buffer.get::<i16>());
             table.s_typo_line_gap = Some(buffer.get::<i16>());

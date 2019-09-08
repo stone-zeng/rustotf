@@ -1,5 +1,5 @@
-use crate::font::{Font, TableRecord};
-use crate::util::{Buffer, Read};
+use crate::font::Font;
+use crate::util::{Buffer, ReadBuffer};
 
 /// ## `hmtx` &mdash; Horizontal Metrics Table
 ///
@@ -19,8 +19,7 @@ pub struct Table_hmtx {
 }
 
 impl Font {
-    pub fn parse_hmtx(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_hmtx(&mut self, buffer: &mut Buffer) {
         let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics as usize;
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         self.hmtx = Some(Table_hmtx {
@@ -36,7 +35,7 @@ pub struct LongHorMetric {
     left_side_bearing: i16,
 }
 
-impl Read for LongHorMetric {
+impl ReadBuffer for LongHorMetric {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             advance_width: buffer.get::<u16>(),

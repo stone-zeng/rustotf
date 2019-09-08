@@ -1,4 +1,4 @@
-use crate::font::{Font, TableRecord};
+use crate::font::Font;
 use crate::util::{Buffer, Fixed};
 
 /// ## `maxp` &mdash; Maximum Profile
@@ -31,8 +31,7 @@ pub struct Table_maxp {
 }
 
 impl Font {
-    pub fn parse_maxp(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_maxp(&mut self, buffer: &mut Buffer) {
         let mut table = Table_maxp {
             _version: buffer.get::<Fixed>(),
             num_glyphs: buffer.get::<u16>(),

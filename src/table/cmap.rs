@@ -1,5 +1,5 @@
-use crate::font::{Font, TableRecord};
-use crate::util::{u24, Buffer, Offset32, Read};
+use crate::font::Font;
+use crate::util::{u24, Buffer, Offset32, ReadBuffer};
 
 use std::collections::HashMap;
 
@@ -24,21 +24,22 @@ pub struct Table_cmap {
 }
 
 impl Font {
-    pub fn parse_cmap(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_cmap(&mut self, buffer: &mut Buffer) {
+        let start_offset = buffer.offset;
         let _version = buffer.get::<u16>();
         let _num_tables = buffer.get::<u16>();
         let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
 
         let mut _subtables: HashMap<Offset32, CmapSubtable> = HashMap::new();
         for i in &_encodings {
-            buffer.offset = (record.offset + i._offset) as usize;
+            buffer.offset = start_offset + i._offset as usize;
             _subtables
                 .entry(i._offset)
                 .or_insert(buffer.get::<CmapSubtable>());
         }
 
-        let mut maps: HashMap<Encoding, Map> = HashMap::new();
+        // TODO: parse maps
+        let maps: HashMap<Encoding, Map> = HashMap::new();
 
         self.cmap = Some(Table_cmap {
             _version,
@@ -68,7 +69,7 @@ pub struct Encoding {
     pub encoding_id: u16,
 }
 
-impl Read for Encoding {
+impl ReadBuffer for Encoding {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             platform_id: buffer.get::<u16>(),
@@ -92,7 +93,7 @@ struct CmapSubtable {
     _format_14_data: Option<CmapFormat14>,
 }
 
-impl Read for CmapSubtable {
+impl ReadBuffer for CmapSubtable {
     fn read(buffer: &mut Buffer) -> Self {
         let mut subtable = CmapSubtable {
             _format: buffer.get::<u16>(),
@@ -130,7 +131,7 @@ struct CmapFormat0 {
     map: Map,
 }
 
-impl Read for CmapFormat0 {
+impl ReadBuffer for CmapFormat0 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get::<u16>();
         let language = buffer.get::<u16>();
@@ -158,7 +159,7 @@ struct CmapFormat2 {
     map: Map,
 }
 
-impl Read for CmapFormat2 {
+impl ReadBuffer for CmapFormat2 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get::<u16>();
         let language = buffer.get::<u16>();
@@ -212,7 +213,7 @@ struct CmapFormat4 {
     map: Map,
 }
 
-impl Read for CmapFormat4 {
+impl ReadBuffer for CmapFormat4 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get::<u16>();
         let language = buffer.get::<u16>();
@@ -278,7 +279,7 @@ struct CmapFormat6 {
     map: Map,
 }
 
-impl Read for CmapFormat6 {
+impl ReadBuffer for CmapFormat6 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get::<u16>();
         let language = buffer.get::<u16>();
@@ -306,7 +307,7 @@ struct CmapFormat8 {
     map: Map,
 }
 
-impl Read for CmapFormat8 {
+impl ReadBuffer for CmapFormat8 {
     fn read(buffer: &mut Buffer) -> Self {
         buffer.skip::<u16>(1);
         let length = buffer.get::<u32>();
@@ -335,7 +336,7 @@ struct CmapFormat10 {
     map: Map,
 }
 
-impl Read for CmapFormat10 {
+impl ReadBuffer for CmapFormat10 {
     fn read(buffer: &mut Buffer) -> Self {
         buffer.skip::<u16>(1);
         let length = buffer.get::<u32>();
@@ -363,7 +364,7 @@ struct CmapFormat12 {
     map: Map,
 }
 
-impl Read for CmapFormat12 {
+impl ReadBuffer for CmapFormat12 {
     fn read(buffer: &mut Buffer) -> Self {
         buffer.skip::<u16>(1);
         let length = buffer.get::<u32>();
@@ -389,7 +390,7 @@ struct CmapFormat13 {
     map: Map,
 }
 
-impl Read for CmapFormat13 {
+impl ReadBuffer for CmapFormat13 {
     fn read(buffer: &mut Buffer) -> Self {
         buffer.skip::<u16>(1);
         let length = buffer.get::<u32>();
@@ -414,7 +415,7 @@ struct CmapFormat14 {
     map: Map,
 }
 
-impl Read for CmapFormat14 {
+impl ReadBuffer for CmapFormat14 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get::<u32>();
         let num_var_selectors = buffer.get::<u32>();
@@ -444,7 +445,7 @@ struct SequentialMapGroup {
     start_glyph_id: u32,
 }
 
-impl Read for SequentialMapGroup {
+impl ReadBuffer for SequentialMapGroup {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             start_char_code: buffer.get::<u32>(),
@@ -461,7 +462,7 @@ struct ConstantMapGroup {
     glyph_id: u32,
 }
 
-impl Read for ConstantMapGroup {
+impl ReadBuffer for ConstantMapGroup {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             start_char_code: buffer.get::<u32>(),
@@ -478,7 +479,7 @@ struct VariationSelector {
     non_default_uvs_offset: Offset32,
 }
 
-impl Read for VariationSelector {
+impl ReadBuffer for VariationSelector {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             var_selector: buffer.get::<u24>(),

@@ -24,13 +24,13 @@ impl Buffer {
     }
 
     /// Get a value as type `T` from the buffer.
-    pub fn get<T: Read>(&mut self) -> T {
+    pub fn get<T: ReadBuffer>(&mut self) -> T {
         // let _offset = self.offset as usize;
         // self.offset += mem::size_of::<T>() as u32;
-        Read::read(self)
+        ReadBuffer::read(self)
     }
 
-    pub fn get_vec<T: Read>(&mut self, n: usize) -> Vec<T> {
+    pub fn get_vec<T: ReadBuffer>(&mut self, n: usize) -> Vec<T> {
         // let mut _offset = self.offset as usize;
         // let _size = mem::size_of::<T>();
         // let mut v: Vec<T> = Vec::new();
@@ -41,7 +41,7 @@ impl Buffer {
         // }
         // self.offset = _offset as u32;
         // v
-        (0..n).map(|_| Read::read(self)).collect()
+        (0..n).map(|_| ReadBuffer::read(self)).collect()
     }
 
     /// Skip `n` * `size_of<T>` bytes for `offset`.
@@ -64,7 +64,7 @@ impl Buffer {
     // }
 }
 
-pub trait Read {
+pub trait ReadBuffer {
     // fn read(_buffer: &Vec<u8>, _offset: usize) -> Self;
     fn read(buffer: &mut Buffer) -> Self;
 }
@@ -88,7 +88,7 @@ pub trait Read {
 /// - `Offset16`
 /// - `Offset32`
 
-impl Read for u8 {
+impl ReadBuffer for u8 {
     fn read(buffer: &mut Buffer) -> Self {
         let offset = buffer.offset;
         buffer.offset += mem::size_of::<u8>();
@@ -96,7 +96,7 @@ impl Read for u8 {
     }
 }
 
-impl Read for i8 {
+impl ReadBuffer for i8 {
     fn read(buffer: &mut Buffer) -> Self {
         let offset = buffer.offset;
         buffer.offset += mem::size_of::<i8>();
@@ -104,10 +104,10 @@ impl Read for i8 {
     }
 }
 
-// Implement `Read` for `u16`, `u32`, etc.
+// Implement `ReadBuffer` for `u16`, `u32`, etc.
 macro_rules! _generate_read {
     ($t:ty, $f:expr) => {
-        impl Read for $t {
+        impl ReadBuffer for $t {
             fn read(buffer: &mut Buffer) -> Self {
                 let offset = buffer.offset;
                 buffer.offset += mem::size_of::<$t>();
@@ -137,7 +137,7 @@ impl fmt::Debug for u24 {
     }
 }
 
-impl Read for u24 {
+impl ReadBuffer for u24 {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             _internal: [buffer.get::<u8>(), buffer.get::<u8>(), buffer.get::<u8>()],
@@ -162,7 +162,7 @@ impl PartialEq<i32> for Fixed {
     }
 }
 
-impl Read for Fixed {
+impl ReadBuffer for Fixed {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             _num: buffer.get::<i32>(),
@@ -211,7 +211,7 @@ impl fmt::Debug for LongDateTime {
     }
 }
 
-impl Read for LongDateTime {
+impl ReadBuffer for LongDateTime {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             _num: buffer.get::<i64>(),
@@ -246,7 +246,7 @@ impl fmt::Debug for Tag {
     }
 }
 
-impl Read for Tag {
+impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             _u8_arr: [

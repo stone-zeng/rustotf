@@ -2,13 +2,20 @@ use crate::table::{
     cmap::Table_cmap, head::Table_head, hhea::Table_hhea, hmtx::Table_hmtx, maxp::Table_maxp,
     name::Table_name, os_2::Table_OS_2, post::Table_post,
 };
-use crate::util::{Buffer, Offset32, Read, Tag};
+use crate::util::{Buffer, Offset32, ReadBuffer, Tag};
+
 use std::collections::HashMap;
+use std::io::Read;
+
+use flate2::read::ZlibDecoder;
 
 #[allow(non_snake_case)]
 #[derive(Debug)]
 pub struct Font {
     subtype: Subtype,
+
+    table_records: HashMap<String, TableRecord>,
+    woff_table_records: HashMap<String, WoffTableRecord>,
 
     // Required Tables
     pub head: Option<Table_head>, // Font header
@@ -19,68 +26,18 @@ pub struct Font {
     pub name: Option<Table_name>, // Naming table
     pub OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
     pub post: Option<Table_post>, // PostScript information
-
-    // // Tables Related to TrueType Outlines
-    // pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
-    // pub fpgm: Option<Table_fpgm>, // Font program (optional table)
-    // pub glyf: Option<Table_glyf>, // Glyph data
-    // pub loca: Option<Table_loca>, // Index to location
-    // pub prep: Option<Table_prep>, // CVT Program (optional table)
-    // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
-
-    // // Tables Related to CFF Outlines
-    // CFF_: Option<Table_CFF_>, // Compact Font Format 1.0
-    // CFF2: Option<Table_CFF2>, // Compact Font Format 2.0
-    // VORG: Option<Table_VORG>, // Vertical Origin (optional table)
-
-    // // Tables Related to Bitmap Glyphs
-    // EBDT: Option<Table_EBDT>, // Embedded bitmap data
-    // EBLC: Option<Table_EBLC>, // Embedded bitmap location data
-    // EBSC: Option<Table_EBSC>, // Embedded bitmap scaling data
-    // CBDT: Option<Table_CBDT>, // Color bitmap data
-    // CBLC: Option<Table_CBLC>, // Color bitmap location data
-    // sbix: Option<Table_sbix>, // Standard bitmap graphics
-
-    // // Advanced Typographic Tables
-    // BASE: Option<Table_BASE>, // Baseline data
-    // GDEF: Option<Table_GDEF>, // Glyph definition data
-    // GPOS: Option<Table_GPOS>, // Glyph positioning data
-    // GSUB: Option<Table_GSUB>, // Glyph substitution data
-    // JSTF: Option<Table_JSTF>, // Justification data
-    // MATH: Option<Table_MATH>, // Math layout data
-
-    // // Tables used for OpenType Font Variations
-    // avar: Option<Table_avar>, // Axis variations
-    // cvar: Option<Table_cvar>, // CVT variations (TrueType outlines only)
-    // fvar: Option<Table_fvar>, // Font variations
-    // gvar: Option<Table_gvar>, // Glyph variations (TrueType outlines only)
-    // HVAR: Option<Table_HVAR>, // Horizontal metrics variations
-    // MVAR: Option<Table_MVAR>, // Metrics variations
-    // STAT: Option<Table_STAT>, // Style attributes (required for variable fonts, optional for non-variable fonts)
-    // VVAR: Option<Table_VVAR>, // Vertical metrics variations
-
-    // // Tables Related to Color Fonts
-    // COLR: Option<Table_COLR>, // Color table
-    // CPAL: Option<Table_CPAL>, // Color palette table
-    // SVG_: Option<Table_SVG_>, // The SVG (Scalable Vector Graphics) table
-
-    // // Other OpenType Tables
-    // DSIG: Option<Table_DSIG>, // Digital signature
-    // hdmx: Option<Table_hdmx>, // Horizontal device metrics
-    // kern: Option<Table_kern>, // Kerning
-    // LTSH: Option<Table_LTSH>, // Linear threshold data
-    // MERG: Option<Table_MERG>, // Merge
-    // meta: Option<Table_meta>, // Metadata
-    // PCLT: Option<Table_PCLT>, // PCL 5 data
-    // VDMX: Option<Table_VDMX>, // Vertical device metrics
-    // vhea: Option<Table_vhea>, // Vertical Metrics header
-    // vmtx: Option<Table_vmtx>, // Vertical Metrics
 }
 
 impl Font {
-    fn new(subtype: Subtype) -> Self {
+    fn new(signature: u32) -> Self {
         Self {
-            subtype,
+            subtype: match signature {
+                0x4F54_544F => Subtype::CFF,
+                0x0001_0000 => Subtype::TTF,
+                _ => Subtype::TTF,
+            },
+            table_records: HashMap::new(),
+            woff_table_records: HashMap::new(),
             head: None,
             hhea: None,
             maxp: None,
@@ -90,6 +47,39 @@ impl Font {
             OS_2: None,
             post: None,
         }
+    }
+
+    fn _parse(&mut self, table_tag: &str, buffer: &mut Buffer) {
+        match table_tag {
+            "head" => self.parse_head(buffer),
+            "hhea" => self.parse_hhea(buffer),
+            "maxp" => self.parse_maxp(buffer),
+            "hmtx" => self.parse_hmtx(buffer),
+            "cmap" => self.parse_cmap(buffer),
+            "name" => self.parse_name(buffer),
+            "OS/2" => self.parse_OS_2(buffer),
+            "post" => self.parse_post(buffer),
+            _ => (),
+        };
+    }
+
+    fn parse(&mut self, table_tag: &str, buffer: &mut Buffer) {
+        buffer.offset = self.get_record(table_tag).offset as usize;
+        self._parse(table_tag, buffer);
+    }
+
+    fn parse_woff(&mut self, table_tag: &str, buffer: &mut Buffer) {
+        let start = self.woff_table_records.get(table_tag).unwrap().offset as usize;
+        let end = start + self.woff_table_records.get(table_tag).unwrap().comp_length as usize;
+        let mut new_buffer = decompress_woff(buffer, start, end);
+
+        println!("----- {}", table_tag);
+
+        self._parse(table_tag, &mut new_buffer);
+    }
+
+    pub fn get_record(&self, table_tag: &str) -> &TableRecord {
+        self.table_records.get(table_tag).unwrap()
     }
 }
 
@@ -106,7 +96,7 @@ pub struct TableRecord {
     pub length: u32,
 }
 
-impl Read for TableRecord {
+impl ReadBuffer for TableRecord {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             check_sum: buffer.get::<u32>(),
@@ -116,39 +106,51 @@ impl Read for TableRecord {
     }
 }
 
+#[derive(Debug)]
+pub struct WoffTableRecord {
+    offset: u32,
+    comp_length: u32,
+    orig_length: u32,
+    orig_check_sum: u32,
+}
+
+impl ReadBuffer for WoffTableRecord {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self {
+            offset: buffer.get::<u32>(),
+            comp_length: buffer.get::<u32>(),
+            orig_length: buffer.get::<u32>(),
+            orig_check_sum: buffer.get::<u32>(),
+        }
+    }
+}
+
 pub fn read_otf(buffer: &mut Buffer, signature: u32) {
     // Offset Table
     let num_tables = buffer.get::<u16>();
-    let search_range = buffer.get::<u16>();
-    let entry_selector = buffer.get::<u16>();
-    let range_shift = buffer.get::<u16>();
+    // TODO: not used now
+    let _search_range = buffer.get::<u16>();
+    let _entry_selector = buffer.get::<u16>();
+    let _range_shift = buffer.get::<u16>();
     // println!(
     //     "\tnumTables: {}\n\tsearchRange: {}\n\tentrySelector: {}\n\trangeShift: {}",
     //     num_tables, search_range, entry_selector, range_shift
     // );
 
-    let mut font = Font::new(match signature {
-        // 'OTTO'
-        0x4F54_544F => Subtype::CFF,
-        _ => Subtype::TTF,
-    });
-
-    // Table Record entries
-    let mut records = HashMap::new();
+    let mut font = Font::new(signature);
     for _ in 0..num_tables {
-        records.insert(buffer.get::<Tag>().to_string(), buffer.get::<TableRecord>());
+        font.table_records
+            .insert(buffer.get::<Tag>().to_string(), buffer.get::<TableRecord>());
     }
 
-    // println!("{:#?}", records);
-
-    font.parse_head(buffer, records.get("head").unwrap());
-    font.parse_hhea(buffer, records.get("hhea").unwrap());
-    font.parse_maxp(buffer, records.get("maxp").unwrap());
-    font.parse_hmtx(buffer, records.get("hmtx").unwrap());
-    font.parse_cmap(buffer, records.get("cmap").unwrap());
-    font.parse_name(buffer, records.get("name").unwrap());
-    font.parse_OS_2(buffer, records.get("OS/2").unwrap());
-    font.parse_post(buffer, records.get("post").unwrap());
+    font.parse("head", buffer);
+    font.parse("hhea", buffer);
+    font.parse("maxp", buffer);
+    font.parse("hmtx", buffer);
+    font.parse("cmap", buffer);
+    font.parse("name", buffer);
+    font.parse("OS/2", buffer);
+    font.parse("post", buffer);
 
     println!("\t{:#?}", font);
 }
@@ -174,24 +176,66 @@ pub fn read_ttc(buffer: &mut Buffer) {
             dsig_tag, dsig_length, dsig_offset
         );
     }
+
+    for offset in offset_table {
+        buffer.offset = offset as usize;
+        let signature = buffer.get::<u32>();
+        read_otf(buffer, signature);
+    }
 }
 
 pub fn read_woff(buffer: &mut Buffer) {
     let flavor = buffer.get::<u32>();
-    let length = buffer.get::<u32>();
+    // TODO: not used now
+    let _length = buffer.get::<u32>();
     let num_tables = buffer.get::<u16>();
-    let reserved = buffer.get::<u16>();
-    let total_sfnt_size = buffer.get::<u32>();
-    let major_version = buffer.get::<u16>();
-    let minor_version = buffer.get::<u16>();
-    let meta_offset = buffer.get::<u32>();
-    let meta_length = buffer.get::<u32>();
-    let meta_orig_length = buffer.get::<u32>();
-    let priv_offset = buffer.get::<u32>();
-    let priv_length = buffer.get::<u32>();
-    println!(
-        "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
-        flavor, length, num_tables, reserved, total_sfnt_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);
+    let _reserved = buffer.get::<u16>();
+    let _total_sfnt_size = buffer.get::<u32>();
+    let _major_version = buffer.get::<u16>();
+    let _minor_version = buffer.get::<u16>();
+    let _meta_offset = buffer.get::<u32>();
+    let _meta_length = buffer.get::<u32>();
+    let _meta_orig_length = buffer.get::<u32>();
+    let _priv_offset = buffer.get::<u32>();
+    let _priv_length = buffer.get::<u32>();
+    // println!(
+    //     "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
+    //     flavor, length, num_tables, reserved, total_sfnt_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);
+
+    let mut font = Font::new(flavor);
+    for _ in 0..num_tables {
+        font.woff_table_records.insert(
+            buffer.get::<Tag>().to_string(),
+            buffer.get::<WoffTableRecord>(),
+        );
+    }
+
+    font.parse_woff("head", buffer);
+    font.parse_woff("hhea", buffer);
+    font.parse_woff("maxp", buffer);
+    // FIXME: index out of range for slice
+    // font.parse_woff("hmtx", buffer);
+    font.parse_woff("cmap", buffer);
+    font.parse_woff("name", buffer);
+    // font.parse_woff("OS/2", buffer);
+    font.parse_woff("post", buffer);
+
+    println!("\t{:#?}", font);
+}
+
+fn decompress_woff(buffer: &mut Buffer, start: usize, end: usize) -> Buffer {
+    buffer.offset = 0;
+    let comp_buffer = buffer.slice(start, end);
+    let mut orig_buffer: Vec<u8> = Vec::new();
+
+    if ZlibDecoder::new(comp_buffer)
+        .read_to_end(&mut orig_buffer)
+        .is_ok()
+    {
+        Buffer::new(orig_buffer)
+    } else {
+        Buffer::new(comp_buffer.to_vec())
+    }
 }
 
 pub fn read_woff2(buffer: &mut Buffer) {
@@ -211,4 +255,7 @@ pub fn read_woff2(buffer: &mut Buffer) {
     println!(
         "\tflavor: {:08X}\n\tlength: {}\n\tnumTables: {}\n\treserved: {}\n\ttotalSfntSize: {}\n\ttotalCompressedSize: {}\n\tmajorVersion: {}\n\tminorVersion: {}\n\tmetaOffset: {}\n\tmetaLength: {}\n\tmetaOrigLength: {}\n\tprivOffset: {}\n\tprivLength: {}",
         flavor, length, num_tables, reserved, total_sfnt_size, total_compressed_size, major_version, minor_version, meta_offset, meta_length, meta_orig_length, priv_offset, priv_length);
+
+    let font = Font::new(flavor);
+    println!("\t{:#?}", font);
 }

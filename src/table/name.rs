@@ -1,5 +1,5 @@
-use crate::font::{Font, TableRecord};
-use crate::util::{Buffer, Offset16, Read};
+use crate::font::Font;
+use crate::util::{Buffer, Offset16, ReadBuffer};
 
 use encoding_rs;
 
@@ -36,8 +36,7 @@ pub struct Table_name {
 }
 
 impl Font {
-    pub fn parse_name(&mut self, buffer: &mut Buffer, record: &TableRecord) {
-        buffer.offset = record.offset as usize;
+    pub fn parse_name(&mut self, buffer: &mut Buffer) {
         let _format = buffer.get::<u16>();
         let _count = buffer.get::<u16>();
         let _string_offset = buffer.get::<Offset16>();
@@ -106,7 +105,7 @@ impl Name {
     }
 }
 
-impl Read for Name {
+impl ReadBuffer for Name {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             platform_id: buffer.get::<u16>(),
@@ -127,7 +126,7 @@ struct LangTag {
     pub tag: String,
 }
 
-impl Read for LangTag {
+impl ReadBuffer for LangTag {
     fn read(buffer: &mut Buffer) -> Self {
         let _length = buffer.get::<u16>();
         let _offset = buffer.get::<Offset16>();
