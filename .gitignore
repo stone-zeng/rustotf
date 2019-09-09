@@ -3,5 +3,6 @@ assets/
 target/
 temp/
 
-*.rs.bk
+Cargo.lock
+
 .DS_Store
