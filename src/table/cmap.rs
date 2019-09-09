@@ -35,7 +35,7 @@ impl Font {
             buffer.offset = start_offset + i._offset as usize;
             _subtables
                 .entry(i._offset)
-                .or_insert(buffer.get::<CmapSubtable>());
+                .or_insert_with(|| buffer.get::<CmapSubtable>());
         }
 
         // TODO: parse maps
@@ -138,7 +138,7 @@ impl ReadBuffer for CmapFormat0 {
         let gid_array = buffer.get_vec::<u8>(256);
         let mut map: Map = HashMap::new();
         for (cid, gid) in (0..256).zip(gid_array.iter()) {
-            map.entry(cid).or_insert(*gid as u32);
+            map.entry(cid).or_insert_with(|| u32::from(*gid));
         }
         Self {
             length,
@@ -248,7 +248,7 @@ impl ReadBuffer for CmapFormat4 {
             };
             gid_seg_array.push(gid_seg.to_vec());
             for (cid, gid) in char_range.zip(gid_seg.iter()) {
-                map.entry(cid as u32).or_insert(*gid as u32);
+                map.entry(u32::from(cid)).or_insert_with(|| u32::from(*gid));
             }
         }
 

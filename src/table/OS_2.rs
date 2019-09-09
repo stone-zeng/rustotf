@@ -70,7 +70,7 @@ impl Font {
     #[allow(non_snake_case)]
     pub fn parse_OS_2(&mut self, buffer: &mut Buffer) {
         // TODO: make it more elegant.
-        let os_2_length = self.get_table_len(b"OS/2");
+        let os_2_length = self.get_table_len(*b"OS/2");
         // Version 0
         let mut table = Table_OS_2 {
             _version: buffer.get::<u16>(),

@@ -163,8 +163,9 @@ pub struct u24 {
 
 impl fmt::Debug for u24 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let num =
-            4 * self._internal[0] as u32 + 2 * self._internal[1] as u32 + self._internal[2] as u32;
+        let num = u32::from(self._internal[0]) * 4
+            + u32::from(self._internal[1]) * 2
+            + u32::from(self._internal[2]);
         write!(f, "{}", num)
     }
 }
@@ -184,7 +185,7 @@ pub struct Fixed {
 
 impl fmt::Debug for Fixed {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{:.3}", self._num as f64 / 65536.0)
+        write!(f, "{:.3}", f64::from(self._num) / 65536.0)
     }
 }
 
