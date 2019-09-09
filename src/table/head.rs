@@ -14,7 +14,7 @@ use crate::util::{get_version_string, Buffer, Fixed, LongDateTime};
 pub struct Table_head {
     _version: String,
     pub font_revision: Fixed,
-    pub check_sum_adjustment: u32,
+    pub checksum_adjustment: u32,
     pub magic_number: u32,
     pub flags: u16,
     pub units_per_em: u16,
@@ -36,7 +36,7 @@ impl Font {
         self.head = Some(Table_head {
             _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
             font_revision: buffer.get::<Fixed>(),
-            check_sum_adjustment: buffer.get::<u32>(),
+            checksum_adjustment: buffer.get::<u32>(),
             magic_number: buffer.get::<u32>(),
             flags: buffer.get::<u16>(),
             units_per_em: buffer.get::<u16>(),

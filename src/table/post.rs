@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{Buffer, FWord, Fixed};
+use crate::util::{Buffer, Fixed};
 
 /// ## `post` &mdash; PostScript Table
 ///
@@ -14,8 +14,8 @@ use crate::util::{Buffer, FWord, Fixed};
 pub struct Table_post {
     _version: Fixed,
     pub italic_angle: Fixed,
-    pub underline_position: FWord,
-    pub underline_thickness: FWord,
+    pub underline_position: i16,
+    pub underline_thickness: i16,
     pub is_fixed_pitch: u32,
     pub min_mem_type42: u32,
     pub max_mem_type42: u32,
@@ -35,8 +35,8 @@ impl Font {
         let mut table = Table_post {
             _version: buffer.get::<Fixed>(),
             italic_angle: buffer.get::<Fixed>(),
-            underline_position: buffer.get::<FWord>(),
-            underline_thickness: buffer.get::<FWord>(),
+            underline_position: buffer.get::<i16>(),
+            underline_thickness: buffer.get::<i16>(),
             is_fixed_pitch: buffer.get::<u32>(),
             min_mem_type42: buffer.get::<u32>(),
             max_mem_type42: buffer.get::<u32>(),

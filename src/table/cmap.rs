@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{u24, Buffer, Offset32, ReadBuffer};
+use crate::util::{u24, Buffer, ReadBuffer};
 
 use std::collections::HashMap;
 
@@ -19,7 +19,7 @@ pub struct Table_cmap {
     _version: u16,
     _num_tables: u16,
     _encodings: Vec<Encoding>,
-    _subtables: HashMap<Offset32, CmapSubtable>,
+    _subtables: HashMap<u32, CmapSubtable>,
     pub maps: HashMap<Encoding, Map>,
 }
 
@@ -30,7 +30,7 @@ impl Font {
         let _num_tables = buffer.get::<u16>();
         let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
 
-        let mut _subtables: HashMap<Offset32, CmapSubtable> = HashMap::new();
+        let mut _subtables: HashMap<u32, CmapSubtable> = HashMap::new();
         for i in &_encodings {
             buffer.offset = start_offset + i._offset as usize;
             _subtables
@@ -64,7 +64,7 @@ impl Font {
 
 #[derive(Debug, Eq, Hash, PartialEq)]
 pub struct Encoding {
-    _offset: Offset32,
+    _offset: u32,
     pub platform_id: u16,
     pub encoding_id: u16,
 }
@@ -74,7 +74,7 @@ impl ReadBuffer for Encoding {
         Self {
             platform_id: buffer.get::<u16>(),
             encoding_id: buffer.get::<u16>(),
-            _offset: buffer.get::<Offset32>(),
+            _offset: buffer.get::<u32>(),
         }
     }
 }
@@ -475,16 +475,16 @@ impl ReadBuffer for ConstantMapGroup {
 #[derive(Debug)]
 struct VariationSelector {
     var_selector: u24,
-    default_uvs_offset: Offset32,
-    non_default_uvs_offset: Offset32,
+    default_uvs_offset: u32,
+    non_default_uvs_offset: u32,
 }
 
 impl ReadBuffer for VariationSelector {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             var_selector: buffer.get::<u24>(),
-            default_uvs_offset: buffer.get::<Offset32>(),
-            non_default_uvs_offset: buffer.get::<Offset32>(),
+            default_uvs_offset: buffer.get::<u32>(),
+            non_default_uvs_offset: buffer.get::<u32>(),
         }
     }
 }

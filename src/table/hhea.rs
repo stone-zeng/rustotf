@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{get_version_string, Buffer, FWord, UFWord};
+use crate::util::{get_version_string, Buffer};
 
 /// ## hhea &mdash; Horizontal Header Table
 ///
@@ -15,13 +15,13 @@ use crate::util::{get_version_string, Buffer, FWord, UFWord};
 #[derive(Debug)]
 pub struct Table_hhea {
     _version: String,
-    pub ascender: FWord,
-    pub descender: FWord,
-    pub line_gap: FWord,
-    pub advance_width_max: UFWord,
-    pub min_left_side_bearing: FWord,
-    pub min_right_side_bearing: FWord,
-    pub x_max_extent: FWord,
+    pub ascender: i16,
+    pub descender: i16,
+    pub line_gap: i16,
+    pub advance_width_max: u16,
+    pub min_left_side_bearing: i16,
+    pub min_right_side_bearing: i16,
+    pub x_max_extent: i16,
     pub caret_slope_rise: i16,
     pub caret_slope_run: i16,
     pub caret_offset: i16,
@@ -34,13 +34,13 @@ impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer) {
         self.hhea = Some(Table_hhea {
             _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
-            ascender: buffer.get::<FWord>(),
-            descender: buffer.get::<FWord>(),
-            line_gap: buffer.get::<FWord>(),
-            advance_width_max: buffer.get::<UFWord>(),
-            min_left_side_bearing: buffer.get::<FWord>(),
-            min_right_side_bearing: buffer.get::<FWord>(),
-            x_max_extent: buffer.get::<FWord>(),
+            ascender: buffer.get::<i16>(),
+            descender: buffer.get::<i16>(),
+            line_gap: buffer.get::<i16>(),
+            advance_width_max: buffer.get::<u16>(),
+            min_left_side_bearing: buffer.get::<i16>(),
+            min_right_side_bearing: buffer.get::<i16>(),
+            x_max_extent: buffer.get::<i16>(),
             caret_slope_rise: buffer.get::<i16>(),
             caret_slope_run: buffer.get::<i16>(),
             caret_offset: buffer.get::<i16>(),

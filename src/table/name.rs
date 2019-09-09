@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{Buffer, Offset16, ReadBuffer};
+use crate::util::{Buffer, ReadBuffer};
 
 use encoding_rs;
 
@@ -29,7 +29,7 @@ use encoding_rs;
 pub struct Table_name {
     _format: u16,
     _count: u16,
-    _string_offset: Offset16,
+    _string_offset: u16,
     _names: Vec<Name>,
     _lang_tag_count: Option<u16>,
     _lang_tags: Option<Vec<LangTag>>,
@@ -39,7 +39,7 @@ impl Font {
     pub fn parse_name(&mut self, buffer: &mut Buffer) {
         let _format = buffer.get::<u16>();
         let _count = buffer.get::<u16>();
-        let _string_offset = buffer.get::<Offset16>();
+        let _string_offset = buffer.get::<u16>();
         let mut _names = buffer.get_vec::<Name>(_count as usize);
         let _lang_tag_count: u16 = 0;
         let _lang_tags: Vec<LangTag> = Vec::new();
@@ -69,7 +69,7 @@ struct Name {
     pub language_id: u16,
     pub name_id: u16,
     _length: u16,
-    _offset: Offset16,
+    _offset: u16,
     pub string: String,
 }
 
@@ -113,7 +113,7 @@ impl ReadBuffer for Name {
             language_id: buffer.get::<u16>(),
             name_id: buffer.get::<u16>(),
             _length: buffer.get::<u16>(),
-            _offset: buffer.get::<Offset16>(),
+            _offset: buffer.get::<u16>(),
             string: "".to_string(),
         }
     }
@@ -122,14 +122,14 @@ impl ReadBuffer for Name {
 #[derive(Debug)]
 struct LangTag {
     _length: u16,
-    _offset: Offset16,
+    _offset: u16,
     pub tag: String,
 }
 
 impl ReadBuffer for LangTag {
     fn read(buffer: &mut Buffer) -> Self {
         let _length = buffer.get::<u16>();
-        let _offset = buffer.get::<Offset16>();
+        let _offset = buffer.get::<u16>();
         let tag = String::new();
         Self {
             _length,

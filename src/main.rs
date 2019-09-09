@@ -17,8 +17,6 @@
 
 use rustotf;
 use std::process;
-// use std::mem;
-// use std::io::prelude::*;
 
 fn main() {
     for font_file_name in &[
@@ -36,12 +34,13 @@ fn main() {
         "/Applications/Adobe Illustrator CC 2019/Adobe Illustrator.app/Contents/Required/Fonts/KozGoPr6N-Regular.otf",
         "/Applications/Microsoft Excel.app/Contents/Resources/DFonts/Cambria.ttc",
         "/Applications/Microsoft Excel.app/Contents/Resources/DFonts/times.ttf",
+        "/Applications/Microsoft OneNote.app/Contents/Resources/DFonts/Kartika.TTF",
         "/Library/Fonts/Apple Chancery.ttf",
         "/Library/Fonts/Didot.ttc",
         "/Library/Fonts/FiraGO-Regular.otf",
         "/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc",
     ] {
-        if let Err(e) = rustotf::run(font_file_name) {
+        if let Err(e) = rustotf::read_font(font_file_name) {
             eprintln!("Application error: {}", e);
             process::exit(1);
         }

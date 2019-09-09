@@ -1,24 +1,25 @@
 // extern crate byteorder;
 
-use std::{fmt, mem};
+use std::{fmt, io::Read, mem};
 
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
+use flate2::read::ZlibDecoder;
 
 pub fn get_version_string(major: u16, minor: u16) -> String {
     major.to_string() + "." + &minor.to_string()
 }
 
 pub struct Buffer {
-    _buffer: Vec<u8>,
+    raw_buffer: Vec<u8>,
     pub offset: usize,
 }
 
 impl Buffer {
     /// Create a new `Buffer`.
-    pub const fn new(buffer: Vec<u8>) -> Buffer {
-        Buffer {
-            _buffer: buffer,
+    pub fn new(raw_buffer: Vec<u8>) -> Self {
+        Self {
+            raw_buffer,
             offset: 0,
         }
     }
@@ -49,11 +50,31 @@ impl Buffer {
         self.offset += n * mem::size_of::<T>();
     }
 
-    pub fn slice(&mut self, start: usize, end: usize) -> &[u8] {
-        &self._buffer[self.offset + start..self.offset + end]
+    pub fn slice(&self, start: usize, end: usize) -> &[u8] {
+        &self.raw_buffer[self.offset + start..self.offset + end]
     }
 
-    // pub fn calc_check_sum(&self, offset: u32, length: u32) -> u32 {
+    pub fn duplicate(self, offset: usize) -> Self {
+        Self {
+            raw_buffer: self.raw_buffer,
+            offset,
+        }
+    }
+
+    pub fn decompress(&self, comp_length: usize) -> Buffer {
+        let comp_buffer = self.slice(0, comp_length);
+        let mut orig_buffer: Vec<u8> = Vec::new();
+        if ZlibDecoder::new(comp_buffer)
+            .read_to_end(&mut orig_buffer)
+            .is_ok()
+        {
+            Buffer::new(orig_buffer)
+        } else {
+            Buffer::new(comp_buffer.to_vec())
+        }
+    }
+
+    // pub fn calc_checksum(&self, offset: u32, length: u32) -> u32 {
     //     let _offset = offset as usize;
     //     let padded_length = ((length + 3) & !3) as usize;
     //     (0..padded_length).step_by(4).fold(0, |acc, i| {
@@ -64,8 +85,19 @@ impl Buffer {
     // }
 }
 
+impl fmt::Debug for Buffer {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Buffer {{len: {}, elems: [{}, ..., {}]}}",
+            self.raw_buffer.len(),
+            self.raw_buffer.first().unwrap(),
+            self.raw_buffer.last().unwrap(),
+        )
+    }
+}
+
 pub trait ReadBuffer {
-    // fn read(_buffer: &Vec<u8>, _offset: usize) -> Self;
     fn read(buffer: &mut Buffer) -> Self;
 }
 
@@ -92,7 +124,7 @@ impl ReadBuffer for u8 {
     fn read(buffer: &mut Buffer) -> Self {
         let offset = buffer.offset;
         buffer.offset += mem::size_of::<u8>();
-        buffer._buffer[offset]
+        buffer.raw_buffer[offset]
     }
 }
 
@@ -100,7 +132,7 @@ impl ReadBuffer for i8 {
     fn read(buffer: &mut Buffer) -> Self {
         let offset = buffer.offset;
         buffer.offset += mem::size_of::<i8>();
-        buffer._buffer[offset] as i8
+        buffer.raw_buffer[offset] as i8
     }
 }
 
@@ -111,7 +143,7 @@ macro_rules! _generate_read {
             fn read(buffer: &mut Buffer) -> Self {
                 let offset = buffer.offset;
                 buffer.offset += mem::size_of::<$t>();
-                $f(&buffer._buffer[offset..buffer.offset])
+                $f(&buffer.raw_buffer[offset..buffer.offset])
             }
         }
     };
@@ -202,7 +234,7 @@ pub struct LongDateTime {
 }
 
 /// Seconds from 1904-01-01 to 1970-01-01 (at midnight).
-const DATE_TIME_OFFSET: i64 = 2082844800;
+const DATE_TIME_OFFSET: i64 = 2_082_844_800;
 
 impl fmt::Debug for LongDateTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -224,57 +256,15 @@ impl ReadBuffer for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-pub struct Tag {
-    _u8_arr: [u8; 4],
-}
-
-impl Tag {
-    pub fn to_string(&self) -> String {
-        let char_arr = [
-            self._u8_arr[0] as char,
-            self._u8_arr[1] as char,
-            self._u8_arr[2] as char,
-            self._u8_arr[3] as char,
-        ];
-        char_arr.iter().collect()
-    }
-}
-
-impl fmt::Debug for Tag {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
+pub type Tag = [u8; 4];
 
 impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _u8_arr: [
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
-            ],
-        }
+        [
+            buffer.get::<u8>(),
+            buffer.get::<u8>(),
+            buffer.get::<u8>(),
+            buffer.get::<u8>(),
+        ]
     }
 }
-
-pub type FWord = i16;
-pub type UFWord = u16;
-pub type Offset16 = u16;
-pub type Offset32 = u32;
-
-// pub const I8_SIZE: usize = mem::size_of::<i8>();
-// pub const I16_SIZE: usize = mem::size_of::<i16>();
-// pub const I32_SIZE: usize = mem::size_of::<i32>();
-// pub const U8_SIZE: usize = mem::size_of::<u8>();
-// pub const U16_SIZE: usize = mem::size_of::<u16>();
-// pub const U32_SIZE: usize = mem::size_of::<u32>();
-// pub const FIXED_SIZE: usize = mem::size_of::<Fixed>();
-// pub const FWORD_SIZE: usize = mem::size_of::<FWord>();
-// pub const UFWORD_SIZE: usize = mem::size_of::<UFWord>();
-// pub const F2DOT14_SIZE: usize = mem::size_of::<F2Dot14>();
-// pub const LONG_DATE_TIME_SIZE: usize = mem::size_of::<LongDateTime>();
-// pub const TAG_SIZE: usize = mem::size_of::<Tag>();
-// pub const OFFSET16_SIZE: usize = mem::size_of::<Offset16>();
-// pub const OFFSET32_SIZE: usize = mem::size_of::<Offset32>();
