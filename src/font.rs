@@ -48,14 +48,12 @@ impl FontContainer {
         let signature = self.buffer.get::<u32>();
         self.buffer.offset = 0;
         match signature {
-            // 'OTTO' | .. | 'true' | 'typ1'
-            0x4F54_544F | 0x0001_0000 | 0x7472_7565 | 0x7479_7031 => self.init_otf(),
-            // 'ttcf'
-            0x7474_6366 => self.init_ttc(),
-            // 'wOFF'
-            0x774F_4646 => self.init_woff(),
-            // 'wOF2'
-            0x774F_4632 => self.init_woff2(),
+            SIGNATURE_OTF | SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => {
+                self.init_otf()
+            }
+            SIGNATURE_TTC => self.init_ttc(),
+            SIGNATURE_WOFF => self.init_woff(),
+            SIGNATURE_WOFF2 => self.init_woff2(),
             _ => (),
         }
     }
@@ -167,7 +165,7 @@ impl Font {
         let flavor = buffer.get::<u32>();
         let length = buffer.get::<u32>();
         let num_tables = buffer.get::<u16>();
-        let reserved = buffer.get::<u16>();
+        buffer.skip::<u16>(1);
         let total_sfnt_size = buffer.get::<u32>();
         let major_version = buffer.get::<u16>();
         let minor_version = buffer.get::<u16>();
@@ -217,7 +215,7 @@ impl Font {
         let flavor = buffer.get::<u32>();
         let length = buffer.get::<u32>();
         let num_tables = buffer.get::<u16>();
-        let reserved = buffer.get::<u16>();
+        buffer.skip::<u16>(1);
         let total_sfnt_size = buffer.get::<u32>();
         let total_compressed_size = buffer.get::<u32>();
         let major_version = buffer.get::<u16>();
@@ -248,10 +246,8 @@ impl Font {
 
     fn _get_flavor(flavor: u32) -> Flavor {
         match flavor {
-            // 'OTTO'
-            0x4F54_544F => Flavor::CFF,
-            // .. | 'true' | 'typ1'
-            0x0001_0000 | 0x7472_7565 | 0x7479_7031 => Flavor::TTF,
+            SIGNATURE_OTF => Flavor::CFF,
+            SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => Flavor::TTF,
             // TODO: invalid signature.
             _ => Flavor::CFF,
         }
@@ -268,8 +264,8 @@ macro_rules! _parse_sfnt {
 macro_rules! _parse_woff {
     ($self:ident, $buffer:ident, $tag:expr, $f:ident) => {
         $buffer.offset = $self.get_table_offset($tag);
-        let comp_len = $self.get_table_comp_len($tag);
-        $self.$f(&mut $buffer.decompress(comp_len));
+        let comp_length = $self.get_table_comp_len($tag);
+        $self.$f(&mut $buffer.decompress(comp_length));
     };
 }
 
@@ -307,8 +303,8 @@ impl Font {
 
     fn parse_table_woff(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.offset = self.get_table_offset(tag);
-        let comp_len = self.get_table_comp_len(tag);
-        self._parse_table(tag, &mut buffer.decompress(comp_len));
+        let comp_length = self.get_table_comp_len(tag);
+        self._parse_table(tag, &mut buffer.decompress(comp_length));
     }
 
     #[allow(unused_variables)]
@@ -378,3 +374,18 @@ impl ReadBuffer for TableRecord {
         }
     }
 }
+
+/// For OpenType fonts containing CFF data (version 1 or 2), which is `OTTO`.
+const SIGNATURE_OTF: u32 = 0x4F54_544F;
+/// For OpenType fonts that contain TrueType outlines.
+const SIGNATURE_TTF: u32 = 0x0001_0000;
+/// The Apple specification for TrueType fonts allows for `true`. Should NOT be used.
+const SIGNATURE_TTF_TRUE: u32 = 0x7472_7565;
+/// The Apple specification for TrueType fonts allows for `typ1`. Should NOT be used.
+const SIGNATURE_TTF_TYP1: u32 = 0x7479_7031;
+/// Font Collection ID string: `ttcf`.
+const SIGNATURE_TTC: u32 = 0x7474_6366;
+/// The `signature` field in the WOFF (version 1) header MUST contain this "magic number" `wOFF`.
+const SIGNATURE_WOFF: u32 = 0x774F_4646;
+/// The `signature` field in the WOFF (version 2) header MUST contain this "magic number" `wOF2`.
+const SIGNATURE_WOFF2: u32 = 0x774F_4632;

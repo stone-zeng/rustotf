@@ -11,10 +11,22 @@ mod table {
     pub mod post;
 }
 
-pub use font::read_font;
+pub use font::{
+    read_font,
+    Font,
+    FontContainer,
+};
 
-pub use font::Font;
-pub use font::FontContainer;
+pub use table::{
+    cmap::Table_cmap,
+    head::Table_head,
+    hhea::Table_hhea,
+    hmtx::Table_hmtx,
+    maxp::Table_maxp,
+    name::Table_name,
+    os_2::Table_OS_2,
+    post::Table_post,
+};
 
 // pub fn parse_args(args: &[String]) -> Result<&str, &str> {
 //     if args.len() > 1 {

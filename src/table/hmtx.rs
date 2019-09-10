@@ -3,7 +3,7 @@ use crate::util::{Buffer, ReadBuffer};
 
 /// ## `hmtx` &mdash; Horizontal Metrics Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/hmtx>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/hmtx>.
 ///
 /// Glyph metrics used for horizontal text layout include glyph advance widths,
 /// side bearings and X-direction min and max values (`xMin`, `xMax`). These are

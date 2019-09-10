@@ -5,7 +5,7 @@ use encoding_rs;
 
 /// ## `name` &mdash; Naming Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/name>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/name>.
 ///
 /// The naming table allows multilingual strings to be associated with the
 /// OpenType font. These strings can represent copyright notices, font names,

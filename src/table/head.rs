@@ -3,7 +3,7 @@ use crate::util::{get_version_string, Buffer, Fixed, LongDateTime};
 
 /// ## `head` &mdash; Font Header Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/head>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/head>.
 ///
 /// This table gives global information about the font. The bounding box values
 /// should be computed using *only* glyphs that have contours. Glyphs with no

@@ -1,9 +1,9 @@
 use crate::font::Font;
 use crate::util::{get_version_string, Buffer};
 
-/// ## hhea &mdash; Horizontal Header Table
+/// ## `hhea` &mdash; Horizontal Header Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/hhea>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/hhea>.
 ///
 /// This table contains information for horizontal layout. The values in the
 /// `minRightSidebearing`, `minLeftSideBearing` and `xMaxExtent` should be

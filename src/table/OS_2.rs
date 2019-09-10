@@ -3,7 +3,7 @@ use crate::util::{Buffer, Tag};
 
 /// ## `OS/2` &mdash; OS/2 and Windows Metrics Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/os2>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/os2>.
 ///
 /// The `OS/2` table consists of a set of metrics and other data that are
 /// required in OpenType fonts.

@@ -3,7 +3,7 @@ use crate::util::{Buffer, Fixed};
 
 /// ## `post` &mdash; PostScript Table
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/post>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/post>.
 ///
 /// This table contains additional information needed to use TrueType or
 /// OpenType fonts on PostScript printers. This includes data for the FontInfo

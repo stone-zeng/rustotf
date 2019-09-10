@@ -3,7 +3,7 @@ use crate::util::{Buffer, Fixed};
 
 /// ## `maxp` &mdash; Maximum Profile
 ///
-/// <https://docs.microsoft.com/en-us/typography/opentype/spec/maxp>
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/maxp>.
 ///
 /// This table establishes the memory requirements for this font. Fonts with
 /// CFF data must use Version 0.5 of this table, specifying only the `numGlyphs`
