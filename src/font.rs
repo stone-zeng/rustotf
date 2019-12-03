@@ -13,7 +13,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
 
     let mut font_container = FontContainer::new(fs::read(font_file_path)?);
     font_container.init();
-    font_container.parse_table(*b"name");
+    font_container.parse_table("name");
     // font_container.parse();
 
     println!("{:#?}", font_container);
@@ -100,12 +100,12 @@ impl FontContainer {
         }
     }
 
-    pub fn parse_table(&mut self, tag: Tag) {
+    pub fn parse_table(&mut self, tag_str: &str) {
         for font in &mut self.fonts {
             match font.format {
-                Format::SFNT => font.parse_table_sfnt(tag, &mut self.buffer),
-                Format::WOFF => font.parse_table_woff(tag, &mut self.buffer),
-                Format::WOFF2 => font.parse_table_woff2(tag, &mut self.buffer),
+                Format::SFNT => font.parse_table_sfnt(tag_str, &mut self.buffer),
+                Format::WOFF => font.parse_table_woff(tag_str, &mut self.buffer),
+                Format::WOFF2 => font.parse_table_woff2(tag_str, &mut self.buffer),
             }
         }
     }
@@ -129,6 +129,12 @@ pub struct Font {
     pub OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
     pub post: Option<Table_post>, // PostScript information
 }
+
+// impl fmt::Debug for Font {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         write!(f, "format: {:?}, flavor: {:?}", self.format, self.flavor)
+//     }
+// }
 
 impl Font {
     #[allow(unused_variables)]
@@ -271,24 +277,24 @@ macro_rules! _parse_woff {
 
 impl Font {
     fn parse_sfnt(&mut self, buffer: &mut Buffer) {
-        _parse_sfnt!(self, buffer, *b"hhea", parse_hhea);
-        _parse_sfnt!(self, buffer, *b"maxp", parse_maxp);
-        _parse_sfnt!(self, buffer, *b"hmtx", parse_hmtx);
-        _parse_sfnt!(self, buffer, *b"cmap", parse_cmap);
-        _parse_sfnt!(self, buffer, *b"name", parse_name);
-        _parse_sfnt!(self, buffer, *b"OS/2", parse_OS_2);
-        _parse_sfnt!(self, buffer, *b"post", parse_post);
+        _parse_sfnt!(self, buffer, "hhea", parse_hhea);
+        _parse_sfnt!(self, buffer, "maxp", parse_maxp);
+        _parse_sfnt!(self, buffer, "hmtx", parse_hmtx);
+        _parse_sfnt!(self, buffer, "cmap", parse_cmap);
+        _parse_sfnt!(self, buffer, "name", parse_name);
+        _parse_sfnt!(self, buffer, "OS/2", parse_OS_2);
+        _parse_sfnt!(self, buffer, "post", parse_post);
     }
 
     fn parse_woff(&mut self, buffer: &mut Buffer) {
-        _parse_woff!(self, buffer, *b"hhea", parse_hhea);
-        _parse_woff!(self, buffer, *b"maxp", parse_maxp);
+        _parse_woff!(self, buffer, "hhea", parse_hhea);
+        _parse_woff!(self, buffer, "maxp", parse_maxp);
         // FIXME: index out of range for slice
-        // _parse_woff!(self, buffer, b"hmtx", parse_hmtx);
-        _parse_woff!(self, buffer, *b"cmap", parse_cmap);
-        _parse_woff!(self, buffer, *b"name", parse_name);
-        // _parse_woff!(self, buffer, b"OS/2", parse_OS_2);
-        _parse_woff!(self, buffer, *b"post", parse_post);
+        // _parse_woff!(self, buffer, "hmtx", parse_hmtx);
+        _parse_woff!(self, buffer, "cmap", parse_cmap);
+        _parse_woff!(self, buffer, "name", parse_name);
+        // _parse_woff!(self, buffer, "OS/2", parse_OS_2);
+        _parse_woff!(self, buffer, "post", parse_post);
     }
 
     #[allow(unused_variables)]
@@ -296,50 +302,51 @@ impl Font {
         unimplemented!()
     }
 
-    fn parse_table_sfnt(&mut self, tag: Tag, buffer: &mut Buffer) {
-        buffer.offset = self.get_table_offset(tag);
-        self._parse_table(tag, buffer);
+    fn parse_table_sfnt(&mut self, tag_str: &str, buffer: &mut Buffer) {
+        buffer.offset = self.get_table_offset(tag_str);
+        self._parse_table(tag_str, buffer);
     }
 
-    fn parse_table_woff(&mut self, tag: Tag, buffer: &mut Buffer) {
-        buffer.offset = self.get_table_offset(tag);
-        let comp_length = self.get_table_comp_len(tag);
-        self._parse_table(tag, &mut buffer.decompress(comp_length));
+    fn parse_table_woff(&mut self, tag_str: &str, buffer: &mut Buffer) {
+        buffer.offset = self.get_table_offset(tag_str);
+        let comp_length = self.get_table_comp_len(tag_str);
+        self._parse_table(tag_str, &mut buffer.decompress(comp_length));
     }
 
     #[allow(unused_variables)]
-    fn parse_table_woff2(&mut self, tag: Tag, buffer: &mut Buffer) {
+    fn parse_table_woff2(&mut self, tag_str: &str, buffer: &mut Buffer) {
         unimplemented!()
     }
 
-    fn _parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
-        match &tag {
-            b"head" => self.parse_head(buffer),
-            b"hhea" => self.parse_hhea(buffer),
-            b"maxp" => self.parse_maxp(buffer),
-            b"hmtx" => self.parse_hmtx(buffer),
-            b"cmap" => self.parse_cmap(buffer),
-            b"name" => self.parse_name(buffer),
-            b"OS/2" => self.parse_OS_2(buffer),
-            b"post" => self.parse_post(buffer),
+    fn _parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
+        match tag_str {
+            "head" => self.parse_head(buffer),
+            "hhea" => self.parse_hhea(buffer),
+            "maxp" => self.parse_maxp(buffer),
+            "hmtx" => self.parse_hmtx(buffer),
+            "cmap" => self.parse_cmap(buffer),
+            "name" => self.parse_name(buffer),
+            "OS/2" => self.parse_OS_2(buffer),
+            "post" => self.parse_post(buffer),
             _ => (),
         };
     }
 
-    fn _get_table_record(&self, tag: Tag) -> &TableRecord {
+    fn _get_table_record(&self, tag_str: &str) -> &TableRecord {
+        let tag = Tag::new(tag_str);
         self.table_records.get(&tag).unwrap()
     }
 
-    pub fn get_table_len(&self, tag: Tag) -> usize {
-        self._get_table_record(tag).length as usize
+    pub fn get_table_len(&self, tag_str: &str) -> usize {
+        self._get_table_record(tag_str).length as usize
     }
 
-    pub fn get_table_offset(&self, tag: Tag) -> usize {
-        self._get_table_record(tag).offset as usize
+    pub fn get_table_offset(&self, tag_str: &str) -> usize {
+        self._get_table_record(tag_str).offset as usize
     }
 
-    pub fn get_table_comp_len(&self, tag: Tag) -> usize {
-        self._get_table_record(tag).woff_comp_length as usize
+    pub fn get_table_comp_len(&self, tag_str: &str) -> usize {
+        self._get_table_record(tag_str).woff_comp_length as usize
     }
 }
 

@@ -257,15 +257,47 @@ impl ReadBuffer for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-pub type Tag = [u8; 4];
+#[derive(Eq, PartialEq, Hash)]
+pub struct Tag {
+    _internal: [u8; 4],
+}
+
+impl Tag {
+    pub fn new(tag_str: &str) -> Self {
+        let mut bytes = tag_str.bytes();
+        Self {
+            _internal: [
+                bytes.next().unwrap(),
+                bytes.next().unwrap(),
+                bytes.next().unwrap(),
+                bytes.next().unwrap(),
+            ]
+        }
+    }
+}
 
 impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
-        [
-            buffer.get::<u8>(),
-            buffer.get::<u8>(),
-            buffer.get::<u8>(),
-            buffer.get::<u8>(),
-        ]
+        Self {
+            _internal: [
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
+                buffer.get::<u8>(),
+            ]
+        }
+    }
+}
+
+impl fmt::Debug for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}{}{}{}",
+            self._internal[0] as char,
+            self._internal[1] as char,
+            self._internal[2] as char,
+            self._internal[3] as char,
+        )
     }
 }
