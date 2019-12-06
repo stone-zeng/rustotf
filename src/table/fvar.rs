@@ -1,14 +1,14 @@
 use crate::font::Font;
 use crate::util::{get_version_string, Buffer, Fixed, Tag, ReadBuffer};
 
-//// ## `fvar` &mdash; Font Variations Table
+/// ## `fvar` &mdash; Font Variations Table
 ///
 /// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/fvar>.
-////
-//// OpenType Font Variations allow a font designer to incorporate multiple
-//// faces within a font family into a single font resource. Variable fonts can
-//// provide great flexibility for content authors and designers while also
-//// allowing the font data to be represented in an efficient format.
+///
+/// OpenType Font Variations allow a font designer to incorporate multiple
+/// faces within a font family into a single font resource. Variable fonts can
+/// provide great flexibility for content authors and designers while also
+/// allowing the font data to be represented in an efficient format.
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]

@@ -1,16 +1,16 @@
 use crate::font::Font;
 use crate::util::{get_version_string, Buffer, F2Dot14, ReadBuffer};
 
-//// ## `avar` &mdash; Axis Variations Table
+/// ## `avar` &mdash; Axis Variations Table
 ///
 /// Specification: <https://docs.microsoft.com/zh-cn/typography/opentype/spec/avar>.
-////
-//// The axis variations table (`avar`) is an optional table used in variable
-//// fonts that use OpenType Font Variations mechanisms. It can be used to
-//// modify aspects of how a design varies for different instances along a
-//// particular design-variation axis. Specifically, it allows modification of
-//// the coordinate normalization that is used when processing variation data
-//// for a particular variation instance.
+///
+/// The axis variations table (`avar`) is an optional table used in variable
+/// fonts that use OpenType Font Variations mechanisms. It can be used to
+/// modify aspects of how a design varies for different instances along a
+/// particular design-variation axis. Specifically, it allows modification of
+/// the coordinate normalization that is used when processing variation data
+/// for a particular variation instance.
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
