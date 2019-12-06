@@ -1,44 +1,38 @@
-// use std::env;
-// use std::process;
-
-// use rustotf;
-
-// fn main() {
-//     let args: Vec<String> = env::args().collect();
-//     let font_file_name = rustotf::parse_args(&args).unwrap_or_else(|e| {
-//         eprintln!("Problem parsing arguments: {}", e);
-//         process::exit(1);
-//     });
-//     if let Err(e) = rustotf::run(font_file_name) {
-//         eprintln!("Application error: {}", e);
-//         process::exit(1);
-//     }
-// }
-
 use rustotf;
 use std::process;
 
 fn main() {
     for font_file_name in &[
-        "./assets/iosevka-regular.ttc",
-        "./assets/NotoColorEmoji.ttf",
-        "./assets/SourceHan.ttc",
-        "./assets/SourceSansPro-Regular.otf.woff2",
-        "./assets/SourceSansPro-Regular.otf",
-        "./assets/SourceSansPro-Regular.ttf.woff",
-        "./assets/SourceSansPro-Regular.ttf",
-        "./assets/SourceSansVariable-Roman.otf.woff",
-        "./assets/SourceSansVariable-Roman.otf.woff2",
-        "./assets/SourceSansVariable-Roman.otf",
-        "/Applications/Adobe Illustrator CC 2019/Adobe Illustrator.app/Contents/Required/Fonts/AdobeMyungjoStd-Medium.otf",
-        "/Applications/Adobe Illustrator CC 2019/Adobe Illustrator.app/Contents/Required/Fonts/KozGoPr6N-Regular.otf",
-        "/Applications/Microsoft Excel.app/Contents/Resources/DFonts/Cambria.ttc",
-        "/Applications/Microsoft Excel.app/Contents/Resources/DFonts/times.ttf",
-        "/Applications/Microsoft OneNote.app/Contents/Resources/DFonts/Kartika.TTF",
-        "/Library/Fonts/Apple Chancery.ttf",
-        "/Library/Fonts/Didot.ttc",
-        "/Library/Fonts/FiraGO-Regular.otf",
-        "/System/Library/Fonts/ヒラギノ角ゴシック W4.ttc",
+        // Basic
+        "./test/fonts/macos/Arial.ttf",
+        "./test/fonts/msword/times.ttf",
+        "./test/fonts/texlive/lmroman10-regular.otf",
+        "./test/fonts/texlive/NotoSans-Regular.ttf",
+        "./test/fonts/texlive/SourceSansPro-RegularIt.otf",
+        // CJK
+        "./test/fonts/contrib/BabelStoneHan.ttf",
+        "./test/fonts/contrib/BabelStoneHanPUA.ttf",
+        "./test/fonts/contrib/HYZhongHeiS.ttf",
+        "./test/fonts/msword/msyh.ttf",
+        "./test/fonts/texlive/FandolSong-Regular.otf",
+        // TTC
+        "./test/fonts/contrib/iosevka-medium.ttc",
+        "./test/fonts/contrib/sarasa-regular.ttc",
+        "./test/fonts/contrib/SourceHanNotoCJK.ttc",
+        "./test/fonts/macos/HelveticaNeue.ttc",
+        "./test/fonts/macos/PingFang.ttc",
+        "./test/fonts/macos/ヒラギノ角ゴシック W4.ttc",
+        "./test/fonts/msword/Cambria.ttc",
+        // Emoji
+        "./test/fonts/contrib/NotoColorEmoji.ttf",
+        "./test/fonts/contrib/NotoEmoji-Regular.ttf",
+        "./test/fonts/macos/Apple Color Emoji.ttc",
+        // Variable fonts
+        "./test/fonts/contrib/AdobeVFPrototype.otf",
+        "./test/fonts/contrib/AdobeVFPrototype.ttf",
+        "./test/fonts/macos/SFNS.ttf",
+        // WOFF
+        // WOFF2
     ] {
         if let Err(e) = rustotf::read_font(font_file_name) {
             eprintln!("Application error: {}", e);

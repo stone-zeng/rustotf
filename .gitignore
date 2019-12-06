@@ -1,7 +1,7 @@
 .vscode/
-assets/
 target/
 temp/
+test/fonts/
 
 Cargo.lock
 
