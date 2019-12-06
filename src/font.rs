@@ -7,7 +7,7 @@ use crate::table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
-
+    avar::Table_avar,
     fvar::Table_fvar,
 };
 use crate::util::{Buffer, ReadBuffer, Tag};
@@ -21,7 +21,10 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
 
     let mut font_container = FontContainer::new(fs::read(font_file_path)?);
     font_container.init();
-    font_container.parse();
+    // font_container.parse();
+
+    // font_container.parse_table("fvar");
+    font_container.parse_table("avar");
 
     println!("{:#?}", font_container);
     Ok(())
@@ -137,7 +140,7 @@ pub struct Font {
     pub post: Option<Table_post>, // PostScript information
 
     // Tables used for OpenType Font Variations
-    // pub avar: Option<Table_avar>, // Axis variations
+    pub avar: Option<Table_avar>, // Axis variations
     // pub cvar: Option<Table_cvar>, // CVT variations (TrueType outlines only)
     pub fvar: Option<Table_fvar>, // Font variations
     // pub gvar: Option<Table_gvar>, // Glyph variations (TrueType outlines only)
@@ -179,6 +182,7 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            avar: None,
             fvar: None,
         }
     }
@@ -230,6 +234,7 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            avar: None,
             fvar: None,
         }
     }
@@ -266,6 +271,7 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            avar: None,
             fvar: None,
         }
     }
@@ -325,8 +331,14 @@ impl Font {
     }
 
     fn parse_table_sfnt(&mut self, tag_str: &str, buffer: &mut Buffer) {
-        buffer.offset = self.get_table_offset(tag_str);
-        self._parse_table(tag_str, buffer);
+        let tag = Tag::new(tag_str);
+        match self.table_records.get(&tag) {
+            Some(record) => {
+                buffer.offset = record.offset as usize;
+                self._parse_table(tag_str, buffer);
+            },
+            None => (),
+        }
     }
 
     fn parse_table_woff(&mut self, tag_str: &str, buffer: &mut Buffer) {
@@ -350,10 +362,13 @@ impl Font {
             "name" => self.parse_name(buffer),
             "OS/2" => self.parse_OS_2(buffer),
             "post" => self.parse_post(buffer),
+            "avar" => self.parse_avar(buffer),
             "fvar" => self.parse_fvar(buffer),
             _ => (),
         };
     }
+
+    // TODO: consider Option<>
 
     fn _get_table_record(&self, tag_str: &str) -> &TableRecord {
         let tag = Tag::new(tag_str);

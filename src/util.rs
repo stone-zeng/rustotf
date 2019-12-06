@@ -197,36 +197,32 @@ impl PartialEq<i32> for Fixed {
 
 impl ReadBuffer for Fixed {
     fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _num: buffer.get::<i32>(),
-        }
+        Self { _num: buffer.get::<i32>() }
     }
 }
 
 /// 16-bit signed fixed number with the low 14 bits of fraction (2.14).
-// pub struct F2Dot14 {
-//     _num: i16,
-// }
+pub struct F2Dot14 {
+    _num: i16,
+}
 
-// impl fmt::Debug for F2Dot14 {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "{:.3}", self._num as f64 / 16384.0)
-//     }
-// }
+impl fmt::Debug for F2Dot14 {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.3}", self._num as f64 / 16384.0)
+    }
+}
 
-// impl PartialEq<i16> for F2Dot14 {
-//     fn eq(&self, other: &i16) -> bool {
-//         self._num == *other
-//     }
-// }
+impl PartialEq<i16> for F2Dot14 {
+    fn eq(&self, other: &i16) -> bool {
+        self._num == *other
+    }
+}
 
-// impl Read for F2Dot14 {
-//     fn read(_buffer: &Vec<u8>, _offset: usize) -> Self {
-//         Self {
-//             _num: i16::read(_buffer, _offset),
-//         }
-//     }
-// }
+impl ReadBuffer for F2Dot14 {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self { _num: buffer.get::<i16>() }
+    }
+}
 
 /// Date represented in number of seconds since 12:00 midnight, January 1, 1904.
 /// The value is represented as a signed 64-bit integer.
@@ -246,9 +242,7 @@ impl fmt::Debug for LongDateTime {
 
 impl ReadBuffer for LongDateTime {
     fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _num: buffer.get::<i64>(),
-        }
+        Self { _num: buffer.get::<i64>() }
     }
 }
 

@@ -9,6 +9,7 @@ mod table {
     pub mod name;
     pub mod os_2;
     pub mod post;
+    pub mod avar;
     pub mod fvar;
 }
 
@@ -27,6 +28,7 @@ pub use table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
+    avar::Table_avar,
     fvar::Table_fvar,
 };
 
