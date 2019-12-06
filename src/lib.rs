@@ -9,6 +9,7 @@ mod table {
     pub mod name;
     pub mod os_2;
     pub mod post;
+    pub mod fvar;
 }
 
 pub use font::{
@@ -26,6 +27,7 @@ pub use table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
+    fvar::Table_fvar,
 };
 
 // pub fn parse_args(args: &[String]) -> Result<&str, &str> {
