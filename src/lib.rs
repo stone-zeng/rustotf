@@ -10,7 +10,13 @@ mod table {
     pub mod os_2;
     pub mod post;
     pub mod avar;
+    // pub mod cvar;
     pub mod fvar;
+    // pub mod gvar;
+    // pub mod hvar;
+    pub mod mvar;
+    // pub mod stat;
+    // pub mod vvar;
 }
 
 pub use font::{
@@ -29,7 +35,13 @@ pub use table::{
     os_2::Table_OS_2,
     post::Table_post,
     avar::Table_avar,
+    // cvar::Table_cvar,
     fvar::Table_fvar,
+    // gvar::Table_gvar,
+    // hvar::Table_HVAR,
+    mvar::Table_MVAR,
+    // stat::Table_STAT,
+    // vvar::Table_VVAR,
 };
 
 // pub fn parse_args(args: &[String]) -> Result<&str, &str> {

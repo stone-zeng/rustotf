@@ -67,26 +67,3 @@ impl ReadBuffer for AxisValueMap {
         }
     }
 }
-
-// #[derive(Debug)]
-// struct Instance {
-//     pub subfamily_name_id: u16,
-//     pub flags: u16,
-//     pub coordinates: Vec<Fixed>,
-//     pub postscript_name_id: u16,
-// }
-
-// // We can't use trait `ReadBuffer` here because reading `Instance` requires
-// // `axis_count`, which from the outside structure.
-// fn read_instance(buffer: &mut Buffer, axis_count: usize) -> Instance {
-//     let subfamily_name_id = buffer.get::<u16>();
-//     let flags = buffer.get::<u16>();
-//     let coordinates = buffer.get_vec::<Fixed>(axis_count);
-//     let postscript_name_id = buffer.get::<u16>();
-//     Instance {
-//         subfamily_name_id,
-//         flags,
-//         coordinates,
-//         postscript_name_id,
-//     }
-// }

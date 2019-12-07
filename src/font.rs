@@ -8,7 +8,13 @@ use crate::table::{
     os_2::Table_OS_2,
     post::Table_post,
     avar::Table_avar,
+    // cvar::Table_cvar,
     fvar::Table_fvar,
+    // gvar::Table_gvar,
+    // hvar::Table_HVAR,
+    mvar::Table_MVAR,
+    // stat::Table_STAT,
+    // vvar::Table_VVAR,
 };
 use crate::util::{Buffer, ReadBuffer, Tag};
 
@@ -24,7 +30,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // font_container.parse();
 
     // font_container.parse_table("fvar");
-    font_container.parse_table("avar");
+    font_container.parse_table("MVAR");
 
     println!("{:#?}", font_container);
     Ok(())
@@ -145,7 +151,7 @@ pub struct Font {
     pub fvar: Option<Table_fvar>, // Font variations
     // pub gvar: Option<Table_gvar>, // Glyph variations (TrueType outlines only)
     // pub HVAR: Option<Table_HVAR>, // Horizontal metrics variations
-    // pub MVAR: Option<Table_MVAR>, // Metrics variations
+    pub MVAR: Option<Table_MVAR>, // Metrics variations
     // pub STAT: Option<Table_STAT>, // Style attributes
     // pub VVAR: Option<Table_VVAR>, // Vertical metrics variations
 }
@@ -183,7 +189,13 @@ impl Font {
             OS_2: None,
             post: None,
             avar: None,
+            // cvar: None,
             fvar: None,
+            // gvar: None,
+            // HVAR: None,
+            MVAR: None,
+            // STAT: None,
+            // VVAR: None,
         }
     }
 
@@ -235,7 +247,13 @@ impl Font {
             OS_2: None,
             post: None,
             avar: None,
+            // cvar: None,
             fvar: None,
+            // gvar: None,
+            // HVAR: None,
+            MVAR: None,
+            // STAT: None,
+            // VVAR: None,
         }
     }
 
@@ -272,7 +290,13 @@ impl Font {
             OS_2: None,
             post: None,
             avar: None,
+            // cvar: None,
             fvar: None,
+            // gvar: None,
+            // HVAR: None,
+            MVAR: None,
+            // STAT: None,
+            // VVAR: None,
         }
     }
 
@@ -310,7 +334,15 @@ impl Font {
         _parse_sfnt!(self, buffer, "name", parse_name);
         _parse_sfnt!(self, buffer, "OS/2", parse_OS_2);
         _parse_sfnt!(self, buffer, "post", parse_post);
+
+        _parse_sfnt!(self, buffer, "avar", parse_avar);
+        // _parse_sfnt!(self, buffer, "cvar", parse_cvar);
         _parse_sfnt!(self, buffer, "fvar", parse_fvar);
+        // _parse_sfnt!(self, buffer, "gvar", parse_gvar);
+        // _parse_sfnt!(self, buffer, "HVAR", parse_HVAR);
+        _parse_sfnt!(self, buffer, "MVAR", parse_MVAR);
+        // _parse_sfnt!(self, buffer, "STAT", parse_STAT);
+        // _parse_sfnt!(self, buffer, "VVAR", parse_VVAR);
     }
 
     fn parse_woff(&mut self, buffer: &mut Buffer) {
@@ -322,7 +354,6 @@ impl Font {
         _parse_woff!(self, buffer, "name", parse_name);
         // _parse_woff!(self, buffer, "OS/2", parse_OS_2);
         _parse_woff!(self, buffer, "post", parse_post);
-        _parse_woff!(self, buffer, "fvar", parse_fvar);
     }
 
     #[allow(unused_variables)]
@@ -362,8 +393,15 @@ impl Font {
             "name" => self.parse_name(buffer),
             "OS/2" => self.parse_OS_2(buffer),
             "post" => self.parse_post(buffer),
+
             "avar" => self.parse_avar(buffer),
+            // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),
+            // "gvar" => self.parse_gvar(buffer),
+            // "HVAR" => self.parse_HVAR(buffer),
+            "MVAR" => self.parse_MVAR(buffer),
+            // "STAT" => self.parse_STAT(buffer),
+            // "VVAR" => self.parse_VVAR(buffer),
             _ => (),
         };
     }
