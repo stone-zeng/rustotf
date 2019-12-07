@@ -11,7 +11,7 @@ use crate::table::{
     // cvar::Table_cvar,
     fvar::Table_fvar,
     // gvar::Table_gvar,
-    // hvar::Table_HVAR,
+    hvar::Table_HVAR,
     mvar::Table_MVAR,
     // stat::Table_STAT,
     // vvar::Table_VVAR,
@@ -30,7 +30,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // font_container.parse();
 
     // font_container.parse_table("fvar");
-    font_container.parse_table("MVAR");
+    font_container.parse_table("HVAR");
 
     println!("{:#?}", font_container);
     Ok(())
@@ -150,7 +150,7 @@ pub struct Font {
     // pub cvar: Option<Table_cvar>, // CVT variations (TrueType outlines only)
     pub fvar: Option<Table_fvar>, // Font variations
     // pub gvar: Option<Table_gvar>, // Glyph variations (TrueType outlines only)
-    // pub HVAR: Option<Table_HVAR>, // Horizontal metrics variations
+    pub HVAR: Option<Table_HVAR>, // Horizontal metrics variations
     pub MVAR: Option<Table_MVAR>, // Metrics variations
     // pub STAT: Option<Table_STAT>, // Style attributes
     // pub VVAR: Option<Table_VVAR>, // Vertical metrics variations
@@ -192,7 +192,7 @@ impl Font {
             // cvar: None,
             fvar: None,
             // gvar: None,
-            // HVAR: None,
+            HVAR: None,
             MVAR: None,
             // STAT: None,
             // VVAR: None,
@@ -250,7 +250,7 @@ impl Font {
             // cvar: None,
             fvar: None,
             // gvar: None,
-            // HVAR: None,
+            HVAR: None,
             MVAR: None,
             // STAT: None,
             // VVAR: None,
@@ -293,7 +293,7 @@ impl Font {
             // cvar: None,
             fvar: None,
             // gvar: None,
-            // HVAR: None,
+            HVAR: None,
             MVAR: None,
             // STAT: None,
             // VVAR: None,
@@ -339,7 +339,7 @@ impl Font {
         // _parse_sfnt!(self, buffer, "cvar", parse_cvar);
         _parse_sfnt!(self, buffer, "fvar", parse_fvar);
         // _parse_sfnt!(self, buffer, "gvar", parse_gvar);
-        // _parse_sfnt!(self, buffer, "HVAR", parse_HVAR);
+        _parse_sfnt!(self, buffer, "HVAR", parse_HVAR);
         _parse_sfnt!(self, buffer, "MVAR", parse_MVAR);
         // _parse_sfnt!(self, buffer, "STAT", parse_STAT);
         // _parse_sfnt!(self, buffer, "VVAR", parse_VVAR);
@@ -398,7 +398,7 @@ impl Font {
             // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),
             // "gvar" => self.parse_gvar(buffer),
-            // "HVAR" => self.parse_HVAR(buffer),
+            "HVAR" => self.parse_HVAR(buffer),
             "MVAR" => self.parse_MVAR(buffer),
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),

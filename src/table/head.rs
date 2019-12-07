@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{get_version_string, Buffer, Fixed, LongDateTime};
+use crate::util::{Buffer, Fixed, LongDateTime};
 
 /// ## `head` &mdash; Font Header Table
 ///
@@ -34,7 +34,7 @@ pub struct Table_head {
 impl Font {
     pub fn parse_head(&mut self, buffer: &mut Buffer) {
         self.head = Some(Table_head {
-            _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
+            _version: buffer.get_version(),
             font_revision: buffer.get::<Fixed>(),
             checksum_adjustment: buffer.get::<u32>(),
             magic_number: buffer.get::<u32>(),

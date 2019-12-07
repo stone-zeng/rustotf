@@ -6,10 +6,6 @@ use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
 use flate2::read::ZlibDecoder;
 
-pub fn get_version_string(major: u16, minor: u16) -> String {
-    major.to_string() + "." + &minor.to_string()
-}
-
 pub struct Buffer {
     raw_buffer: Vec<u8>,
     pub offset: usize,
@@ -26,23 +22,17 @@ impl Buffer {
 
     /// Get a value as type `T` from the buffer.
     pub fn get<T: ReadBuffer>(&mut self) -> T {
-        // let _offset = self.offset as usize;
-        // self.offset += mem::size_of::<T>() as u32;
         ReadBuffer::read(self)
     }
 
+    /// Get a vector of type `T` values frome the buffer.
     pub fn get_vec<T: ReadBuffer>(&mut self, n: usize) -> Vec<T> {
-        // let mut _offset = self.offset as usize;
-        // let _size = mem::size_of::<T>();
-        // let mut v: Vec<T> = Vec::new();
-        // for _ in 0..n {
-        //     let elem = Read::read(&self._buffer, _offset);
-        //     _offset += _size;
-        //     v.push(elem);
-        // }
-        // self.offset = _offset as u32;
-        // v
         (0..n).map(|_| ReadBuffer::read(self)).collect()
+    }
+
+    /// Get a version string (`major.minor`) from the buffer.
+    pub fn get_version(&mut self) -> String {
+        self.get::<u16>().to_string() + "." + &self.get::<u16>().to_string()
     }
 
     /// Skip `n` * `size_of<T>` bytes for `offset`.

@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{get_version_string, Buffer};
+use crate::util::{Buffer};
 
 /// ## `hhea` &mdash; Horizontal Header Table
 ///
@@ -33,7 +33,7 @@ pub struct Table_hhea {
 impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer) {
         self.hhea = Some(Table_hhea {
-            _version: get_version_string(buffer.get::<u16>(), buffer.get::<u16>()),
+            _version: buffer.get_version(),
             ascender: buffer.get::<i16>(),
             descender: buffer.get::<i16>(),
             line_gap: buffer.get::<i16>(),

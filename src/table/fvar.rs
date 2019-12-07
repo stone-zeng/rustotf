@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{get_version_string, Buffer, Fixed, Tag, ReadBuffer};
+use crate::util::{Buffer, Fixed, Tag, ReadBuffer};
 
 /// ## `fvar` &mdash; Font Variations Table
 ///
@@ -26,7 +26,7 @@ pub struct Table_fvar {
 
 impl Font {
     pub fn parse_fvar(&mut self, buffer: &mut Buffer) {
-        let _version = get_version_string(buffer.get::<u16>(), buffer.get::<u16>());
+        let _version = buffer.get_version();
         let axes_array_offset = buffer.get::<u16>();
         buffer.skip::<u16>(1);
         let _axis_count = buffer.get::<u16>();

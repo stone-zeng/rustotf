@@ -1,12 +1,12 @@
 use crate::font::Font;
-use crate::util::{get_version_string, Buffer, Tag, ReadBuffer};
+use crate::util::{Buffer, Tag, ReadBuffer};
 
 /// ## `MVAR` &mdash; Metrics Variations Table
 ///
 /// Specification: <https://docs.microsoft.com/zh-cn/typography/opentype/spec/mvar>.
 ///
 /// The metrics variations table is used in variable fonts to provide
-/// variations for font-wide metric values found in the OS/2 table and other
+/// variations for font-wide metric values found in the `OS/2` table and other
 /// font tables. For a general overview of OpenType Font Variation and
 /// terminology related to variations, see the chapter,
 /// [OpenType Font Variations Overview](https://docs.microsoft.com/zh-cn/typography/opentype/spec/otvaroverview).
@@ -25,7 +25,7 @@ pub struct Table_MVAR {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_MVAR(&mut self, buffer: &mut Buffer) {
-        let _version = get_version_string(buffer.get::<u16>(), buffer.get::<u16>());
+        let _version = buffer.get_version();
         buffer.skip::<u16>(1);
         let _value_record_size = buffer.get::<u16>();
         let _value_record_count = buffer.get::<u16>();

@@ -13,7 +13,7 @@ mod table {
     // pub mod cvar;
     pub mod fvar;
     // pub mod gvar;
-    // pub mod hvar;
+    pub mod hvar;
     pub mod mvar;
     // pub mod stat;
     // pub mod vvar;
@@ -38,7 +38,7 @@ pub use table::{
     // cvar::Table_cvar,
     fvar::Table_fvar,
     // gvar::Table_gvar,
-    // hvar::Table_HVAR,
+    hvar::Table_HVAR,
     mvar::Table_MVAR,
     // stat::Table_STAT,
     // vvar::Table_VVAR,
