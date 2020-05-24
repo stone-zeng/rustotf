@@ -7,6 +7,12 @@ use crate::table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
+    // cvt_::Table_cvt_,
+    // fpgm::Table_fpgm,
+    // glyf::Table_glyf,
+    loca::Table_loca,
+    // prep::Table_prep,
+    // gasp::Table_gasp,
     avar::Table_avar,
     // cvar::Table_cvar,
     fvar::Table_fvar,
@@ -27,10 +33,10 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
 
     let mut font_container = FontContainer::new(fs::read(font_file_path)?);
     font_container.init();
-    // font_container.parse();
+    font_container.parse();
 
     // font_container.parse_table("fvar");
-    font_container.parse_table("HVAR");
+    // font_container.parse_table("loca");
 
     println!("{:#?}", font_container);
     Ok(())
@@ -109,19 +115,20 @@ impl FontContainer {
     pub fn parse(&mut self) {
         for font in &mut self.fonts {
             match font.format {
-                Format::SFNT => font.parse_sfnt(&mut self.buffer),
-                Format::WOFF => font.parse_woff(&mut self.buffer),
-                Format::WOFF2 => font.parse_woff2(&mut self.buffer),
+                Format::SFNT => font.sfnt_parse(&mut self.buffer),
+                Format::WOFF => font.woff_parse(&mut self.buffer),
+                Format::WOFF2 => font.woff2_parse(&mut self.buffer),
             }
         }
     }
 
+    // TODO: Some tables depend on other tables
     pub fn parse_table(&mut self, tag_str: &str) {
         for font in &mut self.fonts {
             match font.format {
-                Format::SFNT => font.parse_table_sfnt(tag_str, &mut self.buffer),
-                Format::WOFF => font.parse_table_woff(tag_str, &mut self.buffer),
-                Format::WOFF2 => font.parse_table_woff2(tag_str, &mut self.buffer),
+                Format::SFNT => font.sfnt_parse_table(tag_str, &mut self.buffer),
+                Format::WOFF => font.woff_parse_table(tag_str, &mut self.buffer),
+                Format::WOFF2 => font.woff2_parse_table(tag_str, &mut self.buffer),
             }
         }
     }
@@ -135,7 +142,7 @@ pub struct Font {
     table_records: HashMap<Tag, TableRecord>,
     // woff_table_records: HashMap<String, WoffTableRecord>,
 
-    // Required Tables
+    // Required tables
     pub head: Option<Table_head>, // Font header
     pub hhea: Option<Table_hhea>, // Horizontal header
     pub maxp: Option<Table_maxp>, // Maximum profile
@@ -145,7 +152,15 @@ pub struct Font {
     pub OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
     pub post: Option<Table_post>, // PostScript information
 
-    // Tables used for OpenType Font Variations
+    // Tables related to TrueType outlines
+    // pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
+    // pub fpgm: Option<Table_fpgm>, // Font program (optional table)
+    // pub glyf: Option<Table_glyf>, // Glyph data
+    pub loca: Option<Table_loca>, // Index to location
+    // pub prep: Option<Table_prep>, // CVT Program (optional table)
+    // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
+
+    // Tables used for OpenType font variations
     pub avar: Option<Table_avar>, // Axis variations
     // pub cvar: Option<Table_cvar>, // CVT variations (TrueType outlines only)
     pub fvar: Option<Table_fvar>, // Font variations
@@ -188,6 +203,12 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            // cvt_: None,
+            // fpgm: None,
+            // glyf: None,
+            loca: None,
+            // prep: None,
+            // gasp: None,
             avar: None,
             // cvar: None,
             fvar: None,
@@ -246,6 +267,12 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            // cvt_: None,
+            // fpgm: None,
+            // glyf: None,
+            loca: None,
+            // prep: None,
+            // gasp: None,
             avar: None,
             // cvar: None,
             fvar: None,
@@ -289,6 +316,12 @@ impl Font {
             name: None,
             OS_2: None,
             post: None,
+            // cvt_: None,
+            // fpgm: None,
+            // glyf: None,
+            loca: None,
+            // prep: None,
+            // gasp: None,
             avar: None,
             // cvar: None,
             fvar: None,
@@ -310,58 +343,56 @@ impl Font {
     }
 }
 
-macro_rules! _parse_sfnt {
-    ($self:ident, $buffer:ident, $tag:expr, $f:ident) => {
-        $buffer.offset = $self.get_table_offset($tag);
+macro_rules! _sfnt_parse {
+    // ($self:ident, $buffer:ident, $tag:expr, $f:ident) => {
+    //     $buffer.offset = $self.get_table_offset($tag);
+    //     $self.$f($buffer);
+    // };
+    ($self:ident, $tag:expr, $f:ident) => {
+        buffer.offset = $self.get_table_offset($tag);
         $self.$f($buffer);
     };
 }
 
-macro_rules! _parse_woff {
-    ($self:ident, $buffer:ident, $tag:expr, $f:ident) => {
-        $buffer.offset = $self.get_table_offset($tag);
-        let comp_length = $self.get_table_comp_len($tag);
-        $self.$f(&mut $buffer.decompress(comp_length));
-    };
-}
-
 impl Font {
-    fn parse_sfnt(&mut self, buffer: &mut Buffer) {
-        _parse_sfnt!(self, buffer, "hhea", parse_hhea);
-        _parse_sfnt!(self, buffer, "maxp", parse_maxp);
-        _parse_sfnt!(self, buffer, "hmtx", parse_hmtx);
-        _parse_sfnt!(self, buffer, "cmap", parse_cmap);
-        _parse_sfnt!(self, buffer, "name", parse_name);
-        _parse_sfnt!(self, buffer, "OS/2", parse_OS_2);
-        _parse_sfnt!(self, buffer, "post", parse_post);
+    fn sfnt_parse(&mut self, buffer: &mut Buffer) {
+        macro_rules! _sfnt_parse {
+            ($tag:expr, $f:ident) => {
+                buffer.offset = self.get_table_offset($tag);
+                self.$f(buffer);
+            };
+        }
 
-        _parse_sfnt!(self, buffer, "avar", parse_avar);
-        // _parse_sfnt!(self, buffer, "cvar", parse_cvar);
-        _parse_sfnt!(self, buffer, "fvar", parse_fvar);
-        // _parse_sfnt!(self, buffer, "gvar", parse_gvar);
-        _parse_sfnt!(self, buffer, "HVAR", parse_HVAR);
-        _parse_sfnt!(self, buffer, "MVAR", parse_MVAR);
-        // _parse_sfnt!(self, buffer, "STAT", parse_STAT);
-        // _parse_sfnt!(self, buffer, "VVAR", parse_VVAR);
+        _sfnt_parse!("head", parse_head);
+        _sfnt_parse!("hhea", parse_hhea);
+        _sfnt_parse!("maxp", parse_maxp);
+        _sfnt_parse!("hmtx", parse_hmtx);
+        _sfnt_parse!("cmap", parse_cmap);
+        _sfnt_parse!("name", parse_name);
+        _sfnt_parse!("OS/2", parse_OS_2);
+        _sfnt_parse!("post", parse_post);
+
+        let tag = Tag::new("loca");
+        println!("{:#?}", self.table_records.get(&tag));
+
+        // _sfnt_parse!("cvt ", parse_cvt_);
+        // _sfnt_parse!("fpgm", parse_fpgm);
+        // _sfnt_parse!("glyf", parse_glyf);
+        _sfnt_parse!("loca", parse_loca);
+        // _sfnt_parse!("prep", parse_prep);
+        // _sfnt_parse!("gasp", parse_gasp);
+
+        // _sfnt_parse!("avar", parse_avar);
+        // _sfnt_parse!("cvar", parse_cvar);
+        // _sfnt_parse!("fvar", parse_fvar);
+        // _sfnt_parse!("gvar", parse_gvar);
+        // _sfnt_parse!("HVAR", parse_HVAR);
+        // _sfnt_parse!("MVAR", parse_MVAR);
+        // _sfnt_parse!("STAT", parse_STAT);
+        // _sfnt_parse!("VVAR", parse_VVAR);
     }
 
-    fn parse_woff(&mut self, buffer: &mut Buffer) {
-        _parse_woff!(self, buffer, "hhea", parse_hhea);
-        _parse_woff!(self, buffer, "maxp", parse_maxp);
-        // FIXME: index out of range for slice
-        // _parse_woff!(self, buffer, "hmtx", parse_hmtx);
-        _parse_woff!(self, buffer, "cmap", parse_cmap);
-        _parse_woff!(self, buffer, "name", parse_name);
-        // _parse_woff!(self, buffer, "OS/2", parse_OS_2);
-        _parse_woff!(self, buffer, "post", parse_post);
-    }
-
-    #[allow(unused_variables)]
-    fn parse_woff2(&mut self, buffer: &mut Buffer) {
-        unimplemented!()
-    }
-
-    fn parse_table_sfnt(&mut self, tag_str: &str, buffer: &mut Buffer) {
+    fn sfnt_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
         let tag = Tag::new(tag_str);
         match self.table_records.get(&tag) {
             Some(record) => {
@@ -372,14 +403,37 @@ impl Font {
         }
     }
 
-    fn parse_table_woff(&mut self, tag_str: &str, buffer: &mut Buffer) {
+    fn woff_parse(&mut self, buffer: &mut Buffer) {
+        macro_rules! _woff_parse {
+            ($tag:expr, $f:ident) => {
+                buffer.offset = self.get_table_offset($tag);
+                let comp_length = self.get_table_comp_len($tag);
+                self.$f(&mut buffer.decompress(comp_length));
+            };
+        }
+        _woff_parse!("hhea", parse_hhea);
+        _woff_parse!("maxp", parse_maxp);
+        // FIXME: index out of range for slice
+        // _woff_parse!("hmtx", parse_hmtx);
+        _woff_parse!("cmap", parse_cmap);
+        _woff_parse!("name", parse_name);
+        // _woff_parse!("OS/2", parse_OS_2);
+        _woff_parse!("post", parse_post);
+    }
+
+    fn woff_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
         buffer.offset = self.get_table_offset(tag_str);
         let comp_length = self.get_table_comp_len(tag_str);
         self._parse_table(tag_str, &mut buffer.decompress(comp_length));
     }
 
     #[allow(unused_variables)]
-    fn parse_table_woff2(&mut self, tag_str: &str, buffer: &mut Buffer) {
+    fn woff2_parse(&mut self, buffer: &mut Buffer) {
+        unimplemented!()
+    }
+
+    #[allow(unused_variables)]
+    fn woff2_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
         unimplemented!()
     }
 
@@ -393,6 +447,13 @@ impl Font {
             "name" => self.parse_name(buffer),
             "OS/2" => self.parse_OS_2(buffer),
             "post" => self.parse_post(buffer),
+
+            // "cvt " => self.parse_cvt_(buffer),
+            // "fpgm" => self.parse_fpgm(buffer),
+            // "glyf" => self.parse_glyf(buffer),
+            "loca" => self.parse_loca(buffer),
+            // "prep" => self.parse_prep(buffer),
+            // "gasp" => self.parse_gasp(buffer),
 
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),
