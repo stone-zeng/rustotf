@@ -11,7 +11,7 @@ mod table {
     pub mod post;
     // pub mod cvt_;
     // pub mod fpgm;
-    // pub mod glyf;
+    pub mod glyf;
     pub mod loca;
     // pub mod prep;
     // pub mod gasp;
@@ -42,7 +42,7 @@ pub use table::{
     post::Table_post,
     // cvt_::Table_cvt_,
     // fpgm::Table_fpgm,
-    // glyf::Table_glyf,
+    glyf::Table_glyf,
     loca::Table_loca,
     // prep::Table_prep,
     // gasp::Table_gasp,

@@ -12,27 +12,23 @@ use crate::util::{Buffer};
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_loca {
-    pub short_offsets: Option<Vec<u16>>,
-    pub long_offsets: Option<Vec<u32>>,
+    pub offsets: Vec<usize>,
 }
 
 impl Font {
     pub fn parse_loca(&mut self, buffer: &mut Buffer) {
-        let mut table = Table_loca {
-            short_offsets: None,
-            long_offsets: None,
-        };
-
-        println!("{:?}", self.head);
-
-
         let index_to_loc_format = self.head.as_ref().unwrap().index_to_loc_format;
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
+        let mut offsets = Vec::new();
         match index_to_loc_format {
-            0 => table.short_offsets = Some(buffer.get_vec::<u16>(num_glyphs)),
-            1 => table.long_offsets = Some(buffer.get_vec::<u32>(num_glyphs)),
+            0 => for _ in 0..num_glyphs {
+                offsets.push(buffer.get::<u16>() as usize * 2)
+            },
+            1 => for _ in 0..num_glyphs {
+                offsets.push(buffer.get::<u32>() as usize)
+            },
             _ => (),
         }
-        self.loca = Some(table);
+        self.loca = Some(Table_loca { offsets });
     }
 }

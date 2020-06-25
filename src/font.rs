@@ -9,7 +9,7 @@ use crate::table::{
     post::Table_post,
     // cvt_::Table_cvt_,
     // fpgm::Table_fpgm,
-    // glyf::Table_glyf,
+    glyf::Table_glyf,
     loca::Table_loca,
     // prep::Table_prep,
     // gasp::Table_gasp,
@@ -38,7 +38,11 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // font_container.parse_table("fvar");
     // font_container.parse_table("loca");
 
-    println!("{:#?}", font_container);
+    for i in font_container.fonts {
+        // println!("{:#?}", i.table_records);
+        // println!("{:#?}", i.loca);
+        println!("{:#?}", i.glyf);
+    }
     Ok(())
 
     // TODO: check extension.
@@ -155,7 +159,7 @@ pub struct Font {
     // Tables related to TrueType outlines
     // pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
     // pub fpgm: Option<Table_fpgm>, // Font program (optional table)
-    // pub glyf: Option<Table_glyf>, // Glyph data
+    pub glyf: Option<Table_glyf>, // Glyph data
     pub loca: Option<Table_loca>, // Index to location
     // pub prep: Option<Table_prep>, // CVT Program (optional table)
     // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
@@ -205,7 +209,7 @@ impl Font {
             post: None,
             // cvt_: None,
             // fpgm: None,
-            // glyf: None,
+            glyf: None,
             loca: None,
             // prep: None,
             // gasp: None,
@@ -269,7 +273,7 @@ impl Font {
             post: None,
             // cvt_: None,
             // fpgm: None,
-            // glyf: None,
+            glyf: None,
             loca: None,
             // prep: None,
             // gasp: None,
@@ -318,7 +322,7 @@ impl Font {
             post: None,
             // cvt_: None,
             // fpgm: None,
-            // glyf: None,
+            glyf: None,
             loca: None,
             // prep: None,
             // gasp: None,
@@ -372,13 +376,10 @@ impl Font {
         _sfnt_parse!("OS/2", parse_OS_2);
         _sfnt_parse!("post", parse_post);
 
-        let tag = Tag::new("loca");
-        println!("{:#?}", self.table_records.get(&tag));
-
         // _sfnt_parse!("cvt ", parse_cvt_);
         // _sfnt_parse!("fpgm", parse_fpgm);
-        // _sfnt_parse!("glyf", parse_glyf);
         _sfnt_parse!("loca", parse_loca);
+        _sfnt_parse!("glyf", parse_glyf);  // Must be after `loca`
         // _sfnt_parse!("prep", parse_prep);
         // _sfnt_parse!("gasp", parse_gasp);
 
@@ -450,7 +451,7 @@ impl Font {
 
             // "cvt " => self.parse_cvt_(buffer),
             // "fpgm" => self.parse_fpgm(buffer),
-            // "glyf" => self.parse_glyf(buffer),
+            "glyf" => self.parse_glyf(buffer),
             "loca" => self.parse_loca(buffer),
             // "prep" => self.parse_prep(buffer),
             // "gasp" => self.parse_gasp(buffer),
