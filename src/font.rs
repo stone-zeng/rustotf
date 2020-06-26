@@ -7,11 +7,11 @@ use crate::table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
-    // cvt_::Table_cvt_,
-    // fpgm::Table_fpgm,
-    glyf::Table_glyf,
     loca::Table_loca,
-    // prep::Table_prep,
+    glyf::Table_glyf,
+    cvt_::Table_cvt_,
+    fpgm::Table_fpgm,
+    prep::Table_prep,
     // gasp::Table_gasp,
     avar::Table_avar,
     // cvar::Table_cvar,
@@ -42,6 +42,9 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
         println!("{:#?}", i.table_records);
         // println!("{:#?}", i.loca);
         // println!("{:#?}", i.glyf);
+        println!("{:#?}", i.cvt_);
+        println!("{:#?}", i.fpgm);
+        println!("{:#?}", i.prep);
     }
     Ok(())
 
@@ -156,11 +159,11 @@ pub struct Font {
     pub post: Option<Table_post>, // PostScript information
 
     // Tables related to TrueType outlines
-    // pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
-    // pub fpgm: Option<Table_fpgm>, // Font program (optional table)
-    pub glyf: Option<Table_glyf>, // Glyph data
     pub loca: Option<Table_loca>, // Index to location
-    // pub prep: Option<Table_prep>, // CVT Program (optional table)
+    pub glyf: Option<Table_glyf>, // Glyph data
+    pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
+    pub fpgm: Option<Table_fpgm>, // Font program (optional table)
+    pub prep: Option<Table_prep>, // CVT Program (optional table)
     // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
 
     // Tables used for OpenType font variations
@@ -282,9 +285,9 @@ impl Font {
 
         _sfnt_parse!("loca", parse_loca);
         _sfnt_parse!("glyf", parse_glyf);  // Must be after `loca`
-        // _sfnt_parse!("cvt ", parse_cvt_);
-        // _sfnt_parse!("fpgm", parse_fpgm);
-        // _sfnt_parse!("prep", parse_prep);
+        _sfnt_parse!("cvt ", parse_cvt_);
+        _sfnt_parse!("fpgm", parse_fpgm);
+        _sfnt_parse!("prep", parse_prep);
         // _sfnt_parse!("gasp", parse_gasp);
 
         // _sfnt_parse!("avar", parse_avar);
@@ -353,11 +356,11 @@ impl Font {
             "OS/2" => self.parse_OS_2(buffer),
             "post" => self.parse_post(buffer),
 
-            // "cvt " => self.parse_cvt_(buffer),
-            // "fpgm" => self.parse_fpgm(buffer),
-            "glyf" => self.parse_glyf(buffer),
             "loca" => self.parse_loca(buffer),
-            // "prep" => self.parse_prep(buffer),
+            "glyf" => self.parse_glyf(buffer),
+            "cvt " => self.parse_cvt_(buffer),
+            "fpgm" => self.parse_fpgm(buffer),
+            "prep" => self.parse_prep(buffer),
             // "gasp" => self.parse_gasp(buffer),
 
             "avar" => self.parse_avar(buffer),

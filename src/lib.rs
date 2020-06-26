@@ -9,11 +9,11 @@ mod table {
     pub mod name;
     pub mod os_2;
     pub mod post;
-    // pub mod cvt_;
-    // pub mod fpgm;
-    pub mod glyf;
     pub mod loca;
-    // pub mod prep;
+    pub mod glyf;
+    pub mod cvt_;
+    pub mod fpgm;
+    pub mod prep;
     // pub mod gasp;
     pub mod avar;
     // pub mod cvar;
@@ -40,11 +40,11 @@ pub use table::{
     name::Table_name,
     os_2::Table_OS_2,
     post::Table_post,
-    // cvt_::Table_cvt_,
-    // fpgm::Table_fpgm,
-    glyf::Table_glyf,
     loca::Table_loca,
-    // prep::Table_prep,
+    glyf::Table_glyf,
+    cvt_::Table_cvt_,
+    fpgm::Table_fpgm,
+    prep::Table_prep,
     // gasp::Table_gasp,
     avar::Table_avar,
     // cvar::Table_cvar,

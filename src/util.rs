@@ -99,8 +99,8 @@ pub trait ReadBuffer {
 /// - `uint32`
 /// - `int32`
 /// - `Fixed`
-/// - `FWord`
-/// - `UFWord`
+/// - `FWord` = `int16`
+/// - `UFWord` = `uint16`
 /// - `F2Dot14`
 /// - `LongDateTime`
 /// - `Tag`
