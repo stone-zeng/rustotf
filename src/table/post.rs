@@ -10,7 +10,7 @@ use crate::util::{Buffer, Fixed};
 /// dictionary entry and the PostScript names of all the glyphs.
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Table_post {
     _version: Fixed,
     pub italic_angle: Fixed,
@@ -42,10 +42,7 @@ impl Font {
             max_mem_type42: buffer.get::<u32>(),
             min_mem_type1: buffer.get::<u32>(),
             max_mem_type1: buffer.get::<u32>(),
-            num_glyphs: None,
-            glyph_name_index: None,
-            names: None,
-            offset: None,
+            ..Default::default()
         };
         if table._version == 0x0002_0000 {
             table.num_glyphs = Some(buffer.get::<u16>());

@@ -139,7 +139,7 @@ impl FontContainer {
 }
 
 #[allow(non_snake_case)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Font {
     format: Format,
     flavor: Flavor,
@@ -199,28 +199,7 @@ impl Font {
             format: Format::SFNT,
             flavor: Self::_get_flavor(signature),
             table_records,
-            head: None,
-            hhea: None,
-            maxp: None,
-            hmtx: None,
-            cmap: None,
-            name: None,
-            OS_2: None,
-            post: None,
-            // cvt_: None,
-            // fpgm: None,
-            glyf: None,
-            loca: None,
-            // prep: None,
-            // gasp: None,
-            avar: None,
-            // cvar: None,
-            fvar: None,
-            // gvar: None,
-            HVAR: None,
-            MVAR: None,
-            // STAT: None,
-            // VVAR: None,
+            ..Default::default()
         }
     }
 
@@ -263,28 +242,7 @@ impl Font {
             format: Format::WOFF,
             flavor: Self::_get_flavor(flavor),
             table_records,
-            head: None,
-            hhea: None,
-            maxp: None,
-            hmtx: None,
-            cmap: None,
-            name: None,
-            OS_2: None,
-            post: None,
-            // cvt_: None,
-            // fpgm: None,
-            glyf: None,
-            loca: None,
-            // prep: None,
-            // gasp: None,
-            avar: None,
-            // cvar: None,
-            fvar: None,
-            // gvar: None,
-            HVAR: None,
-            MVAR: None,
-            // STAT: None,
-            // VVAR: None,
+            ..Default::default()
         }
     }
 
@@ -312,28 +270,7 @@ impl Font {
             format: Format::WOFF2,
             flavor: Self::_get_flavor(flavor),
             table_records,
-            head: None,
-            hhea: None,
-            maxp: None,
-            hmtx: None,
-            cmap: None,
-            name: None,
-            OS_2: None,
-            post: None,
-            // cvt_: None,
-            // fpgm: None,
-            glyf: None,
-            loca: None,
-            // prep: None,
-            // gasp: None,
-            avar: None,
-            // cvar: None,
-            fvar: None,
-            // gvar: None,
-            HVAR: None,
-            MVAR: None,
-            // STAT: None,
-            // VVAR: None,
+            ..Default::default()
         }
     }
 
@@ -495,10 +432,18 @@ enum Format {
     WOFF2,
 }
 
+impl Default for Format {
+    fn default() -> Self { Self::SFNT }
+}
+
 #[derive(Debug)]
 enum Flavor {
     TTF,
     CFF,
+}
+
+impl Default for Flavor {
+    fn default() -> Self { Self::TTF }
 }
 
 #[derive(Debug)]

@@ -79,7 +79,7 @@ impl ReadBuffer for Encoding {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct CmapSubtable {
     _format: u16,
     _format_0_data: Option<CmapFormat0>,
@@ -97,15 +97,7 @@ impl ReadBuffer for CmapSubtable {
     fn read(buffer: &mut Buffer) -> Self {
         let mut subtable = CmapSubtable {
             _format: buffer.get::<u16>(),
-            _format_0_data: None,
-            _format_2_data: None,
-            _format_4_data: None,
-            _format_6_data: None,
-            _format_8_data: None,
-            _format_10_data: None,
-            _format_12_data: None,
-            _format_13_data: None,
-            _format_14_data: None,
+            ..Default::default()
         };
         match subtable._format {
             0 => subtable._format_0_data = Some(buffer.get::<CmapFormat0>()),

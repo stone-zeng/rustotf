@@ -18,7 +18,7 @@ use crate::util::{Buffer, Tag};
 /// TrueType fonts may have been built with a shortened version 0 `OS/2` table.
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Table_OS_2 {
     _version: u16,
     // Version 0
@@ -98,20 +98,7 @@ impl Font {
             fs_selection: buffer.get::<u16>(),
             us_first_char_index: buffer.get::<u16>(),
             us_last_char_index: buffer.get::<u16>(),
-            s_typo_ascender: None,
-            s_typo_descender: None,
-            s_typo_line_gap: None,
-            us_win_ascent: None,
-            us_win_descent: None,
-            ul_code_page_range1: None,
-            ul_code_page_range2: None,
-            sx_height: None,
-            s_cap_height: None,
-            us_default_char: None,
-            us_break_char: None,
-            us_max_context: None,
-            us_lower_optical_point_size: None,
-            us_upper_optical_point_size: None,
+            ..Default::default()
         };
         // Version 0 (Microsoft)
         if os_2_length >= 78 {

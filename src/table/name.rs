@@ -25,7 +25,7 @@ use encoding_rs;
 /// not included.
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Table_name {
     _format: u16,
     _count: u16,
@@ -41,15 +41,12 @@ impl Font {
         let _count = buffer.get::<u16>();
         let _string_offset = buffer.get::<u16>();
         let mut _names = buffer.get_vec::<Name>(_count as usize);
-        let _lang_tag_count: u16 = 0;
-        let _lang_tags: Vec<LangTag> = Vec::new();
         let mut table = Table_name {
             _format,
             _count,
             _string_offset,
             _names,
-            _lang_tag_count: None,
-            _lang_tags: None,
+            ..Default::default()
         };
         if _format == 1 {
             let _lang_tag_count = buffer.get::<u16>();
@@ -62,7 +59,7 @@ impl Font {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Name {
     pub platform_id: u16,
     pub encoding_id: u16,
@@ -114,12 +111,12 @@ impl ReadBuffer for Name {
             name_id: buffer.get::<u16>(),
             _length: buffer.get::<u16>(),
             _offset: buffer.get::<u16>(),
-            string: "".to_string(),
+            ..Default::default()
         }
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct LangTag {
     _length: u16,
     _offset: u16,
@@ -130,11 +127,10 @@ impl ReadBuffer for LangTag {
     fn read(buffer: &mut Buffer) -> Self {
         let _length = buffer.get::<u16>();
         let _offset = buffer.get::<u16>();
-        let tag = String::new();
         Self {
             _length,
             _offset,
-            tag,
+            ..Default::default()
         }
     }
 }

@@ -11,7 +11,7 @@ use crate::util::{Buffer, Fixed};
 /// where all data is required.
 
 #[allow(non_camel_case_types)]
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Table_maxp {
     _version: Fixed,
     pub num_glyphs: u16,
@@ -35,19 +35,7 @@ impl Font {
         let mut table = Table_maxp {
             _version: buffer.get::<Fixed>(),
             num_glyphs: buffer.get::<u16>(),
-            max_points: None,
-            max_contours: None,
-            max_composite_points: None,
-            max_composite_contours: None,
-            max_zones: None,
-            max_twilight_points: None,
-            max_storage: None,
-            max_function_defs: None,
-            max_instruction_defs: None,
-            max_stack_elements: None,
-            max_size_of_instructions: None,
-            max_component_elements: None,
-            max_component_depth: None,
+            ..Default::default()
         };
         // Version 1.0
         if table._version == 0x0001_0000 {

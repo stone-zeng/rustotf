@@ -32,7 +32,7 @@ impl Buffer {
 
     /// Get a version string (`major.minor`) from the buffer.
     pub fn get_version(&mut self) -> String {
-        self.get::<u16>().to_string() + "." + &self.get::<u16>().to_string()
+        format!("{}.{}", self.get::<u16>(), self.get::<u16>())
     }
 
     /// Skip `n` * `size_of<T>` bytes for `offset`.
@@ -169,6 +169,7 @@ impl ReadBuffer for u24 {
 }
 
 /// 32-bit signed fixed-point number (16.16).
+#[derive(Default)]
 pub struct Fixed {
     _num: i32,
 }
@@ -242,7 +243,7 @@ impl ReadBuffer for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Default, Eq, PartialEq, Hash)]
 pub struct Tag {
     _internal: [u8; 4],
 }

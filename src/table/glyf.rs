@@ -44,16 +44,12 @@ pub struct Glyph {
 impl ReadBuffer for Glyph {
     fn read(buffer: &mut Buffer) -> Self {
         let number_of_contours = buffer.get::<i16>();
-        let x_min = buffer.get::<i16>();
-        let y_min = buffer.get::<i16>();
-        let x_max = buffer.get::<i16>();
-        let y_max = buffer.get::<i16>();
 
         let mut glyph = Glyph {
-            x_min,
-            y_min,
-            x_max,
-            y_max,
+            x_min: buffer.get::<i16>(),
+            y_min: buffer.get::<i16>(),
+            x_max: buffer.get::<i16>(),
+            y_max: buffer.get::<i16>(),
             ..Default::default()
         };
 
