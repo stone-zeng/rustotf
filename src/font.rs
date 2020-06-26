@@ -12,7 +12,7 @@ use crate::table::{
     cvt_::Table_cvt_,
     fpgm::Table_fpgm,
     prep::Table_prep,
-    // gasp::Table_gasp,
+    gasp::Table_gasp,
     avar::Table_avar,
     // cvar::Table_cvar,
     fvar::Table_fvar,
@@ -42,9 +42,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
         println!("{:#?}", i.table_records);
         // println!("{:#?}", i.loca);
         // println!("{:#?}", i.glyf);
-        println!("{:#?}", i.cvt_);
-        println!("{:#?}", i.fpgm);
-        println!("{:#?}", i.prep);
+        println!("{:#?}", i.gasp);
     }
     Ok(())
 
@@ -164,7 +162,7 @@ pub struct Font {
     pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
     pub fpgm: Option<Table_fpgm>, // Font program (optional table)
     pub prep: Option<Table_prep>, // CVT Program (optional table)
-    // pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
+    pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
 
     // Tables used for OpenType font variations
     pub avar: Option<Table_avar>, // Axis variations
@@ -288,7 +286,7 @@ impl Font {
         _sfnt_parse!("cvt ", parse_cvt_);
         _sfnt_parse!("fpgm", parse_fpgm);
         _sfnt_parse!("prep", parse_prep);
-        // _sfnt_parse!("gasp", parse_gasp);
+        _sfnt_parse!("gasp", parse_gasp);
 
         // _sfnt_parse!("avar", parse_avar);
         // _sfnt_parse!("cvar", parse_cvar);
@@ -361,7 +359,7 @@ impl Font {
             "cvt " => self.parse_cvt_(buffer),
             "fpgm" => self.parse_fpgm(buffer),
             "prep" => self.parse_prep(buffer),
-            // "gasp" => self.parse_gasp(buffer),
+            "gasp" => self.parse_gasp(buffer),
 
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),

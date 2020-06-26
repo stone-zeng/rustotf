@@ -14,7 +14,7 @@ mod table {
     pub mod cvt_;
     pub mod fpgm;
     pub mod prep;
-    // pub mod gasp;
+    pub mod gasp;
     pub mod avar;
     // pub mod cvar;
     pub mod fvar;
@@ -45,7 +45,7 @@ pub use table::{
     cvt_::Table_cvt_,
     fpgm::Table_fpgm,
     prep::Table_prep,
-    // gasp::Table_gasp,
+    gasp::Table_gasp,
     avar::Table_avar,
     // cvar::Table_cvar,
     fvar::Table_fvar,

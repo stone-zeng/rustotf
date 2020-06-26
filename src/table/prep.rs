@@ -1,6 +1,6 @@
 use std::mem::size_of;
 use crate::font::Font;
-use crate::util::{Buffer};
+use crate::util::Buffer;
 
 /// ## `prep` &mdash; Control Value Program
 ///

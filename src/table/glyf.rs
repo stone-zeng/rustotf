@@ -203,7 +203,7 @@ impl Buffer {
     }
 
     fn get_coordinates(&mut self, flags: &Vec<u8>, flag1: u8, flag2: u8) -> Vec<i16> {
-        let flag3 = flag1 + flag2;
+        let flag3 = flag1 | flag2;
         flags.iter().map(|flag| match flag & flag3 {
                 0 => self.get::<i16>(),
                 n if n == flag1 => 0,

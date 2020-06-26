@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{Buffer};
+use crate::util::Buffer;
 
 /// ## `HVAR` &mdash; Horizontal Metrics Variations Table
 ///
