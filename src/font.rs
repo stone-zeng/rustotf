@@ -126,7 +126,7 @@ impl FontContainer {
         }
     }
 
-    // TODO: Some tables depend on other tables
+    // TODO: some tables depend on other tables
     pub fn parse_table(&mut self, tag_str: &str) {
         for font in &mut self.fonts {
             match font.format {

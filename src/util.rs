@@ -192,6 +192,7 @@ impl ReadBuffer for Fixed {
 }
 
 /// 16-bit signed fixed number with the low 14 bits of fraction (2.14).
+#[derive(Clone, Copy, Default)]
 pub struct F2Dot14 {
     _num: i16,
 }
