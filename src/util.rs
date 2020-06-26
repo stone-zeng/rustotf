@@ -54,10 +54,7 @@ impl Buffer {
     pub fn decompress(&self, comp_length: usize) -> Buffer {
         let comp_buffer = self.slice(0, comp_length);
         let mut orig_buffer: Vec<u8> = Vec::new();
-        if ZlibDecoder::new(comp_buffer)
-            .read_to_end(&mut orig_buffer)
-            .is_ok()
-        {
+        if ZlibDecoder::new(comp_buffer).read_to_end(&mut orig_buffer).is_ok() {
             Buffer::new(orig_buffer)
         } else {
             Buffer::new(comp_buffer.to_vec())

@@ -80,7 +80,7 @@ impl FontContainer {
             SIGNATURE_TTC => self.init_ttc(),
             SIGNATURE_WOFF => self.init_woff(),
             SIGNATURE_WOFF2 => self.init_woff2(),
-            _ => (),
+            _ => unreachable!(),
         }
     }
 
@@ -174,12 +174,6 @@ pub struct Font {
     // pub STAT: Option<Table_STAT>, // Style attributes
     // pub VVAR: Option<Table_VVAR>, // Vertical metrics variations
 }
-
-// impl fmt::Debug for Font {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         write!(f, "format: {:?}, flavor: {:?}", self.format, self.flavor)
-//     }
-// }
 
 impl Font {
     #[allow(unused_variables)]
@@ -278,17 +272,12 @@ impl Font {
         match flavor {
             SIGNATURE_OTF => Flavor::CFF,
             SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => Flavor::TTF,
-            // TODO: invalid signature.
-            _ => Flavor::CFF,
+            _ => unreachable!(),
         }
     }
 }
 
 macro_rules! _sfnt_parse {
-    // ($self:ident, $buffer:ident, $tag:expr, $f:ident) => {
-    //     $buffer.offset = $self.get_table_offset($tag);
-    //     $self.$f($buffer);
-    // };
     ($self:ident, $tag:expr, $f:ident) => {
         buffer.offset = $self.get_table_offset($tag);
         $self.$f($buffer);
@@ -401,7 +390,7 @@ impl Font {
             "MVAR" => self.parse_MVAR(buffer),
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),
-            _ => (),
+            _ => unreachable!(),
         };
     }
 

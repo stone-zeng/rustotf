@@ -109,7 +109,7 @@ impl ReadBuffer for CmapSubtable {
             12 => subtable._format_12_data = Some(buffer.get::<CmapFormat12>()),
             13 => subtable._format_13_data = Some(buffer.get::<CmapFormat13>()),
             14 => subtable._format_14_data = Some(buffer.get::<CmapFormat14>()),
-            _ => (),
+            _ => unreachable!(),
         }
         subtable
     }

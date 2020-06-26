@@ -27,7 +27,7 @@ impl Font {
             1 => for _ in 0..num_glyphs {
                 offsets.push(buffer.get::<u32>() as usize)
             },
-            _ => (),
+            _ => unreachable!(),
         }
         self.loca = Some(Table_loca { offsets });
     }
