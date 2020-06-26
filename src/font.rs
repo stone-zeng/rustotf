@@ -22,7 +22,7 @@ use crate::table::{
     // stat::Table_STAT,
     // vvar::Table_VVAR,
 };
-use crate::util::{Buffer, ReadBuffer, Tag};
+use crate::util::{Buffer, Tag};
 
 use std::collections::HashMap;
 use std::error::Error;
@@ -39,9 +39,9 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // font_container.parse_table("loca");
 
     for i in font_container.fonts {
-        // println!("{:#?}", i.table_records);
+        println!("{:#?}", i.table_records);
         // println!("{:#?}", i.loca);
-        println!("{:#?}", i.glyf);
+        // println!("{:#?}", i.glyf);
     }
     Ok(())
 
@@ -144,7 +144,6 @@ pub struct Font {
     format: Format,
     flavor: Flavor,
     table_records: HashMap<Tag, TableRecord>,
-    // woff_table_records: HashMap<String, WoffTableRecord>,
 
     // Required tables
     pub head: Option<Table_head>, // Font header
@@ -183,16 +182,17 @@ impl Font {
         let search_range = buffer.get::<u16>();
         let entry_selector = buffer.get::<u16>();
         let range_shift = buffer.get::<u16>();
-
-        // Table Record entries
-        let mut table_records = HashMap::new();
-        for _ in 0..num_tables {
-            table_records.insert(buffer.get::<Tag>(), buffer.get::<TableRecord>());
-        }
         Self {
             format: Format::SFNT,
-            flavor: Self::_get_flavor(signature),
-            table_records,
+            flavor: Self::get_flavor(signature),
+            table_records: (0..num_tables)
+                .map(|_| (buffer.get::<Tag>(), TableRecord {
+                    checksum: buffer.get::<u32>(),
+                    offset: buffer.get::<u32>(),
+                    length: buffer.get::<u32>(),
+                    ..Default::default()
+                }))
+                .collect(),
             ..Default::default()
         }
     }
@@ -212,34 +212,23 @@ impl Font {
         let meta_orig_length = buffer.get::<u32>();
         let priv_offset = buffer.get::<u32>();
         let priv_length = buffer.get::<u32>();
-
-        // Table Record entries
-        let mut table_records = HashMap::new();
-        for _ in 0..num_tables {
-            let tag = buffer.get::<Tag>();
-            let offset = buffer.get::<u32>();
-            let comp_length = buffer.get::<u32>();
-            let orig_length = buffer.get::<u32>();
-            let orig_checksum = buffer.get::<u32>();
-            table_records.insert(
-                tag,
-                TableRecord {
-                    checksum: orig_checksum,
-                    offset,
-                    length: orig_length,
-                    woff_comp_length: comp_length,
-                },
-            );
-        }
-
         Self {
             format: Format::WOFF,
-            flavor: Self::_get_flavor(flavor),
-            table_records,
+            flavor: Self::get_flavor(flavor),
+            table_records: (0..num_tables)
+                .map(|_| (buffer.get::<Tag>(), TableRecord {
+                    // The order is different from SFNT format
+                    offset: buffer.get::<u32>(),
+                    woff_comp_length: buffer.get::<u32>(),
+                    length: buffer.get::<u32>(),
+                    checksum: buffer.get::<u32>(),
+                }))
+                .collect(),
             ..Default::default()
         }
     }
 
+    // TODO: WOFF2
     #[allow(unused_variables)]
     fn load_woff2(buffer: &mut Buffer) -> Self {
         let signature = buffer.get::<u32>();
@@ -256,32 +245,21 @@ impl Font {
         let meta_orig_length = buffer.get::<u32>();
         let priv_offset = buffer.get::<u32>();
         let priv_length = buffer.get::<u32>();
-
-        // TODO: Table Record entries
-        let table_records = HashMap::new();
-
         Self {
             format: Format::WOFF2,
-            flavor: Self::_get_flavor(flavor),
-            table_records,
+            flavor: Self::get_flavor(flavor),
             ..Default::default()
         }
     }
 
-    fn _get_flavor(flavor: u32) -> Flavor {
+    fn get_flavor(flavor: u32) -> Flavor {
         match flavor {
+            // Signature::OTF => Flavor::CFF,
             SIGNATURE_OTF => Flavor::CFF,
             SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => Flavor::TTF,
             _ => unreachable!(),
         }
     }
-}
-
-macro_rules! _sfnt_parse {
-    ($self:ident, $tag:expr, $f:ident) => {
-        buffer.offset = $self.get_table_offset($tag);
-        $self.$f($buffer);
-    };
 }
 
 impl Font {
@@ -302,10 +280,10 @@ impl Font {
         _sfnt_parse!("OS/2", parse_OS_2);
         _sfnt_parse!("post", parse_post);
 
-        // _sfnt_parse!("cvt ", parse_cvt_);
-        // _sfnt_parse!("fpgm", parse_fpgm);
         _sfnt_parse!("loca", parse_loca);
         _sfnt_parse!("glyf", parse_glyf);  // Must be after `loca`
+        // _sfnt_parse!("cvt ", parse_cvt_);
+        // _sfnt_parse!("fpgm", parse_fpgm);
         // _sfnt_parse!("prep", parse_prep);
         // _sfnt_parse!("gasp", parse_gasp);
 
@@ -435,23 +413,12 @@ impl Default for Flavor {
     fn default() -> Self { Self::TTF }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct TableRecord {
     checksum: u32,
     offset: u32,
     length: u32,
     woff_comp_length: u32,
-}
-
-impl ReadBuffer for TableRecord {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            checksum: buffer.get::<u32>(),
-            offset: buffer.get::<u32>(),
-            length: buffer.get::<u32>(),
-            woff_comp_length: 0,
-        }
-    }
 }
 
 /// For OpenType fonts containing CFF data (version 1 or 2), which is `OTTO`.
