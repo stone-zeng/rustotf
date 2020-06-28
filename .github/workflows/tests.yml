@@ -11,7 +11,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Get fonts
-      run: ./tests/get-fonts.sh
+      run: |
+        mkdir ./tests/fonts/
+        ./tests/get-fonts.sh
     - name: Build
       run: cargo build --verbose
     - name: Run tests
