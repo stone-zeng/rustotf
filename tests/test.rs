@@ -1,7 +1,7 @@
 use rustotf::FontContainer;
 use std::fs;
 
-const FONTS_PATH : &str = "./tests/fonts/";
+const FONTS_PATH: &str = "./tests/fonts/";
 
 const TTF_FONTS: [&str; 3] = [
     "NotoSans-SemiCondensed.ttf",

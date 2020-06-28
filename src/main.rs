@@ -8,7 +8,7 @@ fn main() {
             Err(e) => {
                 eprintln!("Application error: {}", e);
                 process::exit(1);
-            },
+            }
             _ => (),
         }
     }
