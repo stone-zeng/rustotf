@@ -272,13 +272,13 @@ impl Font {
 
 impl Font {
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
-        println!("{:#?}", self.table_records);
         for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
+            buffer.offset = self.get_table_offset(tag_str);
             self._parse_table(&tag_str, buffer);
         }
-
         for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
             if self.table_records.contains_key(&String::from(*tag_str)) {
+                buffer.offset = self.get_table_offset(tag_str);
                 self._parse_table(&tag_str, buffer);
             }
         }

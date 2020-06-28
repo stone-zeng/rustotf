@@ -24,7 +24,7 @@ impl Font {
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         self.hmtx = Some(Table_hmtx {
             hor_metrics: buffer.get_vec::<LongHorMetric>(num_hor_metrics),
-            left_side_bearings: buffer.get_vec::<i16>(num_glyphs),
+            left_side_bearings: buffer.get_vec::<i16>(num_glyphs - num_hor_metrics),
         });
     }
 }
