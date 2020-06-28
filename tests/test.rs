@@ -9,7 +9,24 @@ const TTF_FONTS: [&str; 3] = [
     "WorkSans-Regular.ttf",
 ];
 
-fn check_font(font_file_path: &str) {
+const OTF_FONTS: [&str; 3] = [
+    "SourceHanSansSC-Regular.otf",
+    "SourceSansPro-Black.otf",
+    "XITSMath-Regular.otf",
+];
+
+const TTC_FONTS: [&str; 3] = [
+    "SourceHanSans-Heavy.ttc",
+    "SourceHanSerif-Regular.ttc",
+    "SourceHanNotoCJK.ttc",
+];
+
+const WOFF_FONTS: [&str; 2] = [
+    "SourceSansPro-ExtraLight.ttf.woff",
+    "SourceSerifPro-Bold.otf.woff",
+];
+
+fn check_font(font_file_path: &str, flag: &str) {
     println!("Checking font: {}", font_file_path);
 
     let mut font_container = FontContainer::new(fs::read(font_file_path).unwrap());
@@ -20,7 +37,7 @@ fn check_font(font_file_path: &str) {
         font_container.parse_table(table);
     }
 
-    for font in font_container.fonts {
+    for font in &font_container.fonts {
         assert!(font.head.is_some());
         assert!(font.hhea.is_some());
         assert!(font.maxp.is_some());
@@ -30,12 +47,49 @@ fn check_font(font_file_path: &str) {
         assert!(font.OS_2.is_some());
         assert!(font.post.is_some());
     }
+
+    match flag {
+        "ttf" => {
+            for table in &["loca", "glyf"] {
+                font_container.parse_table(table);
+            }
+            for font in &font_container.fonts {
+                assert!(font.loca.is_some());
+                assert!(font.glyf.is_some());
+            }
+        }
+        _ => unreachable!()
+    }
 }
 
 #[test]
 fn check_ttf() {
     for i in &TTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name);
+        check_font(&font_file_name, "ttf");
+    }
+}
+
+#[test]
+fn check_otf() {
+    for i in &OTF_FONTS {
+        let font_file_name = [FONTS_PATH, i].join("");
+        check_font(&font_file_name, "");
+    }
+}
+
+#[test]
+fn check_ttc() {
+    for i in &TTC_FONTS {
+        let font_file_name = [FONTS_PATH, i].join("");
+        check_font(&font_file_name, "");
+    }
+}
+
+#[test]
+fn check_woff() {
+    for i in &WOFF_FONTS {
+        let font_file_name = [FONTS_PATH, i].join("");
+        check_font(&font_file_name, "");
     }
 }
