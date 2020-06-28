@@ -1,28 +1,30 @@
 mod font;
 mod util;
 mod table {
-    pub mod cmap;
-    pub mod head;
-    pub mod hhea;
-    pub mod hmtx;
-    pub mod maxp;
-    pub mod name;
-    pub mod os_2;
-    pub mod post;
-    pub mod loca;
-    pub mod glyf;
-    pub mod cvt_;
-    pub mod fpgm;
-    pub mod prep;
-    pub mod gasp;
-    pub mod avar;
-    // pub mod cvar;
-    pub mod fvar;
-    // pub mod gvar;
-    pub mod hvar;
-    pub mod mvar;
-    // pub mod stat;
-    // pub mod vvar;
+    pub mod required {
+        pub mod head;
+        pub mod hhea;
+        pub mod maxp;
+        pub mod hmtx;
+        pub mod cmap;
+        pub mod name;
+        pub mod os_2;
+        pub mod post;
+    }
+    pub mod ttf {
+        pub mod loca;
+        pub mod glyf;
+        pub mod cvt_;
+        pub mod fpgm;
+        pub mod prep;
+        pub mod gasp;
+    }
+    pub mod otvar {
+        pub mod avar;
+        pub mod fvar;
+        pub mod hvar;
+        pub mod mvar;
+    }
 }
 
 pub use font::{
@@ -32,28 +34,30 @@ pub use font::{
 };
 
 pub use table::{
-    cmap::Table_cmap,
-    head::Table_head,
-    hhea::Table_hhea,
-    hmtx::Table_hmtx,
-    maxp::Table_maxp,
-    name::Table_name,
-    os_2::Table_OS_2,
-    post::Table_post,
-    loca::Table_loca,
-    glyf::Table_glyf,
-    cvt_::Table_cvt_,
-    fpgm::Table_fpgm,
-    prep::Table_prep,
-    gasp::Table_gasp,
-    avar::Table_avar,
-    // cvar::Table_cvar,
-    fvar::Table_fvar,
-    // gvar::Table_gvar,
-    hvar::Table_HVAR,
-    mvar::Table_MVAR,
-    // stat::Table_STAT,
-    // vvar::Table_VVAR,
+    required::{
+        head::Table_head,
+        hhea::Table_hhea,
+        maxp::Table_maxp,
+        hmtx::Table_hmtx,
+        cmap::Table_cmap,
+        name::Table_name,
+        os_2::Table_OS_2,
+        post::Table_post,
+    },
+    ttf::{
+        loca::Table_loca,
+        glyf::Table_glyf,
+        cvt_::Table_cvt_,
+        fpgm::Table_fpgm,
+        prep::Table_prep,
+        gasp::Table_gasp,
+    },
+    otvar::{
+        avar::Table_avar,
+        fvar::Table_fvar,
+        hvar::Table_HVAR,
+        mvar::Table_MVAR,
+    }
 };
 
 // pub fn parse_args(args: &[String]) -> Result<&str, &str> {

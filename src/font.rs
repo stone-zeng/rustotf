@@ -1,26 +1,28 @@
 use crate::table::{
-    cmap::Table_cmap,
-    head::Table_head,
-    hhea::Table_hhea,
-    hmtx::Table_hmtx,
-    maxp::Table_maxp,
-    name::Table_name,
-    os_2::Table_OS_2,
-    post::Table_post,
-    loca::Table_loca,
-    glyf::Table_glyf,
-    cvt_::Table_cvt_,
-    fpgm::Table_fpgm,
-    prep::Table_prep,
-    gasp::Table_gasp,
-    avar::Table_avar,
-    // cvar::Table_cvar,
-    fvar::Table_fvar,
-    // gvar::Table_gvar,
-    hvar::Table_HVAR,
-    mvar::Table_MVAR,
-    // stat::Table_STAT,
-    // vvar::Table_VVAR,
+    required::{
+        head::Table_head,
+        hhea::Table_hhea,
+        maxp::Table_maxp,
+        hmtx::Table_hmtx,
+        cmap::Table_cmap,
+        name::Table_name,
+        os_2::Table_OS_2,
+        post::Table_post,
+    },
+    ttf::{
+        loca::Table_loca,
+        glyf::Table_glyf,
+        cvt_::Table_cvt_,
+        fpgm::Table_fpgm,
+        prep::Table_prep,
+        gasp::Table_gasp,
+    },
+    otvar::{
+        avar::Table_avar,
+        fvar::Table_fvar,
+        hvar::Table_HVAR,
+        mvar::Table_MVAR,
+    }
 };
 use crate::util::{Buffer, Tag};
 
@@ -147,32 +149,57 @@ pub struct Font {
     table_records: HashMap<Tag, TableRecord>,
 
     // Required tables
-    pub head: Option<Table_head>, // Font header
-    pub hhea: Option<Table_hhea>, // Horizontal header
-    pub maxp: Option<Table_maxp>, // Maximum profile
-    pub hmtx: Option<Table_hmtx>, // Horizontal metrics
-    pub cmap: Option<Table_cmap>, // Character to glyph mapping
-    pub name: Option<Table_name>, // Naming table
-    pub OS_2: Option<Table_OS_2>, // OS/2 and Windows specific metrics
-    pub post: Option<Table_post>, // PostScript information
+
+    /// Font header.
+    pub head: Option<Table_head>,
+    /// Horizontal header.
+    pub hhea: Option<Table_hhea>,
+    /// Maximum profile.
+    pub maxp: Option<Table_maxp>,
+    /// Horizontal metrics.
+    pub hmtx: Option<Table_hmtx>,
+    /// Character to glyph mapping.
+    pub cmap: Option<Table_cmap>,
+    /// Naming table.
+    pub name: Option<Table_name>,
+    /// OS/2 and Windows specific metrics.
+    pub OS_2: Option<Table_OS_2>,
+    /// PostScript information.
+    pub post: Option<Table_post>,
 
     // Tables related to TrueType outlines
-    pub loca: Option<Table_loca>, // Index to location
-    pub glyf: Option<Table_glyf>, // Glyph data
-    pub cvt_: Option<Table_cvt_>, // Control Value Table (optional table)
-    pub fpgm: Option<Table_fpgm>, // Font program (optional table)
-    pub prep: Option<Table_prep>, // CVT Program (optional table)
-    pub gasp: Option<Table_gasp>, // Grid-fitting/Scan-conversion (optional table)
+
+    /// Index to location.
+    pub loca: Option<Table_loca>,
+    /// Glyph data.
+    pub glyf: Option<Table_glyf>,
+    /// Control Value Table (optional table).
+    pub cvt_: Option<Table_cvt_>,
+    /// Font program (optional table).
+    pub fpgm: Option<Table_fpgm>,
+    /// CVT Program (optional table).
+    pub prep: Option<Table_prep>,
+    /// Grid-fitting/Scan-conversion (optional table).
+    pub gasp: Option<Table_gasp>,
 
     // Tables used for OpenType font variations
-    pub avar: Option<Table_avar>, // Axis variations
-    // pub cvar: Option<Table_cvar>, // CVT variations (TrueType outlines only)
-    pub fvar: Option<Table_fvar>, // Font variations
-    // pub gvar: Option<Table_gvar>, // Glyph variations (TrueType outlines only)
-    pub HVAR: Option<Table_HVAR>, // Horizontal metrics variations
-    pub MVAR: Option<Table_MVAR>, // Metrics variations
-    // pub STAT: Option<Table_STAT>, // Style attributes
-    // pub VVAR: Option<Table_VVAR>, // Vertical metrics variations
+    
+    /// Axis variations.
+    pub avar: Option<Table_avar>,
+    // /// CVT variations (TrueType outlines only)
+    // pub cvar: Option<Table_cvar>,
+    /// Font variations.
+    pub fvar: Option<Table_fvar>,
+    // /// Glyph variations (TrueType outlines only)
+    // pub gvar: Option<Table_gvar>,
+    /// Horizontal metrics variations.
+    pub HVAR: Option<Table_HVAR>,
+    /// Metrics variations.
+    pub MVAR: Option<Table_MVAR>,
+    // /// Style attributes
+    // pub STAT: Option<Table_STAT>,
+    // /// Vertical metrics variations
+    // pub VVAR: Option<Table_VVAR>,
 }
 
 impl Font {
