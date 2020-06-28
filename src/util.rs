@@ -257,6 +257,10 @@ impl Tag {
             ]
         }
     }
+
+    pub fn as_str(&self) -> String {
+        self._internal.iter().map(|i| *i as char).collect()
+    }
 }
 
 impl ReadBuffer for Tag {
@@ -274,13 +278,6 @@ impl ReadBuffer for Tag {
 
 impl fmt::Debug for Tag {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}{}{}{}",
-            self._internal[0] as char,
-            self._internal[1] as char,
-            self._internal[2] as char,
-            self._internal[3] as char,
-        )
+        write!(f, "{}", self._internal.iter().map(|i| *i as char).collect::<String>())
     }
 }

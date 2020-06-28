@@ -31,32 +31,11 @@ use std::error::Error;
 use std::fs;
 
 pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
-    println!("{:?}", font_file_path);
-
+    // TODO: check extension.
     let mut font_container = FontContainer::new(fs::read(font_file_path)?);
     font_container.init();
     font_container.parse();
-
-    // font_container.parse_table("fvar");
-    // font_container.parse_table("loca");
-
-    for i in font_container.fonts {
-        println!("{:#?}", i.table_records);
-        // println!("{:#?}", i.loca);
-        // println!("{:#?}", i.glyf);
-        println!("{:#?}", i.gasp);
-    }
     Ok(())
-
-    // TODO: check extension.
-    // let font_file_path = Path::new(font_file_path);
-    // let ext = font_file_path.extension().unwrap().to_str().unwrap().to_lowercase();
-    // let ext = ext.as_str();
-    // match ext {
-    //     "otf" | "ttf" => fonts.push(Font::load(raw_buffer)),
-    //     "ttc" | "otc" => fonts = FontCollection::load(raw_buffer).fonts,
-    //     _ => println!("Not valid extension: {}", ext),
-    // };
 }
 
 #[derive(Debug)]
@@ -78,21 +57,21 @@ impl FontContainer {
         self.buffer.offset = 0;
         match signature {
             SIGNATURE_OTF | SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => {
-                self.init_otf()
+                self.otf_init()
             }
-            SIGNATURE_TTC => self.init_ttc(),
-            SIGNATURE_WOFF => self.init_woff(),
-            SIGNATURE_WOFF2 => self.init_woff2(),
+            SIGNATURE_TTC => self.ttc_init(),
+            SIGNATURE_WOFF => self.woff_init(),
+            SIGNATURE_WOFF2 => self.woff2_init(),
             _ => unreachable!(),
         }
     }
 
-    fn init_otf(&mut self) {
+    fn otf_init(&mut self) {
         self.fonts.push(Font::load_sfnt(&mut self.buffer));
     }
 
     #[allow(unused_variables)]
-    fn init_ttc(&mut self) {
+    fn ttc_init(&mut self) {
         let ttc_tag = self.buffer.get::<u32>();
         let major_version = self.buffer.get::<u16>();
         let minor_version = self.buffer.get::<u16>();
@@ -111,11 +90,11 @@ impl FontContainer {
         }
     }
 
-    fn init_woff(&mut self) {
+    fn woff_init(&mut self) {
         self.fonts.push(Font::load_woff(&mut self.buffer));
     }
 
-    fn init_woff2(&mut self) {
+    fn woff2_init(&mut self) {
         self.fonts.push(Font::load_woff2(&mut self.buffer));
     }
 
@@ -146,7 +125,7 @@ impl FontContainer {
 pub struct Font {
     format: Format,
     flavor: Flavor,
-    table_records: HashMap<Tag, TableRecord>,
+    table_records: HashMap<String, TableRecord>,
 
     // Required tables
 
@@ -214,7 +193,7 @@ impl Font {
             format: Format::SFNT,
             flavor: Self::get_flavor(signature),
             table_records: (0..num_tables)
-                .map(|_| (buffer.get::<Tag>(), TableRecord {
+                .map(|_| (buffer.get::<Tag>().as_str(), TableRecord {
                     checksum: buffer.get::<u32>(),
                     offset: buffer.get::<u32>(),
                     length: buffer.get::<u32>(),
@@ -244,7 +223,7 @@ impl Font {
             format: Format::WOFF,
             flavor: Self::get_flavor(flavor),
             table_records: (0..num_tables)
-                .map(|_| (buffer.get::<Tag>(), TableRecord {
+                .map(|_| (buffer.get::<Tag>().as_str(), TableRecord {
                     // The order is different from SFNT format
                     offset: buffer.get::<u32>(),
                     woff_comp_length: buffer.get::<u32>(),
@@ -290,49 +269,25 @@ impl Font {
     }
 }
 
+
 impl Font {
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
-        macro_rules! _sfnt_parse {
-            ($tag:expr, $f:ident) => {
-                buffer.offset = self.get_table_offset($tag);
-                self.$f(buffer);
-            };
+        println!("{:#?}", self.table_records);
+        for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
+            self._parse_table(&tag_str, buffer);
         }
 
-        _sfnt_parse!("head", parse_head);
-        _sfnt_parse!("hhea", parse_hhea);
-        _sfnt_parse!("maxp", parse_maxp);
-        _sfnt_parse!("hmtx", parse_hmtx);
-        _sfnt_parse!("cmap", parse_cmap);
-        _sfnt_parse!("name", parse_name);
-        _sfnt_parse!("OS/2", parse_OS_2);
-        _sfnt_parse!("post", parse_post);
-
-        _sfnt_parse!("loca", parse_loca);
-        _sfnt_parse!("glyf", parse_glyf);  // Must be after `loca`
-        _sfnt_parse!("cvt ", parse_cvt_);
-        _sfnt_parse!("fpgm", parse_fpgm);
-        _sfnt_parse!("prep", parse_prep);
-        _sfnt_parse!("gasp", parse_gasp);
-
-        // _sfnt_parse!("avar", parse_avar);
-        // _sfnt_parse!("cvar", parse_cvar);
-        // _sfnt_parse!("fvar", parse_fvar);
-        // _sfnt_parse!("gvar", parse_gvar);
-        // _sfnt_parse!("HVAR", parse_HVAR);
-        // _sfnt_parse!("MVAR", parse_MVAR);
-        // _sfnt_parse!("STAT", parse_STAT);
-        // _sfnt_parse!("VVAR", parse_VVAR);
+        for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
+            if self.table_records.contains_key(&String::from(*tag_str)) {
+                self._parse_table(&tag_str, buffer);
+            }
+        }
     }
 
     fn sfnt_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
-        let tag = Tag::new(tag_str);
-        match self.table_records.get(&tag) {
-            Some(record) => {
-                buffer.offset = record.offset as usize;
-                self._parse_table(tag_str, buffer);
-            },
-            None => (),
+        if let Some(record) = self.table_records.get(tag_str) {
+            buffer.offset = record.offset as usize;
+            self._parse_table(tag_str, buffer);
         }
     }
 
@@ -396,15 +351,14 @@ impl Font {
             "MVAR" => self.parse_MVAR(buffer),
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),
-            _ => unreachable!(),
+            _ => eprintln!("Table `{}` is not supported", tag_str),
         };
     }
 
     // TODO: consider Option<>
 
     fn _get_table_record(&self, tag_str: &str) -> &TableRecord {
-        let tag = Tag::new(tag_str);
-        self.table_records.get(&tag).unwrap()
+        self.table_records.get(tag_str).unwrap()
     }
 
     pub fn get_table_len(&self, tag_str: &str) -> usize {
