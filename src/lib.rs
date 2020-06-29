@@ -19,6 +19,11 @@ mod table {
         pub mod prep;
         pub mod gasp;
     }
+    pub mod cff {
+        pub mod cff_;
+        // pub mod cff2;
+        // pub mod vorg;
+    }
     pub mod otvar {
         pub mod avar;
         pub mod fvar;
@@ -51,6 +56,11 @@ pub use table::{
         fpgm::Table_fpgm,
         prep::Table_prep,
         gasp::Table_gasp,
+    },
+    cff::{
+        cff_::Table_CFF_,
+        // cff2::Table_CFF2,
+        // vorg::Table_VORG,
     },
     otvar::{
         avar::Table_avar,

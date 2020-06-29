@@ -31,8 +31,8 @@ impl Buffer {
     }
 
     /// Get a version string (`major.minor`) from the buffer.
-    pub fn get_version(&mut self) -> String {
-        format!("{}.{}", self.get::<u16>(), self.get::<u16>())
+    pub fn get_version<T: ReadBuffer + fmt::Display>(&mut self) -> String {
+        format!("{}.{}", self.get::<T>(), self.get::<T>())
     }
 
     /// Skip `n` * `size_of<T>` bytes for `offset`.

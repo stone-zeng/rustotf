@@ -17,6 +17,11 @@ use crate::table::{
         prep::Table_prep,
         gasp::Table_gasp,
     },
+    cff::{
+        cff_::Table_CFF_,
+        // cff2::Table_CFF2,
+        // vorg::Table_VORG,
+    },
     otvar::{
         avar::Table_avar,
         fvar::Table_fvar,
@@ -34,10 +39,12 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: check extension.
     let mut font_container = FontContainer::new(fs::read(font_file_path)?);
     font_container.init();
+    font_container.parse();
+    // TODO: for debug
     // for i in &font_container.fonts {
     //     println!("{:#?}", i.table_records);
+    //     println!("{:#?}", i.CFF_);
     // }
-    font_container.parse();
     Ok(())
 }
 
@@ -166,6 +173,13 @@ pub struct Font {
     pub gasp: Option<Table_gasp>,
 
     // Tables used for OpenType font variations
+
+    /// Compact Font Format 1.0
+    pub CFF_: Option<Table_CFF_>,
+    /// Compact Font Format 2.0
+    // pub CFF2: Option<Table_CFF2>,
+    // /// Vertical Origin (optional table)
+    // pub VORG: Option<Table_VORG>,
     
     /// Axis variations.
     pub avar: Option<Table_avar>,
@@ -280,7 +294,10 @@ impl Font {
             let tag = &Tag::from(tag_str);
             self.sfnt_parse_table(tag, buffer);
         }
-        for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
+        for tag_str in &[
+            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
+            "CFF ", "CFF2",
+        ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
                 self.sfnt_parse_table(tag, buffer);
@@ -298,7 +315,10 @@ impl Font {
             let tag = &Tag::from(tag_str);
             self.woff_parse_table(tag, buffer);
         }
-        for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
+        for tag_str in &[
+            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
+            "CFF ", "CFF2",
+        ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
                 self.woff_parse_table(tag, buffer);
@@ -339,6 +359,10 @@ impl Font {
             "fpgm" => self.parse_fpgm(buffer),
             "prep" => self.parse_prep(buffer),
             "gasp" => self.parse_gasp(buffer),
+
+            "CFF " => self.parse_CFF_(buffer),
+            // "CFF2" => self.parse_CFF2(buffer),
+            // "VORG" => self.parse_VORG(buffer),
 
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),

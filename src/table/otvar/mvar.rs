@@ -25,7 +25,7 @@ pub struct Table_MVAR {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_MVAR(&mut self, buffer: &mut Buffer) {
-        let _version = buffer.get_version();
+        let _version = buffer.get_version::<u16>();
         buffer.skip::<u16>(1);
         let _value_record_size = buffer.get::<u16>();
         let _value_record_count = buffer.get::<u16>();

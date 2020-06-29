@@ -33,7 +33,7 @@ pub struct Table_hhea {
 impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer) {
         self.hhea = Some(Table_hhea {
-            _version: buffer.get_version(),
+            _version: buffer.get_version::<u16>(),
             ascender: buffer.get::<i16>(),
             descender: buffer.get::<i16>(),
             line_gap: buffer.get::<i16>(),

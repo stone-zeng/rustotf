@@ -34,7 +34,7 @@ pub struct Table_head {
 impl Font {
     pub fn parse_head(&mut self, buffer: &mut Buffer) {
         self.head = Some(Table_head {
-            _version: buffer.get_version(),
+            _version: buffer.get_version::<u16>(),
             font_revision: buffer.get::<Fixed>(),
             checksum_adjustment: buffer.get::<u32>(),
             magic_number: buffer.get::<u32>(),

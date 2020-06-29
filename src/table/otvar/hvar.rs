@@ -25,7 +25,7 @@ impl Font {
     #[allow(non_snake_case)]
     pub fn parse_HVAR(&mut self, buffer: &mut Buffer) {
         self.HVAR = Some(Table_HVAR {
-            _version: buffer.get_version(),
+            _version: buffer.get_version::<u16>(),
             _item_variation_store_offset: buffer.get::<u32>(),
             _advance_width_mapping_offset: buffer.get::<u32>(),
             _lsb_mapping_offset: buffer.get::<u32>(),
