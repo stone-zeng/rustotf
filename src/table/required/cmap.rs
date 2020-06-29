@@ -19,7 +19,7 @@ pub struct Table_cmap {
     _version: u16,
     _num_tables: u16,
     _encodings: Vec<Encoding>,
-    _subtables: HashMap<u32, CmapSubtable>,
+    _subtables: HashMap<(u16, u16), CmapSubtable>,
     pub maps: HashMap<Encoding, Map>,
 }
 
@@ -29,13 +29,10 @@ impl Font {
         let _version = buffer.get::<u16>();
         let _num_tables = buffer.get::<u16>();
         let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
-
-        let mut _subtables: HashMap<u32, CmapSubtable> = HashMap::new();
+        let mut _subtables = HashMap::new();
         for i in &_encodings {
             buffer.offset = start_offset + i._offset as usize;
-            _subtables
-                .entry(i._offset)
-                .or_insert_with(|| buffer.get::<CmapSubtable>());
+            _subtables.insert((i.platform_id, i.encoding_id), buffer.get::<CmapSubtable>());
         }
 
         // TODO: parse maps
@@ -48,21 +45,10 @@ impl Font {
             _subtables,
             maps,
         });
-
-        // let mappings = HashMap::new();
-
-        // self.cmap = Some(Table_cmap {
-        //     _version,
-        //     _num_tables,
-        //     _encodings,
-        //     subtables,
-        //     mappings,
-        // });
-        // self.cmap.as_ref().unwrap();
     }
 }
 
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct Encoding {
     _offset: u32,
     pub platform_id: u16,
@@ -201,7 +187,6 @@ struct CmapFormat4 {
     start_char_code: Vec<u16>, // startCode[segCount]
     id_delta: Vec<i16>,
     id_range_offset: Vec<u16>,
-    gid_seg_array: Vec<Vec<u16>>,
     map: Map,
 }
 
@@ -218,30 +203,37 @@ impl ReadBuffer for CmapFormat4 {
         buffer.skip::<u16>(1);
         let start_char_code = buffer.get_vec::<u16>(seg_count);
         let id_delta = buffer.get_vec::<i16>(seg_count);
-        let offset = buffer.offset;
+        let id_range_offset_begin_offset = buffer.offset;
         let id_range_offset = buffer.get_vec::<u16>(seg_count);
 
-        let mut gid_seg_array: Vec<Vec<u16>> = Vec::new();
-        let mut map: Map = HashMap::new();
-        for i in 0..seg_count - 1 {
-            let mut char_range = start_char_code[i]..=end_char_code[i];
-            let gid_seg: &Vec<u16> = &if id_range_offset[i] != 0 {
-                buffer.offset = offset + 2 * i + id_range_offset[i] as usize;
-                buffer
-                    .get_vec::<u16>(char_range.len())
-                    .iter()
-                    .map(|x| (*x as i16 + id_delta[i]) as u16)
+        let mut gid_seg_array = Vec::new();
+        let mut map = HashMap::new();
+
+        for i in 0..seg_count {
+            let start = start_char_code[i] as u32;
+            let end = end_char_code[i] as u32;
+            let filtered_char_range = (start..=end).filter(|c| *c < 0xFFFF);
+            let gid_seg: Vec<u32> = if id_range_offset[i] != 0 {
+                filtered_char_range
+                    .map(|c| {
+                        // TODO: otfcc is different from the C code in MS reference page.
+                        buffer.offset =
+                            // Address of `id_range_offset[i]`...
+                            id_range_offset_begin_offset + i * 2
+                            // ... plus some offset
+                            + (id_range_offset[i] as u32 + (c - start) * 2) as usize;
+                        ((buffer.get::<u16>() as i32 + id_delta[i] as i32) % 0xFFFF) as u32
+                    })
                     .collect()
             } else {
-                char_range
-                    .by_ref()
-                    .map(|x| (x as i16 + id_delta[i]) as u16)
+                filtered_char_range
+                    .map(|c| ((c as i32 + id_delta[i] as i32) % 0xFFFF) as u32)
                     .collect()
             };
             gid_seg_array.push(gid_seg.to_vec());
-            for (cid, gid) in char_range.zip(gid_seg.iter()) {
-                map.entry(u32::from(cid)).or_insert_with(|| u32::from(*gid));
-            }
+            (start..=end)
+                .zip(gid_seg.iter())
+                .for_each(|(cid, &gid)| { map.insert(cid, gid); });
         }
 
         Self {
@@ -255,7 +247,6 @@ impl ReadBuffer for CmapFormat4 {
             start_char_code,
             id_delta,
             id_range_offset,
-            gid_seg_array,
             map,
         }
     }

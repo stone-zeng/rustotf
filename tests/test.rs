@@ -76,7 +76,7 @@ fn check_otf() {
     }
 }
 
-// #[test]
+#[test]
 fn check_ttc() {
     for i in &TTC_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
