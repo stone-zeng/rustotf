@@ -1,6 +1,6 @@
 use std::mem::size_of;
 use crate::font::Font;
-use crate::util::Buffer;
+use crate::util::{Buffer, Tag};
 
 /// ## `fpgm` &mdash; Font Program
 ///
@@ -18,8 +18,7 @@ pub struct Table_fpgm {
 
 impl Font {
     pub fn parse_fpgm(&mut self, buffer: &mut Buffer) {
-        self.fpgm = Some(Table_fpgm {
-            values: buffer.get_vec(self.get_table_len("fpgm") / size_of::<u8>()),
-        });
+        let num = self.get_table_len(&Tag::from("fpgm")) / size_of::<u8>();
+        self.fpgm = Some(Table_fpgm { values: buffer.get_vec(num) });
     }
 }
