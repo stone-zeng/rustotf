@@ -84,7 +84,7 @@ fn check_ttc() {
     }
 }
 
-// #[test]
+#[test]
 fn check_woff() {
     for i in &WOFF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");

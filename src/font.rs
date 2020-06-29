@@ -273,40 +273,29 @@ impl Font {
 impl Font {
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
         for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
-            buffer.offset = self.get_table_offset(tag_str);
-            self._parse_table(&tag_str, buffer);
+            self.sfnt_parse_table(tag_str, buffer);
         }
         for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
             if self.table_records.contains_key(&String::from(*tag_str)) {
-                buffer.offset = self.get_table_offset(tag_str);
-                self._parse_table(&tag_str, buffer);
+                self.sfnt_parse_table(tag_str, buffer);
             }
         }
     }
 
     fn sfnt_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
-        if let Some(record) = self.table_records.get(tag_str) {
-            buffer.offset = record.offset as usize;
-            self._parse_table(tag_str, buffer);
-        }
+        buffer.offset = self.get_table_offset(tag_str);
+        self._parse_table(tag_str, buffer);
     }
 
     fn woff_parse(&mut self, buffer: &mut Buffer) {
-        macro_rules! _woff_parse {
-            ($tag:expr, $f:ident) => {
-                buffer.offset = self.get_table_offset($tag);
-                let comp_length = self.get_table_comp_len($tag);
-                self.$f(&mut buffer.decompress(comp_length));
-            };
+        for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
+            self.woff_parse_table(tag_str, buffer);
         }
-        _woff_parse!("hhea", parse_hhea);
-        _woff_parse!("maxp", parse_maxp);
-        // FIXME: index out of range for slice
-        // _woff_parse!("hmtx", parse_hmtx);
-        _woff_parse!("cmap", parse_cmap);
-        _woff_parse!("name", parse_name);
-        // _woff_parse!("OS/2", parse_OS_2);
-        _woff_parse!("post", parse_post);
+        for tag_str in &["loca", "glyf", "cvt ", "fpgm", "prep", "gasp"] {
+            if self.table_records.contains_key(&String::from(*tag_str)) {
+                self.woff_parse_table(tag_str, buffer);
+            }
+        }
     }
 
     fn woff_parse_table(&mut self, tag_str: &str, buffer: &mut Buffer) {
