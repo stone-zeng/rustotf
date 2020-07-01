@@ -219,12 +219,14 @@ pub struct LongDateTime {
     _num: i64,
 }
 
-/// Seconds from 1904-01-01 to 1970-01-01 (at midnight).
-const DATE_TIME_OFFSET: i64 = 2_082_844_800;
+impl LongDateTime {
+    /// Seconds from 1904-01-01 to 1970-01-01 (at midnight).
+    const DATE_TIME_OFFSET: i64 = 2_082_844_800;
+}
 
 impl fmt::Debug for LongDateTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let timestamp = self._num - DATE_TIME_OFFSET;
+        let timestamp = self._num - Self::DATE_TIME_OFFSET;
         write!(f, "{}", NaiveDateTime::from_timestamp(timestamp, 0))
     }
 }

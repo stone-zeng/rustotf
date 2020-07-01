@@ -63,6 +63,28 @@ impl ReadBuffer for Glyph {
 }
 
 impl Glyph {
+    const ON_CURVE: u8 = 0x01;
+    const X_SHORT: u8 = 0x02;
+    const Y_SHORT: u8 = 0x04;
+    const REPEAT: u8 = 0x08;
+    const X_SAME_POSITIVE: u8 = 0x10;
+    const Y_SAME_POSITIVE: u8 = 0x20;
+    const OVERLAP_SIMPLE: u8 = 0x40;
+
+    const ARG_1_AND_2_ARE_WORDS: u16 = 0x0001;
+    const ARGS_ARE_XY_VALUES: u16 = 0x0002;
+    const ROUND_XY_TO_GRID: u16 = 0x0004;
+    const WE_HAVE_A_SCALE: u16 = 0x0008;
+    const MORE_COMPONENTS: u16 = 0x0020;
+    const WE_HAVE_AN_X_AND_Y_SCALE: u16 = 0x0040;
+    const WE_HAVE_A_TWO_BY_TWO: u16 = 0x0080;
+    const WE_HAVE_INSTRUCTIONS: u16 = 0x0100;
+    const USE_MY_METRICS: u16 = 0x0200;
+    const OVERLAP_COMPOUND: u16 = 0x0400;
+    // TODO: not used
+    // const SCALED_COMPONENT_OFFSET: u16 = 0x0800;
+    // const UNSCALED_COMPONENT_OFFSET: u16 = 0x1000;
+
     fn parse_simple_glyph(&mut self, buffer: &mut Buffer, number_of_contours: i16) {
         let end_points_of_contours = buffer.get_vec::<u16>(number_of_contours as usize);
         self.instruction_length = buffer.get::<u16>();
@@ -74,8 +96,8 @@ impl Glyph {
         let num_points = *end_points_of_contours.last().unwrap_or(&0) + 1;
 
         let flags = buffer.get_flags(num_points);
-        let xs = buffer.get_coordinates(&flags, FLAG_X_SAME_POSITIVE, FLAG_X_SHORT);
-        let ys = buffer.get_coordinates(&flags, FLAG_Y_SAME_POSITIVE, FLAG_Y_SHORT);
+        let xs = buffer.get_coordinates(&flags, Self::X_SAME_POSITIVE, Self::X_SHORT);
+        let ys = buffer.get_coordinates(&flags, Self::Y_SAME_POSITIVE, Self::Y_SHORT);
 
         // TODO: https://docs.rs/itertools/0.9.0/itertools/macro.izip.html
         let mut points = xs.iter()
@@ -84,8 +106,8 @@ impl Glyph {
             .map(|((&x, &y), &flag)| Point {
                 x,
                 y,
-                on_curve: flag & FLAG_ON_CURVE != 0,
-                overlap_simple: flag & FLAG_OVERLAP_SIMPLE != 0,
+                on_curve: flag & Self::ON_CURVE != 0,
+                overlap_simple: flag & Self::OVERLAP_SIMPLE != 0,
             })
             .collect::<Vec<Point>>();
 
@@ -101,16 +123,16 @@ impl Glyph {
     fn parse_composite_glyph(&mut self, buffer: &mut Buffer) {
         let mut flags = 0xFFFF;
         
-        while flags & FLAG_MORE_COMPONENTS != 0 {
+        while flags & Self::MORE_COMPONENTS != 0 {
             let mut comp: Component = Default::default();
 
             flags = buffer.get::<u16>();
             comp.glyph_index = buffer.get::<u16>();
 
             // Offsets and anchors
-            if flags & FLAG_ARGS_ARE_XY_VALUES != 0 {
+            if flags & Self::ARGS_ARE_XY_VALUES != 0 {
                 // Arguments are signed xy value
-                if flags & FLAG_ARG_1_AND_2_ARE_WORDS != 0 {
+                if flags & Self::ARG_1_AND_2_ARE_WORDS != 0 {
                     comp.x = buffer.get::<i16>();
                     comp.y = buffer.get::<i16>();
                 } else {
@@ -120,7 +142,7 @@ impl Glyph {
             } else {
                 // Arguments are unsigned point numbers
                 // TODO: not used
-                let (outer, inner) = if flags & FLAG_ARG_1_AND_2_ARE_WORDS != 0 {
+                let (outer, inner) = if flags & Self::ARG_1_AND_2_ARE_WORDS != 0 {
                     (buffer.get::<u16>(), buffer.get::<u16>())
                 } else {
                     (buffer.get::<u8>() as u16, buffer.get::<u8>() as u16)
@@ -130,13 +152,13 @@ impl Glyph {
 
             // Scale
             // TODO: scale matrix is not initialized
-            if flags & FLAG_WE_HAVE_A_SCALE != 0 {
+            if flags & Self::WE_HAVE_A_SCALE != 0 {
                 (comp.scale.0).0 = buffer.get::<F2Dot14>();
                 (comp.scale.1).1 = (comp.scale.0).0;
-            } else if flags & FLAG_WE_HAVE_AN_X_AND_Y_SCALE != 0 {
+            } else if flags & Self::WE_HAVE_AN_X_AND_Y_SCALE != 0 {
                 (comp.scale.0).0 = buffer.get::<F2Dot14>();
                 (comp.scale.1).1 = buffer.get::<F2Dot14>();
-            } else if flags & FLAG_WE_HAVE_A_TWO_BY_TWO != 0 {
+            } else if flags & Self::WE_HAVE_A_TWO_BY_TWO != 0 {
                 (comp.scale.0).0 = buffer.get::<F2Dot14>();
                 (comp.scale.0).1 = buffer.get::<F2Dot14>();
                 (comp.scale.1).0 = buffer.get::<F2Dot14>();
@@ -144,9 +166,9 @@ impl Glyph {
             }
 
             // Flags
-            comp.round_xy_to_grid = flags % FLAG_ROUND_XY_TO_GRID != 0;
-            comp.use_my_metrics = flags & FLAG_USE_MY_METRICS != 0;
-            comp.overlap_compound = flags & FLAG_OVERLAP_COMPOUND != 0;
+            comp.round_xy_to_grid = flags % Self::ROUND_XY_TO_GRID != 0;
+            comp.use_my_metrics = flags & Self::USE_MY_METRICS != 0;
+            comp.overlap_compound = flags & Self::OVERLAP_COMPOUND != 0;
 
             self.components.push(comp);
         }
@@ -155,7 +177,7 @@ impl Glyph {
     }
 
     fn parse_instructions(&mut self, buffer: &mut Buffer, flags: u16) {
-        if flags & FLAG_WE_HAVE_INSTRUCTIONS != 0 {
+        if flags & Self::WE_HAVE_INSTRUCTIONS != 0 {
             self.instruction_length = buffer.get::<u16>();
             self.instructions = buffer.get_vec::<u8>(self.instruction_length as usize);
         }
@@ -189,7 +211,7 @@ impl Buffer {
             let flags = self.get::<u8>();
             flags_vec.push(flags);
             // Check repeat flag
-            if flags & FLAG_REPEAT == 0 {
+            if flags & Glyph::REPEAT == 0 {
                 i += 1;
             } else {
                 let repeated = self.get::<u8>();
@@ -215,25 +237,3 @@ impl Buffer {
             .collect()
     }
 }
-
-const FLAG_ON_CURVE: u8 = 0x01;
-const FLAG_X_SHORT: u8 = 0x02;
-const FLAG_Y_SHORT: u8 = 0x04;
-const FLAG_REPEAT: u8 = 0x08;
-const FLAG_X_SAME_POSITIVE: u8 = 0x10;
-const FLAG_Y_SAME_POSITIVE: u8 = 0x20;
-const FLAG_OVERLAP_SIMPLE: u8 = 0x40;
-
-const FLAG_ARG_1_AND_2_ARE_WORDS: u16 = 0x0001;
-const FLAG_ARGS_ARE_XY_VALUES: u16 = 0x0002;
-const FLAG_ROUND_XY_TO_GRID: u16 = 0x0004;
-const FLAG_WE_HAVE_A_SCALE: u16 = 0x0008;
-const FLAG_MORE_COMPONENTS: u16 = 0x0020;
-const FLAG_WE_HAVE_AN_X_AND_Y_SCALE: u16 = 0x0040;
-const FLAG_WE_HAVE_A_TWO_BY_TWO: u16 = 0x0080;
-const FLAG_WE_HAVE_INSTRUCTIONS: u16 = 0x0100;
-const FLAG_USE_MY_METRICS: u16 = 0x0200;
-const FLAG_OVERLAP_COMPOUND: u16 = 0x0400;
-// TODO: not used
-// const FLAG_SCALED_COMPONENT_OFFSET: u16 = 0x0800;
-// const FLAG_UNSCALED_COMPONENT_OFFSET: u16 = 0x1000;
