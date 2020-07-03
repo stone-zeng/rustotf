@@ -72,15 +72,15 @@ struct TopDict {
     charset: Option<i32>,
     encoding: Option<i32>,
     char_strings: Option<i32>,
-    private: Option<i32>,
+    private: Option<(i32, i32)>,
     synthetic_base: Option<i32>,
     postscript: Option<String>,
     base_font_name: Option<String>,
     base_font_blend: Option<Vec<f32>>,
     // CIDFont extensions
     ros: Option<(String, String, i32)>,
-    cid_font_version: Option<i32>,
-    cid_font_revision: Option<i32>,
+    cid_font_version: Option<String>,
+    cid_font_revision: Option<String>,
     cid_font_type: Option<i32>,
     cid_count: Option<i32>,
     uid_base: Option<i32>,
@@ -92,7 +92,6 @@ struct TopDict {
 impl TopDict {
     fn _get_num(dict_item: &mut DictItem) -> Option<i32> {
         let num = dict_item.integer.pop().unwrap();
-        println!("[DEBUG] {}", num);
         dict_item.integer.clear();
         Some(num)
     }
@@ -113,6 +112,20 @@ impl TopDict {
         }
     }
 
+    fn _get_version(dict_item: &mut DictItem) -> Option<String> {
+        if !dict_item.integer.is_empty() {
+            let num = dict_item.integer.pop().unwrap();
+            dict_item.integer.clear();
+            Some(num.to_string())
+        } else if !dict_item.real.is_empty() {
+            let num_str = dict_item.real.pop().unwrap();
+            dict_item.real.clear();
+            Some(num_str)
+        } else {
+            Default::default()
+        }
+    }
+
     fn _get_integer_array(dict_item: &mut DictItem) -> Option<Vec<i32>> {
         let array = dict_item.integer.to_vec();
         dict_item.integer.clear();
@@ -120,7 +133,7 @@ impl TopDict {
     }
 
     fn _get_real_array(dict_item: &mut DictItem) -> Option<Vec<f32>> {
-        let array = dict_item.real.to_vec();
+        let array = dict_item.real.iter().map(|i| i.parse().unwrap()).collect();
         dict_item.real.clear();
         Some(array)
     }
@@ -130,6 +143,7 @@ impl TopDict {
         let mut item = DictItem::default();
         while i < self._data.len() {
             let b0 = self._data[i] as i32;
+            println!("i={}, b0={}", i, b0);
             match b0 {
                 // Operators
                 0 => self.version = Self::_get_string(&mut item, strings),
@@ -170,8 +184,8 @@ impl TopDict {
                             item.integer.clear();
                             Some((s1, s2, num))
                         },
-                        31 => self.cid_font_version = Self::_get_num(&mut item),
-                        32 => self.cid_font_revision = Self::_get_num(&mut item),
+                        31 => self.cid_font_version = Self::_get_version(&mut item),
+                        32 => self.cid_font_revision = Self::_get_version(&mut item),
                         33 => self.cid_font_type = Self::_get_num(&mut item),
                         34 => self.cid_count = Self::_get_num(&mut item),
                         35 => self.uid_base = Self::_get_num(&mut item),
@@ -187,7 +201,12 @@ impl TopDict {
                 15 => self.charset = Self::_get_num(&mut item),
                 16 => self.encoding = Self::_get_num(&mut item),
                 17 => self.char_strings = Self::_get_num(&mut item),
-                18 => {}
+                18 => self.private = {
+                    let num2 = item.integer.pop().unwrap();
+                    let num1 = item.integer.pop().unwrap();
+                    item.integer.clear();
+                    Some((num1, num2))
+                },
                 // Operands: integer
                 32..=246 => item.integer.push(b0 - 139),
                 247..=250 => {
@@ -228,6 +247,7 @@ impl TopDict {
                                     0xE => s += "-",
                                     0xF => {
                                         item.real.push(s.parse().unwrap());
+                                        i += 1;
                                         break;
                                     }
                                     _ => unreachable!(),
@@ -277,8 +297,8 @@ impl Default for TopDict {
             base_font_name: Default::default(),
             base_font_blend: Default::default(),
             ros: Default::default(),
-            cid_font_version: Some(0),
-            cid_font_revision: Some(0),
+            cid_font_version: Some("0".to_string()),
+            cid_font_revision: Some("0".to_string()),
             cid_font_type: Some(0),
             cid_count: Some(8720),
             uid_base: Default::default(),
@@ -291,8 +311,9 @@ impl Default for TopDict {
 
 #[derive(Debug, Default)]
 struct DictItem {
+    // TODO: use a "number" type (maybe union?)
     integer: Vec<i32>,
-    real: Vec<f32>,
+    real: Vec<String>,
     boolean: Option<bool>,
 }
 
