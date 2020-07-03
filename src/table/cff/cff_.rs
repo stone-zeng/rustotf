@@ -52,98 +52,90 @@ impl Font {
 #[derive(Debug)]
 struct TopDict {
     _data: Vec<u8>,
-    version: Option<String>,
-    notice: Option<String>,
-    copyright: Option<String>,
-    full_name: Option<String>,
-    family_name: Option<String>,
-    weight: Option<String>,
-    is_fixed_pitch: Option<bool>,
-    italic_angle: Option<i32>,
-    underline_position: Option<i32>,
-    underline_thickness: Option<i32>,
-    paint_type: Option<i32>,
-    char_string_type: Option<i32>,
-    font_matrix: Option<Vec<f32>>,
+    version: String,
+    notice: String,
+    copyright: String,
+    full_name: String,
+    family_name: String,
+    weight: String,
+    is_fixed_pitch: bool,
+    italic_angle: i32,
+    underline_position: i32,
+    underline_thickness: i32,
+    paint_type: i32,
+    char_string_type: i32,
+    font_matrix: Vec<f32>,
     unique_id: Option<i32>,
-    font_bbox: Option<Vec<i32>>,
-    stroke_width: Option<i32>,
+    font_bbox: Vec<i32>,
+    stroke_width: i32,
     xuid: Option<Vec<i32>>,
-    charset: Option<i32>,
-    encoding: Option<i32>,
+    charset: i32,
+    encoding: i32,
     char_strings: Option<i32>,
     private: Option<(i32, i32)>,
     synthetic_base: Option<i32>,
     postscript: Option<String>,
     base_font_name: Option<String>,
     base_font_blend: Option<Vec<f32>>,
-    // CIDFont extensions
-    ros: Option<(String, String, i32)>,
-    cid_font_version: Option<String>,
-    cid_font_revision: Option<String>,
-    cid_font_type: Option<i32>,
-    cid_count: Option<i32>,
-    uid_base: Option<i32>,
-    fd_array: Option<i32>,
-    fd_select: Option<i32>,
-    font_name: Option<String>,
+    cid: Option<CID>,
 }
 
 impl TopDict {
-    fn _get_num(dict_item: &mut DictItem) -> Option<i32> {
+    fn _get_num(dict_item: &mut DictItem) -> i32 {
         let num = dict_item.integer.pop().unwrap();
         dict_item.integer.clear();
-        Some(num)
+        num
     }
 
-    fn _get_bool(dict_item: &mut DictItem) -> Option<bool> {
+    fn _get_bool(dict_item: &mut DictItem) -> bool {
         let boolean = dict_item.integer.pop().unwrap() != 0;
         dict_item.integer.clear();
-        Some(boolean)
+        boolean
     }
 
-    fn _get_string(dict_item: &mut DictItem, strings: &Vec<String>) -> Option<String> {
+    fn _get_string(dict_item: &mut DictItem, strings: &Vec<String>) -> String {
         let index = dict_item.integer.pop().unwrap() as usize;
         dict_item.integer.clear();
         if index < CFF_STANDARD_STRINGS_LEN {
-            Some(CFF_STANDARD_STRINGS[index].to_string())
+            CFF_STANDARD_STRINGS[index].to_string()
         } else {
-            Some(strings[index - CFF_STANDARD_STRINGS_LEN].to_string())
+            strings[index - CFF_STANDARD_STRINGS_LEN].to_string()
         }
     }
 
-    fn _get_version(dict_item: &mut DictItem) -> Option<String> {
+    fn _get_version(dict_item: &mut DictItem) -> String {
         if !dict_item.integer.is_empty() {
             let num = dict_item.integer.pop().unwrap();
             dict_item.integer.clear();
-            Some(num.to_string())
+            num.to_string()
         } else if !dict_item.real.is_empty() {
             let num_str = dict_item.real.pop().unwrap();
             dict_item.real.clear();
-            Some(num_str)
+            num_str
         } else {
             Default::default()
         }
     }
 
-    fn _get_integer_array(dict_item: &mut DictItem) -> Option<Vec<i32>> {
+    fn _get_integer_array(dict_item: &mut DictItem) -> Vec<i32> {
         let array = dict_item.integer.to_vec();
         dict_item.integer.clear();
-        Some(array)
+        array
     }
 
-    fn _get_real_array(dict_item: &mut DictItem) -> Option<Vec<f32>> {
+    fn _get_real_array(dict_item: &mut DictItem) -> Vec<f32> {
         let array = dict_item.real.iter().map(|i| i.parse().unwrap()).collect();
         dict_item.real.clear();
-        Some(array)
+        array
     }
 
     fn parse(&mut self, strings: &Vec<String>) {
         let mut i = 0;
         let mut item = DictItem::default();
+        let mut is_cid = false;
+        let mut cid = CID::default();
         while i < self._data.len() {
             let b0 = self._data[i] as i32;
-            println!("i={}, b0={}", i, b0);
             match b0 {
                 // Operators
                 0 => self.version = Self::_get_string(&mut item, strings),
@@ -163,11 +155,12 @@ impl TopDict {
                         6 => self.char_string_type = Self::_get_num(&mut item),
                         7 => self.font_matrix = Self::_get_real_array(&mut item),
                         8 => self.stroke_width = Self::_get_num(&mut item),
-                        20 => self.synthetic_base = Self::_get_num(&mut item),
-                        21 => self.postscript = Self::_get_string(&mut item, strings),
-                        22 => self.base_font_name = Self::_get_string(&mut item, strings),
-                        23 => self.base_font_blend = Self::_get_real_array(&mut item),
-                        30 => self.ros = {
+                        20 => self.synthetic_base = Some(Self::_get_num(&mut item)),
+                        21 => self.postscript = Some(Self::_get_string(&mut item, strings)),
+                        22 => self.base_font_name = Some(Self::_get_string(&mut item, strings)),
+                        23 => self.base_font_blend = Some(Self::_get_real_array(&mut item)),
+                        30 => {
+                            is_cid = true;
                             let num = item.integer.pop().unwrap();
                             let index2 = item.integer.pop().unwrap() as usize;
                             let s2 = if index2 < CFF_STANDARD_STRINGS_LEN {
@@ -182,25 +175,49 @@ impl TopDict {
                                 strings[index1 - CFF_STANDARD_STRINGS_LEN].to_string()
                             };
                             item.integer.clear();
-                            Some((s1, s2, num))
+                            cid.ros = (s1, s2, num);
                         },
-                        31 => self.cid_font_version = Self::_get_version(&mut item),
-                        32 => self.cid_font_revision = Self::_get_version(&mut item),
-                        33 => self.cid_font_type = Self::_get_num(&mut item),
-                        34 => self.cid_count = Self::_get_num(&mut item),
-                        35 => self.uid_base = Self::_get_num(&mut item),
-                        36 => self.fd_array = Self::_get_num(&mut item),
-                        37 => self.fd_select = Self::_get_num(&mut item),
-                        38 => self.font_name = Self::_get_string(&mut item, strings),
+                        31 => {
+                            is_cid = true;
+                            cid.cid_font_version = Self::_get_version(&mut item);
+                        }
+                        32 => {
+                            is_cid = true;
+                            cid.cid_font_revision = Self::_get_version(&mut item);
+                        }
+                        33 => {
+                            is_cid = true;
+                            cid.cid_font_type = Self::_get_num(&mut item);
+                        }
+                        34 => {
+                            is_cid = true;
+                            cid.cid_count = Self::_get_num(&mut item);
+                        }
+                        35 => {
+                            is_cid = true;
+                            cid.uid_base = Self::_get_num(&mut item);
+                        }
+                        36 => {
+                            is_cid = true;
+                            cid.fd_array = Self::_get_num(&mut item);
+                        }
+                        37 => {
+                            is_cid = true;
+                            cid.fd_select = Self::_get_num(&mut item);
+                        }
+                        38 => {
+                            is_cid = true;
+                            cid.font_name = Self::_get_string(&mut item, strings);
+                        }
                         _ => println!("[DEBUG] \"{}:{}\" 12 {}", file!(), line!(), self._data[i + 1]),
                     }
                     i += 1;
                 }
-                13 => self.unique_id = Self::_get_num(&mut item),
-                14 => self.xuid = Self::_get_integer_array(&mut item),
+                13 => self.unique_id = Some(Self::_get_num(&mut item)),
+                14 => self.xuid = Some(Self::_get_integer_array(&mut item)),
                 15 => self.charset = Self::_get_num(&mut item),
                 16 => self.encoding = Self::_get_num(&mut item),
-                17 => self.char_strings = Self::_get_num(&mut item),
+                17 => self.char_strings = Some(Self::_get_num(&mut item)),
                 18 => self.private = {
                     let num2 = item.integer.pop().unwrap();
                     let num1 = item.integer.pop().unwrap();
@@ -264,6 +281,9 @@ impl TopDict {
             }
             i += 1;
         }
+        if is_cid {
+            self.cid = Some(cid);
+        }
     }
 }
 
@@ -277,30 +297,51 @@ impl Default for TopDict {
             full_name: Default::default(),
             family_name: Default::default(),
             weight: Default::default(),
-            is_fixed_pitch: Some(false),
-            italic_angle: Some(0),
-            underline_position: Some(-100),
-            underline_thickness: Some(50),
-            paint_type: Some(0),
-            char_string_type: Some(2),
-            font_matrix: Some(vec![0.001, 0.0, 0.001, 0.0]),
+            is_fixed_pitch: false,
+            italic_angle: 0,
+            underline_position: -100,
+            underline_thickness: 50,
+            paint_type: 0,
+            char_string_type: 2,
+            font_matrix: vec![0.001, 0.0, 0.001, 0.0],
             unique_id: Default::default(),
-            font_bbox: Some(vec![0, 0, 0, 0]),
-            stroke_width: Some(0),
+            font_bbox: vec![0, 0, 0, 0],
+            stroke_width: 0,
             xuid: Default::default(),
-            charset: Some(0),
-            encoding: Some(0),
+            charset: 0,
+            encoding: 0,
             char_strings: Default::default(),
             private: Default::default(),
             synthetic_base: Default::default(),
             postscript: Default::default(),
             base_font_name: Default::default(),
             base_font_blend: Default::default(),
+            cid: Default::default(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct CID {
+    ros: (String, String, i32),
+    cid_font_version: String,
+    cid_font_revision: String,
+    cid_font_type: i32,
+    cid_count: i32,
+    uid_base: i32,
+    fd_array: i32,
+    fd_select: i32,
+    font_name: String,
+}
+
+impl Default for CID {
+    fn default() -> Self {
+        Self {
             ros: Default::default(),
-            cid_font_version: Some("0".to_string()),
-            cid_font_revision: Some("0".to_string()),
-            cid_font_type: Some(0),
-            cid_count: Some(8720),
+            cid_font_version: "0".to_string(),
+            cid_font_revision: "0".to_string(),
+            cid_font_type: 0,
+            cid_count: 8720,
             uid_base: Default::default(),
             fd_array: Default::default(),
             fd_select: Default::default(),
