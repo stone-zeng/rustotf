@@ -1,3 +1,4 @@
+use std::fmt;
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer};
 
@@ -59,16 +60,16 @@ struct TopDict {
     family_name: String,
     weight: String,
     is_fixed_pitch: bool,
-    italic_angle: i32,
-    underline_position: i32,
-    underline_thickness: i32,
+    italic_angle: Number,
+    underline_position: Number,
+    underline_thickness: Number,
     paint_type: i32,
     char_string_type: i32,
-    font_matrix: Vec<f32>,
+    font_matrix: Vec<Number>,
     unique_id: Option<i32>,
-    font_bbox: Vec<i32>,
-    stroke_width: i32,
-    xuid: Option<Vec<i32>>,
+    font_bbox: Vec<Number>,
+    stroke_width: Number,
+    xuid: Option<Vec<Number>>,
     charset: i32,
     encoding: i32,
     char_strings: Option<i32>,
@@ -76,170 +77,131 @@ struct TopDict {
     synthetic_base: Option<i32>,
     postscript: Option<String>,
     base_font_name: Option<String>,
-    base_font_blend: Option<Vec<f32>>,
+    base_font_blend: Option<Vec<Number>>,
     cid: Option<CID>,
 }
 
 impl TopDict {
-    fn _get_num(dict_item: &mut DictItem) -> i32 {
-        let num = dict_item.integer.pop().unwrap();
-        dict_item.integer.clear();
-        num
-    }
-
-    fn _get_bool(dict_item: &mut DictItem) -> bool {
-        let boolean = dict_item.integer.pop().unwrap() != 0;
-        dict_item.integer.clear();
-        boolean
-    }
-
-    fn _get_string(dict_item: &mut DictItem, strings: &Vec<String>) -> String {
-        let index = dict_item.integer.pop().unwrap() as usize;
-        dict_item.integer.clear();
-        if index < CFF_STANDARD_STRINGS_LEN {
-            CFF_STANDARD_STRINGS[index].to_string()
-        } else {
-            strings[index - CFF_STANDARD_STRINGS_LEN].to_string()
-        }
-    }
-
-    fn _get_version(dict_item: &mut DictItem) -> String {
-        if !dict_item.integer.is_empty() {
-            let num = dict_item.integer.pop().unwrap();
-            dict_item.integer.clear();
-            num.to_string()
-        } else if !dict_item.real.is_empty() {
-            let num_str = dict_item.real.pop().unwrap();
-            dict_item.real.clear();
-            num_str
-        } else {
-            Default::default()
-        }
-    }
-
-    fn _get_integer_array(dict_item: &mut DictItem) -> Vec<i32> {
-        let array = dict_item.integer.to_vec();
-        dict_item.integer.clear();
-        array
-    }
-
-    fn _get_real_array(dict_item: &mut DictItem) -> Vec<f32> {
-        let array = dict_item.real.iter().map(|i| i.parse().unwrap()).collect();
-        dict_item.real.clear();
-        array
-    }
-
     fn parse(&mut self, strings: &Vec<String>) {
         let mut i = 0;
-        let mut item = DictItem::default();
+        let mut temp = Vec::new();
         let mut is_cid = false;
         let mut cid = CID::default();
+
+        let _get_string = |index: usize| if index < CFF_STD_STRINGS_LEN {
+            CFF_STD_STRINGS[index].to_string()
+        } else {
+            strings[index - CFF_STD_STRINGS_LEN].to_string()
+        };
+
+        let get_num = |nums: &mut Vec<Number>| {
+            let num = nums.pop().unwrap();
+            nums.clear();
+            num
+        };
+
+        let get_bool = |nums: &mut Vec<Number>| {
+            get_num(nums).int != 0
+        };
+
+        let get_array = |nums: &mut Vec<Number>| {
+            let nums_copy = nums.to_vec(); // FIXME:
+            nums.clear();
+            nums_copy
+        };
+
+        let get_string = |nums: &mut Vec<Number>| {
+            let num = nums.pop().unwrap();
+            match num.is_int {
+                true => {
+                    nums.clear();
+                    _get_string(num.int as usize)
+                },
+                _ => unreachable!()
+            }
+        };
+
+        let get_private = |nums: &mut Vec<Number>| {
+            let num2 = nums.pop().unwrap().int;
+            let num1 = nums.pop().unwrap().int;
+            nums.clear();
+            (num1, num2)
+        };
+
+        let get_ros = |nums: &mut Vec<Number>| {
+            let supplement = nums.pop().unwrap().int;
+            let index2 = nums.pop().unwrap().int as usize;
+            let index1 = nums.pop().unwrap().int as usize;
+            (_get_string(index1), _get_string(index2), supplement)
+        };
+
         while i < self._data.len() {
             let b0 = self._data[i] as i32;
             match b0 {
                 // Operators
-                0 => self.version = Self::_get_string(&mut item, strings),
-                1 => self.notice = Self::_get_string(&mut item, strings),
-                2 => self.full_name = Self::_get_string(&mut item, strings),
-                3 => self.family_name = Self::_get_string(&mut item, strings),
-                4 => self.weight = Self::_get_string(&mut item, strings),
-                5 => self.font_bbox = Self::_get_integer_array(&mut item),
+                0 => self.version = get_string(&mut temp),
+                1 => self.notice = get_string(&mut temp),
+                2 => self.full_name = get_string(&mut temp),
+                3 => self.family_name = get_string(&mut temp),
+                4 => self.weight = get_string(&mut temp),
+                5 => self.font_bbox = get_array(&mut temp),
                 12 => {
-                    match self._data[i + 1] {
-                        0 => self.copyright = Self::_get_string(&mut item, strings),
-                        1 => self.is_fixed_pitch = Self::_get_bool(&mut item),
-                        2 => self.italic_angle = Self::_get_num(&mut item),
-                        3 => self.underline_position = Self::_get_num(&mut item),
-                        4 => self.underline_thickness = Self::_get_num(&mut item),
-                        5 => self.paint_type = Self::_get_num(&mut item),
-                        6 => self.char_string_type = Self::_get_num(&mut item),
-                        7 => self.font_matrix = Self::_get_real_array(&mut item),
-                        8 => self.stroke_width = Self::_get_num(&mut item),
-                        20 => self.synthetic_base = Some(Self::_get_num(&mut item)),
-                        21 => self.postscript = Some(Self::_get_string(&mut item, strings)),
-                        22 => self.base_font_name = Some(Self::_get_string(&mut item, strings)),
-                        23 => self.base_font_blend = Some(Self::_get_real_array(&mut item)),
-                        30 => {
+                    let b1 = self._data[i + 1];
+                    match b1 {
+                        0 => self.copyright = get_string(&mut temp),
+                        1 => self.is_fixed_pitch = get_bool(&mut temp),
+                        2 => self.italic_angle = get_num(&mut temp),
+                        3 => self.underline_position = get_num(&mut temp),
+                        4 => self.underline_thickness = get_num(&mut temp),
+                        5 => self.paint_type = get_num(&mut temp).int,
+                        6 => self.char_string_type = get_num(&mut temp).int,
+                        7 => self.font_matrix = get_array(&mut temp),
+                        8 => self.stroke_width = get_num(&mut temp),
+                        20 => self.synthetic_base = Some(get_num(&mut temp).int),
+                        21 => self.postscript = Some(get_string(&mut temp)),
+                        22 => self.base_font_name = Some(get_string(&mut temp)),
+                        23 => self.base_font_blend = Some(get_array(&mut temp)),
+                        30..=38 => {
                             is_cid = true;
-                            let num = item.integer.pop().unwrap();
-                            let index2 = item.integer.pop().unwrap() as usize;
-                            let s2 = if index2 < CFF_STANDARD_STRINGS_LEN {
-                                CFF_STANDARD_STRINGS[index2].to_string()
-                            } else {
-                                strings[index2 - CFF_STANDARD_STRINGS_LEN].to_string()
-                            };
-                            let index1 = item.integer.pop().unwrap() as usize;
-                            let s1 = if index1 < CFF_STANDARD_STRINGS_LEN {
-                                CFF_STANDARD_STRINGS[index1].to_string()
-                            } else {
-                                strings[index1 - CFF_STANDARD_STRINGS_LEN].to_string()
-                            };
-                            item.integer.clear();
-                            cid.ros = (s1, s2, num);
-                        },
-                        31 => {
-                            is_cid = true;
-                            cid.cid_font_version = Self::_get_version(&mut item);
-                        }
-                        32 => {
-                            is_cid = true;
-                            cid.cid_font_revision = Self::_get_version(&mut item);
-                        }
-                        33 => {
-                            is_cid = true;
-                            cid.cid_font_type = Self::_get_num(&mut item);
-                        }
-                        34 => {
-                            is_cid = true;
-                            cid.cid_count = Self::_get_num(&mut item);
-                        }
-                        35 => {
-                            is_cid = true;
-                            cid.uid_base = Self::_get_num(&mut item);
-                        }
-                        36 => {
-                            is_cid = true;
-                            cid.fd_array = Self::_get_num(&mut item);
-                        }
-                        37 => {
-                            is_cid = true;
-                            cid.fd_select = Self::_get_num(&mut item);
-                        }
-                        38 => {
-                            is_cid = true;
-                            cid.font_name = Self::_get_string(&mut item, strings);
+                            match b1 {
+                                30 => cid.ros = get_ros(&mut temp),
+                                31 => cid.cid_font_version = get_num(&mut temp),
+                                32 => cid.cid_font_revision = get_num(&mut temp),
+                                33 => cid.cid_font_type = get_num(&mut temp).int,
+                                34 => cid.cid_count = get_num(&mut temp).int,
+                                35 => cid.uid_base = get_num(&mut temp).int,
+                                36 => cid.fd_array = get_num(&mut temp).int,
+                                37 => cid.fd_select = get_num(&mut temp).int,
+                                38 => cid.font_name = get_string(&mut temp),
+                                _ => unreachable!(),
+                            }
                         }
                         _ => println!("[DEBUG] \"{}:{}\" 12 {}", file!(), line!(), self._data[i + 1]),
                     }
                     i += 1;
                 }
-                13 => self.unique_id = Some(Self::_get_num(&mut item)),
-                14 => self.xuid = Some(Self::_get_integer_array(&mut item)),
-                15 => self.charset = Self::_get_num(&mut item),
-                16 => self.encoding = Self::_get_num(&mut item),
-                17 => self.char_strings = Some(Self::_get_num(&mut item)),
-                18 => self.private = {
-                    let num2 = item.integer.pop().unwrap();
-                    let num1 = item.integer.pop().unwrap();
-                    item.integer.clear();
-                    Some((num1, num2))
-                },
+                13 => self.unique_id = Some(get_num(&mut temp).int),
+                14 => self.xuid = Some(get_array(&mut temp)),
+                15 => self.charset = get_num(&mut temp).int,
+                16 => self.encoding = get_num(&mut temp).int,
+                17 => self.char_strings = Some(get_num(&mut temp).int),
+                18 => self.private = Some(get_private(&mut temp)),
                 // Operands: integer
-                32..=246 => item.integer.push(b0 - 139),
+                32..=246 => temp.push(Number::from(b0 - 139)),
                 247..=250 => {
                     let b1 = self._data[i + 1] as i32;
-                    item.integer.push((b0 - 247) * 256 + b1 + 108);
+                    temp.push(Number::from((b0 - 247) * 256 + b1 + 108));
                     i += 1;
                 },
                 251..=254 => {
                     let b1 = self._data[i + 1] as i32;
-                    item.integer.push(-(b0 - 251) * 256 - b1 - 108);
+                    temp.push(Number::from(-(b0 - 251) * 256 - b1 - 108));
                     i += 1;
                 },
                 28 => {
                     let b1 = self._data[i + 1] as i32;
                     let b2 = self._data[i + 2] as i32;
-                    item.integer.push(b1 << 8 | b2);
+                    temp.push(Number::from(b1 << 8 | b2));
                     i += 2;
                 },
                 29 => {
@@ -247,7 +209,7 @@ impl TopDict {
                     let b2 = self._data[i + 2] as i32;
                     let b3 = self._data[i + 3] as i32;
                     let b4 = self._data[i + 4] as i32;
-                    item.integer.push(b1 << 24 | b2 << 16 | b3 << 8 | b4);
+                    temp.push(Number::from(b1 << 24 | b2 << 16 | b3 << 8 | b4));
                     i += 4;
                 },
                 // Operands: real
@@ -263,7 +225,7 @@ impl TopDict {
                                     0xC => s += "e-",
                                     0xE => s += "-",
                                     0xF => {
-                                        item.real.push(s.parse().unwrap());
+                                        temp.push(Number::from(s));
                                         i += 1;
                                         break;
                                     }
@@ -298,15 +260,21 @@ impl Default for TopDict {
             family_name: Default::default(),
             weight: Default::default(),
             is_fixed_pitch: false,
-            italic_angle: 0,
-            underline_position: -100,
-            underline_thickness: 50,
+            italic_angle: Number::from(0),
+            underline_position: Number::from(-100),
+            underline_thickness: Number::from(50),
             paint_type: 0,
             char_string_type: 2,
-            font_matrix: vec![0.001, 0.0, 0.001, 0.0],
+            font_matrix: vec![0.001, 0.0, 0.001, 0.0]
+                .iter()
+                .map(|&i| Number::from(i))
+                .collect(),
             unique_id: Default::default(),
-            font_bbox: vec![0, 0, 0, 0],
-            stroke_width: 0,
+            font_bbox: vec![0, 0, 0, 0]
+                .iter()
+                .map(|&i| Number::from(i))
+                .collect(),
+            stroke_width: Number::from(0),
             xuid: Default::default(),
             charset: 0,
             encoding: 0,
@@ -323,9 +291,10 @@ impl Default for TopDict {
 
 #[derive(Debug)]
 struct CID {
+    _is_cid: bool,
     ros: (String, String, i32),
-    cid_font_version: String,
-    cid_font_revision: String,
+    cid_font_version: Number,
+    cid_font_revision: Number,
     cid_font_type: i32,
     cid_count: i32,
     uid_base: i32,
@@ -337,9 +306,10 @@ struct CID {
 impl Default for CID {
     fn default() -> Self {
         Self {
+            _is_cid: false,
             ros: Default::default(),
-            cid_font_version: "0".to_string(),
-            cid_font_revision: "0".to_string(),
+            cid_font_version: Number::from(0),
+            cid_font_revision: Number::from(0),
             cid_font_type: 0,
             cid_count: 8720,
             uid_base: Default::default(),
@@ -350,12 +320,51 @@ impl Default for CID {
     }
 }
 
-#[derive(Debug, Default)]
-struct DictItem {
-    // TODO: use a "number" type (maybe union?)
-    integer: Vec<i32>,
-    real: Vec<String>,
-    boolean: Option<bool>,
+// TODO: consider use `Either`
+#[derive(Clone, Default)]
+struct Number {
+    is_int: bool,
+    int: i32,
+    real: String,
+}
+
+impl fmt::Debug for Number {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.is_int {
+            true => write!(f, "{}", self.int),
+            false => write!(f, "{}", self.real),
+        }
+    }
+}
+
+impl From<i32> for Number {
+    fn from(n: i32) -> Self {
+        Self {
+            is_int: true,
+            int: n,
+            ..Default::default()
+        }
+    }
+}
+
+impl From<f32> for Number {
+    fn from(n: f32) -> Self {
+        Self {
+            is_int: false,
+            real: n.to_string(),
+            ..Default::default()
+        }
+    }
+}
+
+impl From<String> for Number {
+    fn from(n: String) -> Self {
+        Self {
+            is_int: false,
+            real: n,
+            ..Default::default()
+        }
+    }
 }
 
 /// An array of variable-sized objects.
@@ -411,8 +420,8 @@ impl ReadBuffer for Index {
     }
 }
 
-const CFF_STANDARD_STRINGS_LEN: usize = 391;
-const CFF_STANDARD_STRINGS: [&str; CFF_STANDARD_STRINGS_LEN] = [
+const CFF_STD_STRINGS_LEN: usize = 391;
+const CFF_STD_STRINGS: [&str; CFF_STD_STRINGS_LEN] = [
     ".notdef",
     "space",
     "exclam",
