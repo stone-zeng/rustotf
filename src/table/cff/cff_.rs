@@ -1,6 +1,6 @@
 use std::fmt;
 use crate::font::Font;
-use crate::util::{Buffer, ReadBuffer};
+use crate::util::{Buffer, ReadBuffer, u24};
 
 /// ## `CFF` &mdash; Compact Font Format table
 ///
@@ -21,6 +21,8 @@ pub struct Table_CFF_ {
     top_dict: TopDict,
     strings: Vec<String>,
     // encodings: Encoding
+    charsets: Vec<String>,
+    char_strings: Index,
 }
 
 impl Font {
@@ -40,6 +42,23 @@ impl Font {
         };
         let strings = buffer.get::<Index>().to_string_vec();
         top_dict.parse(&strings);
+        // TODO: parser not implemented
+        let char_strings = match top_dict.char_strings {
+            Some(offset) => {
+                buffer.offset = cff_start_offset + offset as usize;
+                buffer.get::<Index>()
+            },
+            _ => Default::default(),
+        };
+        let charsets = match top_dict.charset {
+            0 => { println!("[DEBUG] Charset: ISOAdobe"); Vec::new() }
+            1 => { println!("[DEBUG] Charset: Expert"); Vec::new() }
+            2 => { println!("[DEBUG] Charset: ExpertSubset"); Vec::new() }
+            offset => {
+                buffer.offset = cff_start_offset + offset as usize;
+                (0..char_strings.count).map(|sid| from_sid(sid, &strings)).collect()
+            }
+        };
         self.CFF_ = Some(Table_CFF_ {
             _version,
             header_size,
@@ -47,6 +66,8 @@ impl Font {
             name,
             top_dict,
             strings,
+            charsets,
+            char_strings,
         });
     }
 }
@@ -89,12 +110,6 @@ impl TopDict {
         let mut is_cid = false;
         let mut cid = CID::default();
 
-        let _get_string = |index: usize| if index < CFF_STD_STRINGS_LEN {
-            CFF_STD_STRINGS[index].to_string()
-        } else {
-            strings[index - CFF_STD_STRINGS_LEN].to_string()
-        };
-
         let get_num = |nums: &mut Vec<Number>| {
             let num = nums.pop().unwrap();
             nums.clear();
@@ -114,7 +129,7 @@ impl TopDict {
         let get_string = |nums: &mut Vec<Number>| {
             let num = nums.pop().unwrap();
             nums.clear();
-            _get_string(num.integer() as usize)
+            from_sid(num.integer() as usize, strings)
         };
 
         let get_private = |nums: &mut Vec<Number>| {
@@ -128,7 +143,7 @@ impl TopDict {
             let supplement = nums.pop().unwrap().integer();
             let index2 = nums.pop().unwrap().integer() as usize;
             let index1 = nums.pop().unwrap().integer() as usize;
-            (_get_string(index1), _get_string(index2), supplement)
+            (from_sid(index1, strings), from_sid(index2, strings), supplement)
         };
 
         while i < self._data.len() {
@@ -376,8 +391,9 @@ impl ReadBuffer for Index {
             let offset: Vec<usize> = match offset_size {
                 1 => _get_offset!(u8),
                 2 => _get_offset!(u16),
-                3 => _get_offset!(u32),
-                4 => _get_offset!(u64),
+                // u24 is not primitive type.
+                3 => buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect(),
+                4 => _get_offset!(u32),
                 _ => unreachable!(),
             };
             let data = (0..count)
@@ -390,6 +406,14 @@ impl ReadBuffer for Index {
                 data,
             }
         }
+    }
+}
+
+fn from_sid(sid: usize, strings: &Vec<String>) -> String {
+    if sid < CFF_STD_STRINGS_LEN {
+        CFF_STD_STRINGS[sid].to_string()
+    } else {
+        strings[sid - CFF_STD_STRINGS_LEN].to_string()
     }
 }
 

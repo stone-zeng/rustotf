@@ -144,24 +144,30 @@ _generate_read!(i32, BigEndian::read_i32);
 _generate_read!(i64, BigEndian::read_i64);
 
 #[allow(non_camel_case_types)]
+#[derive(Clone, Copy)]
 pub struct u24 {
-    _internal: [u8; 3],
+    _1: u16,
+    _0: u8,
 }
 
 impl fmt::Debug for u24 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let num = u32::from(self._internal[0]) * 4
-            + u32::from(self._internal[1]) * 2
-            + u32::from(self._internal[2]);
-        write!(f, "{}", num)
+        write!(f, "{}", usize::from(*self))
     }
 }
 
 impl ReadBuffer for u24 {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            _internal: [buffer.get::<u8>(), buffer.get::<u8>(), buffer.get::<u8>()],
+            _1: buffer.get(),
+            _0: buffer.get(),
         }
+    }
+}
+
+impl From<u24> for usize {
+    fn from(num: u24) -> Self {
+        ((num._1 as usize) << 8) + (num._0 as usize)
     }
 }
 
