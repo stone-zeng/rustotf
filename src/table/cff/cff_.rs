@@ -73,10 +73,9 @@ impl Font {
                 buffer.offset = cff_start_offset + offset as usize;
                 let format: u8 = buffer.get();
                 match format {
-                    0 => (0..num_glyphs).map(|i| {
-                        buffer.offset += i;
-                        from_sid(buffer.get::<u16>() as usize, &strings)
-                    }).collect(),
+                    0 => (0..num_glyphs)
+                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
+                        .collect(),
                     1 => _get_charsets!(u8),
                     2 => _get_charsets!(u16),
                     _ => unreachable!(),
@@ -91,7 +90,7 @@ impl Font {
             top_dict,
             strings,
             charsets,
-            char_strings,
+            char_strings: Default::default(),
         });
     }
 }
