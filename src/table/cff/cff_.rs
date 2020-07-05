@@ -50,13 +50,37 @@ impl Font {
             },
             _ => Default::default(),
         };
+        let num_glyphs = char_strings.count;
         let charsets = match top_dict.charset {
-            0 => { println!("[DEBUG] Charset: ISOAdobe"); Vec::new() }
-            1 => { println!("[DEBUG] Charset: Expert"); Vec::new() }
-            2 => { println!("[DEBUG] Charset: ExpertSubset"); Vec::new() }
+            0 => unimplemented!("Charset: ISOAdobe"),
+            1 => unimplemented!("Charset: Expert"),
+            2 => unimplemented!("Charset: ExpertSubset"),
             offset => {
+                macro_rules! _get_charsets {
+                    ($t:ty) => {{
+                        // ".notdef" is omitted in the array.
+                        let mut count = 1;
+                        let mut result = vec![CFF_STD_STRINGS[0].to_string()];
+                        while count < num_glyphs {
+                            let sid = buffer.get::<u16>() as usize;
+                            let num_left = buffer.get::<$t>() as usize;
+                            (0..=num_left).for_each(|i| result.push((sid + i).to_string()));
+                            count += num_left as usize + 1;
+                        }
+                        result
+                    }};
+                };
                 buffer.offset = cff_start_offset + offset as usize;
-                (0..char_strings.count).map(|sid| from_sid(sid, &strings)).collect()
+                let format: u8 = buffer.get();
+                match format {
+                    0 => (0..num_glyphs).map(|i| {
+                        buffer.offset += i;
+                        from_sid(buffer.get::<u16>() as usize, &strings)
+                    }).collect(),
+                    1 => _get_charsets!(u8),
+                    2 => _get_charsets!(u16),
+                    _ => unreachable!(),
+                }
             }
         };
         self.CFF_ = Some(Table_CFF_ {
@@ -302,7 +326,6 @@ impl Default for TopDict {
 
 #[derive(Debug)]
 struct CID {
-    _is_cid: bool,
     ros: (String, String, i32),
     cid_font_version: Number,
     cid_font_revision: Number,
@@ -317,7 +340,6 @@ struct CID {
 impl Default for CID {
     fn default() -> Self {
         Self {
-            _is_cid: false,
             ros: Default::default(),
             cid_font_version: Number::Integer(0),
             cid_font_revision: Number::Integer(0),
