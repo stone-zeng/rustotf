@@ -30,6 +30,13 @@ mod table {
         pub mod hvar;
         pub mod mvar;
     }
+    pub mod color {
+        // pub mod COLR;
+        // pub mod CPAL;
+        // pub mod CBDT;
+        // pub mod CBLC;
+        pub mod sbix;
+    }
 }
 
 pub use font::{
@@ -67,7 +74,14 @@ pub use table::{
         fvar::Table_fvar,
         hvar::Table_HVAR,
         mvar::Table_MVAR,
-    }
+    },
+    color::{
+        // COLR::Table_COLR,
+        // CPAL::Table_CPAL,
+        // CBDT::Table_CBDT,
+        // CBLC::Table_CBLC,
+        sbix::Table_sbix,
+    },
 };
 
 // pub fn parse_args(args: &[String]) -> Result<&str, &str> {

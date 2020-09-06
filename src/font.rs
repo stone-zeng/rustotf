@@ -27,7 +27,14 @@ use crate::table::{
         fvar::Table_fvar,
         hvar::Table_HVAR,
         mvar::Table_MVAR,
-    }
+    },
+    color::{
+        // COLR::Table_COLR,
+        // CPAL::Table_CPAL,
+        // CBDT::Table_CBDT,
+        // CBLC::Table_CBLC,
+        sbix::Table_sbix,
+    },
 };
 use crate::util::{Buffer, Tag};
 
@@ -172,7 +179,7 @@ pub struct Font {
     /// Grid-fitting/Scan-conversion (optional table).
     pub gasp: Option<Table_gasp>,
 
-    // Tables used for OpenType font variations
+    // Tables Related to CFF Outlines
 
     /// Compact Font Format 1.0
     pub CFF_: Option<Table_CFF_>,
@@ -180,7 +187,40 @@ pub struct Font {
     // pub CFF2: Option<Table_CFF2>,
     // /// Vertical Origin (optional table)
     // pub VORG: Option<Table_VORG>,
-    
+
+/*
+    // Table Related to SVG Outlines
+
+    /// The SVG (Scalable Vector Graphics) table
+    pub SVG_: Option<Table_SVG_>,
+
+    // Tables Related to Bitmap Glyphs
+
+    /// Embedded bitmap data
+    pub EBDT: Option<Table_EBDT>,
+    /// Embedded bitmap location data
+    pub EBLC: Option<Table_EBLC>,
+    /// Embedded bitmap scaling data
+    pub EBSC: Option<Table_EBSC>,
+
+    // Advanced Typographic Tables
+
+    /// Baseline data
+    pub BASE: Option<Table_BASE>,
+    /// Glyph definition data
+    pub GDEF: Option<Table_GDEF>,
+    /// Glyph positioning data
+    pub GPOS: Option<Table_GPOS>,
+    /// Glyph substitution data
+    pub GSUB: Option<Table_GSUB>,
+    /// Justification data
+    pub JSTF: Option<Table_JSTF>,
+    /// Math layout data
+    pub MATH: Option<Table_MATH>,
+*/
+
+    // Tables used for OpenType font variations
+
     /// Axis variations.
     pub avar: Option<Table_avar>,
     // /// CVT variations (TrueType outlines only)
@@ -197,6 +237,44 @@ pub struct Font {
     // pub STAT: Option<Table_STAT>,
     // /// Vertical metrics variations
     // pub VVAR: Option<Table_VVAR>,
+
+    // Tables Related to Color Fonts
+
+    /// Color table
+    // pub COLR: Option<Table_COLR>,
+    /// Color palette table
+    // pub CPAL: Option<Table_CPAL>,
+    /// Color bitmap data
+    // pub CBDT: Option<Table_CBDT>,
+    /// Color bitmap location data
+    // pub CBLC: Option<Table_CBLC>,
+    /// Standard bitmap graphics
+    pub sbix: Option<Table_sbix>,
+
+/*
+    // Other OpenType Tables
+
+    /// Digital signature
+    pub DSIG: Option<Table_DSIG>,
+    /// Horizontal device metrics
+    pub hdmx: Option<Table_hdmx>,
+    /// Kerning
+    pub kern: Option<Table_kern>,
+    /// Linear threshold data
+    pub LTSH: Option<Table_LTSH>,
+    /// Merge
+    pub MERG: Option<Table_MERG>,
+    /// Metadata
+    pub meta: Option<Table_meta>,
+    /// PCL 5 data
+    pub PCLT: Option<Table_PCLT>,
+    /// Vertical device metrics
+    pub VDMX: Option<Table_VDMX>,
+    /// Vertical Metrics header
+    pub vhea: Option<Table_vhea>,
+    /// Vertical Metrics
+    pub vmtx: Option<Table_vmtx>,
+*/
 }
 
 impl Font {
@@ -296,7 +374,7 @@ impl Font {
         }
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
-            "CFF ", "CFF2",
+            "CFF ", "CFF2", "sbix"
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -372,6 +450,13 @@ impl Font {
             "MVAR" => self.parse_MVAR(buffer),
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),
+
+            // "COLR" => self.parse_COLR(buffer),
+            // "CPAL" => self.parse_CPAL(buffer),
+            // "CBDT" => self.parse_CBDT(buffer),
+            // "CBLC" => self.parse_CBLC(buffer),
+            "sbix" => self.parse_sbix(buffer),
+
             _ => eprintln!("Table `{}` is not supported", tag),
         };
     }
