@@ -29,11 +29,11 @@ impl Font {
         let _version = buffer.get();
         let _num_tables = buffer.get();
         let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
-        let mut _subtables = HashMap::new();
-        for i in &_encodings {
+        let _subtables = _encodings.iter().map(|i| {
             buffer.offset = start_offset + i._offset as usize;
-            _subtables.insert((i.platform_id, i.encoding_id), buffer.get());
-        }
+            ((i.platform_id, i.encoding_id), buffer.get())
+        })
+        .collect();
 
         // TODO: parse maps
         let maps: HashMap<Encoding, Map> = HashMap::new();
@@ -114,10 +114,10 @@ impl ReadBuffer for CmapFormat0 {
         let length = buffer.get();
         let language = buffer.get();
         let gid_array = buffer.get_vec(256);
-        let mut map: Map = HashMap::new();
-        for (cid, gid) in (0..256).zip(gid_array.iter()) {
-            map.entry(cid).or_insert_with(|| u32::from(*gid));
-        }
+        let map = (0..256)
+            .zip(gid_array.iter())
+            .map(|(cid, &gid)| (cid, u32::from(gid)))
+            .collect();
         Self {
             length,
             language,

@@ -19,12 +19,13 @@ pub struct Table_glyf {
 impl Font {
     pub fn parse_glyf(&mut self, buffer: &mut Buffer) {
         let start_offset = buffer.offset;
-        let mut glyphs = Vec::new();
-        for i in &self.loca.as_ref().unwrap().offsets {
-            buffer.offset = start_offset + *i;
-            glyphs.push(buffer.get());
-        }
-        self.glyf = Some(Table_glyf { glyphs });
+        self.glyf = Some(Table_glyf {
+            glyphs: self.loca.as_ref().unwrap().offsets.iter().map(|i| {
+                buffer.offset = start_offset + i;
+                buffer.get()
+            })
+            .collect()
+        });
     }
 }
 
