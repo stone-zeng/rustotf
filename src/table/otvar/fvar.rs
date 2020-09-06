@@ -28,8 +28,10 @@ impl Font {
     pub fn parse_fvar(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
         let axes_array_offset = buffer.get();
-        buffer.skip::<u16>(1);
-        let _axis_count = buffer.get();
+        let _axis_count = {
+            buffer.skip::<u16>(1);
+            buffer.get()
+        };
         let _axis_size = buffer.get();
         let _instance_count = buffer.get();
         let _instance_size = buffer.get();

@@ -24,8 +24,10 @@ pub struct Table_avar {
 impl Font {
     pub fn parse_avar(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
-        buffer.skip::<u16>(1);
-        let _axis_count = buffer.get();
+        let _axis_count = {
+            buffer.skip::<u16>(1);
+            buffer.get()
+        };
         let _axis_segment_maps = buffer.get_vec(_axis_count as usize);
 
         self.avar = Some(Table_avar {

@@ -200,8 +200,10 @@ impl ReadBuffer for CmapFormat4 {
         let range_shift = buffer.get();
         let seg_count = seg_count_x2 as usize / 2;
         let end_char_code = buffer.get_vec(seg_count);
-        buffer.skip::<u16>(1);
-        let start_char_code = buffer.get_vec(seg_count);
+        let start_char_code = {
+            buffer.skip::<u16>(1);
+            buffer.get_vec(seg_count)
+        };
         let id_delta = buffer.get_vec(seg_count);
         let id_range_offset_begin_offset = buffer.offset;
         let id_range_offset = buffer.get_vec(seg_count);

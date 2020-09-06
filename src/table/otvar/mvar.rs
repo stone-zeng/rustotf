@@ -26,8 +26,10 @@ impl Font {
     #[allow(non_snake_case)]
     pub fn parse_MVAR(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
-        buffer.skip::<u16>(1);
-        let _value_record_size = buffer.get();
+        let _value_record_size = {
+            buffer.skip::<u16>(1);
+            buffer.get()
+        };
         let _value_record_count = buffer.get();
         let _item_variation_store_offset = buffer.get();
         let _value_records = buffer.get_vec(_value_record_count as usize);

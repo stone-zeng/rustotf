@@ -304,8 +304,10 @@ impl Font {
         let flavor = buffer.get::<u32>();
         let _length = buffer.get::<u32>();
         let num_tables = buffer.get::<u16>();
-        buffer.skip::<u16>(1);
-        let _total_sfnt_size = buffer.get::<u32>();
+        let _total_sfnt_size = {
+            buffer.skip::<u16>(1);
+            buffer.get::<u32>()
+        };
         let _major_version = buffer.get::<u16>();
         let _minor_version = buffer.get::<u16>();
         let _meta_offset = buffer.get::<u32>();
@@ -335,8 +337,10 @@ impl Font {
         let flavor = buffer.get::<u32>();
         let _length = buffer.get::<u32>();
         let _num_tables = buffer.get::<u16>();
-        buffer.skip::<u16>(1);
-        let _total_sfnt_size = buffer.get::<u32>();
+        let _total_sfnt_size = {
+            buffer.skip::<u16>(1);
+            buffer.get::<u32>()
+        };
         let _total_compressed_size = buffer.get::<u32>();
         let _major_version = buffer.get::<u16>();
         let _minor_version = buffer.get::<u16>();
