@@ -33,25 +33,25 @@ pub struct Table_maxp {
 impl Font {
     pub fn parse_maxp(&mut self, buffer: &mut Buffer) {
         let mut table = Table_maxp {
-            _version: buffer.get::<Fixed>(),
-            num_glyphs: buffer.get::<u16>(),
+            _version: buffer.get(),
+            num_glyphs: buffer.get(),
             ..Default::default()
         };
         // Version 1.0
         if table._version == 0x0001_0000 {
-            table.max_points = Some(buffer.get::<u16>());
-            table.max_contours = Some(buffer.get::<u16>());
-            table.max_composite_points = Some(buffer.get::<u16>());
-            table.max_composite_contours = Some(buffer.get::<u16>());
-            table.max_zones = Some(buffer.get::<u16>());
-            table.max_twilight_points = Some(buffer.get::<u16>());
-            table.max_storage = Some(buffer.get::<u16>());
-            table.max_function_defs = Some(buffer.get::<u16>());
-            table.max_instruction_defs = Some(buffer.get::<u16>());
-            table.max_stack_elements = Some(buffer.get::<u16>());
-            table.max_size_of_instructions = Some(buffer.get::<u16>());
-            table.max_component_elements = Some(buffer.get::<u16>());
-            table.max_component_depth = Some(buffer.get::<u16>());
+            table.max_points = Some(buffer.get());
+            table.max_contours = Some(buffer.get());
+            table.max_composite_points = Some(buffer.get());
+            table.max_composite_contours = Some(buffer.get());
+            table.max_zones = Some(buffer.get());
+            table.max_twilight_points = Some(buffer.get());
+            table.max_storage = Some(buffer.get());
+            table.max_function_defs = Some(buffer.get());
+            table.max_instruction_defs = Some(buffer.get());
+            table.max_stack_elements = Some(buffer.get());
+            table.max_size_of_instructions = Some(buffer.get());
+            table.max_component_elements = Some(buffer.get());
+            table.max_component_depth = Some(buffer.get());
         }
         self.maxp = Some(table);
     }

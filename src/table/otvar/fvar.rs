@@ -27,15 +27,15 @@ pub struct Table_fvar {
 impl Font {
     pub fn parse_fvar(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
-        let axes_array_offset = buffer.get::<u16>();
+        let axes_array_offset = buffer.get();
         buffer.skip::<u16>(1);
-        let _axis_count = buffer.get::<u16>();
-        let _axis_size = buffer.get::<u16>();
-        let _instance_count = buffer.get::<u16>();
-        let _instance_size = buffer.get::<u16>();
-        let _axes = buffer.get_vec::<VariationAxis>(_axis_count as usize);
+        let _axis_count = buffer.get();
+        let _axis_size = buffer.get();
+        let _instance_count = buffer.get();
+        let _instance_size = buffer.get();
+        let _axes = buffer.get_vec(_axis_count as usize);
         let _instances = (0.._instance_count)
-            .map(|_| read_instance(buffer, _axis_count as usize))
+            .map(|_| Instance::read_instance(buffer, _axis_count as usize))
             .collect();
 
         self.fvar = Some(Table_fvar {
@@ -64,12 +64,12 @@ struct VariationAxis {
 impl ReadBuffer for VariationAxis {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            axis_tag: buffer.get::<Tag>(),
-            min_value: buffer.get::<Fixed>(),
-            default_value: buffer.get::<Fixed>(),
-            max_value: buffer.get::<Fixed>(),
-            flags: buffer.get::<u16>(),
-            axis_name_id: buffer.get::<u16>(),
+            axis_tag: buffer.get(),
+            min_value: buffer.get(),
+            default_value: buffer.get(),
+            max_value: buffer.get(),
+            flags: buffer.get(),
+            axis_name_id: buffer.get(),
         }
     }
 }
@@ -84,15 +84,13 @@ struct Instance {
 
 // We can't use trait `ReadBuffer` here because reading `Instance` requires
 // `axis_count`, which from the outside structure.
-fn read_instance(buffer: &mut Buffer, axis_count: usize) -> Instance {
-    let subfamily_name_id = buffer.get::<u16>();
-    let flags = buffer.get::<u16>();
-    let coordinates = buffer.get_vec::<Fixed>(axis_count);
-    let postscript_name_id = buffer.get::<u16>();
-    Instance {
-        subfamily_name_id,
-        flags,
-        coordinates,
-        postscript_name_id,
+impl Instance {
+    fn read_instance(buffer: &mut Buffer, axis_count: usize) -> Self {
+        Self {
+            subfamily_name_id: buffer.get(),
+            flags: buffer.get(),
+            coordinates: buffer.get_vec(axis_count),
+            postscript_name_id: buffer.get(),
+        }
     }
 }

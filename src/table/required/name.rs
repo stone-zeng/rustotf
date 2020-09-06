@@ -37,10 +37,10 @@ pub struct Table_name {
 
 impl Font {
     pub fn parse_name(&mut self, buffer: &mut Buffer) {
-        let _format = buffer.get::<u16>();
-        let _count = buffer.get::<u16>();
-        let _string_offset = buffer.get::<u16>();
-        let mut _names = buffer.get_vec::<Name>(_count as usize);
+        let _format = buffer.get();
+        let _count = buffer.get();
+        let _string_offset = buffer.get();
+        let mut _names = buffer.get_vec(_count as usize);
         let mut table = Table_name {
             _format,
             _count,
@@ -49,8 +49,8 @@ impl Font {
             ..Default::default()
         };
         if _format == 1 {
-            let _lang_tag_count = buffer.get::<u16>();
-            let _lang_tags = buffer.get_vec::<LangTag>(_lang_tag_count as usize);
+            let _lang_tag_count = buffer.get();
+            let _lang_tags = buffer.get_vec(_lang_tag_count as usize);
             table._lang_tag_count = Some(_lang_tag_count);
             table._lang_tags = Some(_lang_tags);
         };
@@ -105,12 +105,12 @@ impl Name {
 impl ReadBuffer for Name {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            platform_id: buffer.get::<u16>(),
-            encoding_id: buffer.get::<u16>(),
-            language_id: buffer.get::<u16>(),
-            name_id: buffer.get::<u16>(),
-            _length: buffer.get::<u16>(),
-            _offset: buffer.get::<u16>(),
+            platform_id: buffer.get(),
+            encoding_id: buffer.get(),
+            language_id: buffer.get(),
+            name_id: buffer.get(),
+            _length: buffer.get(),
+            _offset: buffer.get(),
             ..Default::default()
         }
     }
@@ -125,8 +125,8 @@ struct LangTag {
 
 impl ReadBuffer for LangTag {
     fn read(buffer: &mut Buffer) -> Self {
-        let _length = buffer.get::<u16>();
-        let _offset = buffer.get::<u16>();
+        let _length = buffer.get();
+        let _offset = buffer.get();
         Self {
             _length,
             _offset,

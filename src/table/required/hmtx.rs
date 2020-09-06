@@ -23,8 +23,8 @@ impl Font {
         let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics as usize;
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         self.hmtx = Some(Table_hmtx {
-            hor_metrics: buffer.get_vec::<LongHorMetric>(num_hor_metrics),
-            left_side_bearings: buffer.get_vec::<i16>(num_glyphs - num_hor_metrics),
+            hor_metrics: buffer.get_vec(num_hor_metrics),
+            left_side_bearings: buffer.get_vec(num_glyphs - num_hor_metrics),
         });
     }
 }
@@ -38,8 +38,8 @@ pub struct LongHorMetric {
 impl ReadBuffer for LongHorMetric {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            advance_width: buffer.get::<u16>(),
-            left_side_bearing: buffer.get::<i16>(),
+            advance_width: buffer.get(),
+            left_side_bearing: buffer.get(),
         }
     }
 }

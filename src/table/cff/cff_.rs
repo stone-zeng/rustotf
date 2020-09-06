@@ -30,8 +30,8 @@ impl Font {
     pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
         let cff_start_offset = buffer.offset;
         let _version = buffer.get_version::<u8>();
-        let header_size = buffer.get::<u8>();
-        let offset_size = buffer.get::<u8>();
+        let header_size = buffer.get();
+        let offset_size = buffer.get();
         buffer.offset = cff_start_offset + header_size as usize;
         // We assume that the name index only contains 1 element.
         let name = String::from_utf8(
@@ -403,7 +403,7 @@ impl ReadBuffer for Index {
                 ..Default::default()
             }
         } else {
-            let offset_size = buffer.get::<u8>();
+            let offset_size = buffer.get();
             macro_rules! _get_offset {
                 ($t:ty) => {
                     buffer.get_vec::<$t>(count + 1).iter().map(|&i| i as usize).collect()
@@ -418,7 +418,7 @@ impl ReadBuffer for Index {
                 _ => unreachable!(),
             };
             let data = (0..count)
-                .map(|i| buffer.get_vec::<u8>(offset[i + 1] - offset[i]))
+                .map(|i| buffer.get_vec(offset[i + 1] - offset[i]))
                 .collect();
             Self {
                 count,

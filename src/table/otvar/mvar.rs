@@ -27,10 +27,10 @@ impl Font {
     pub fn parse_MVAR(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
         buffer.skip::<u16>(1);
-        let _value_record_size = buffer.get::<u16>();
-        let _value_record_count = buffer.get::<u16>();
-        let _item_variation_store_offset = buffer.get::<u16>();
-        let _value_records = buffer.get_vec::<Value>(_value_record_count as usize);
+        let _value_record_size = buffer.get();
+        let _value_record_count = buffer.get();
+        let _item_variation_store_offset = buffer.get();
+        let _value_records = buffer.get_vec(_value_record_count as usize);
 
         self.MVAR = Some(Table_MVAR {
             _version,
@@ -52,9 +52,9 @@ struct Value {
 impl ReadBuffer for Value {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            value_tag: buffer.get::<Tag>(),
-            delta_set_outer_index: buffer.get::<u16>(),
-            delta_set_inner_index: buffer.get::<u16>(),
+            value_tag: buffer.get(),
+            delta_set_outer_index: buffer.get(),
+            delta_set_inner_index: buffer.get(),
         }
     }
 }

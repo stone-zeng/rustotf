@@ -73,58 +73,58 @@ impl Font {
         let os_2_length = self.get_table_len(&Tag::from("OS/2"));
         // Version 0
         let mut table = Table_OS_2 {
-            _version: buffer.get::<u16>(),
-            x_avg_char_width: buffer.get::<i16>(),
-            us_weight_class: buffer.get::<u16>(),
-            us_width_class: buffer.get::<u16>(),
-            fs_type: buffer.get::<u16>(),
-            y_subscript_x_size: buffer.get::<i16>(),
-            y_subscript_y_size: buffer.get::<i16>(),
-            y_subscript_x_offset: buffer.get::<i16>(),
-            y_subscript_y_offset: buffer.get::<i16>(),
-            y_superscript_x_size: buffer.get::<i16>(),
-            y_superscript_y_size: buffer.get::<i16>(),
-            y_superscript_x_offset: buffer.get::<i16>(),
-            y_superscript_y_offset: buffer.get::<i16>(),
-            y_strikeout_size: buffer.get::<i16>(),
-            y_strikeout_position: buffer.get::<i16>(),
-            s_family_class: buffer.get::<i16>(),
-            panose: buffer.get_vec::<u8>(10),
-            ul_unicode_range1: buffer.get::<u32>(),
-            ul_unicode_range2: buffer.get::<u32>(),
-            ul_unicode_range3: buffer.get::<u32>(),
-            ul_unicode_range4: buffer.get::<u32>(),
-            ach_vend_i_d: buffer.get::<Tag>(),
-            fs_selection: buffer.get::<u16>(),
-            us_first_char_index: buffer.get::<u16>(),
-            us_last_char_index: buffer.get::<u16>(),
+            _version: buffer.get(),
+            x_avg_char_width: buffer.get(),
+            us_weight_class: buffer.get(),
+            us_width_class: buffer.get(),
+            fs_type: buffer.get(),
+            y_subscript_x_size: buffer.get(),
+            y_subscript_y_size: buffer.get(),
+            y_subscript_x_offset: buffer.get(),
+            y_subscript_y_offset: buffer.get(),
+            y_superscript_x_size: buffer.get(),
+            y_superscript_y_size: buffer.get(),
+            y_superscript_x_offset: buffer.get(),
+            y_superscript_y_offset: buffer.get(),
+            y_strikeout_size: buffer.get(),
+            y_strikeout_position: buffer.get(),
+            s_family_class: buffer.get(),
+            panose: buffer.get_vec(10),
+            ul_unicode_range1: buffer.get(),
+            ul_unicode_range2: buffer.get(),
+            ul_unicode_range3: buffer.get(),
+            ul_unicode_range4: buffer.get(),
+            ach_vend_i_d: buffer.get(),
+            fs_selection: buffer.get(),
+            us_first_char_index: buffer.get(),
+            us_last_char_index: buffer.get(),
             ..Default::default()
         };
         // Version 0 (Microsoft)
         if os_2_length >= 78 {
-            table.s_typo_ascender = Some(buffer.get::<i16>());
-            table.s_typo_descender = Some(buffer.get::<i16>());
-            table.s_typo_line_gap = Some(buffer.get::<i16>());
-            table.us_win_ascent = Some(buffer.get::<u16>());
-            table.us_win_descent = Some(buffer.get::<u16>());
+            table.s_typo_ascender = Some(buffer.get());
+            table.s_typo_descender = Some(buffer.get());
+            table.s_typo_line_gap = Some(buffer.get());
+            table.us_win_ascent = Some(buffer.get());
+            table.us_win_descent = Some(buffer.get());
         }
         // Version 1
         if table._version >= 1 {
-            table.ul_code_page_range1 = Some(buffer.get::<u32>());
-            table.ul_code_page_range2 = Some(buffer.get::<u32>());
+            table.ul_code_page_range1 = Some(buffer.get());
+            table.ul_code_page_range2 = Some(buffer.get());
         }
         // Version 2, 3, 4
         if table._version >= 2 {
-            table.sx_height = Some(buffer.get::<i16>());
-            table.s_cap_height = Some(buffer.get::<i16>());
-            table.us_default_char = Some(buffer.get::<u16>());
-            table.us_break_char = Some(buffer.get::<u16>());
-            table.us_max_context = Some(buffer.get::<u16>());
+            table.sx_height = Some(buffer.get());
+            table.s_cap_height = Some(buffer.get());
+            table.us_default_char = Some(buffer.get());
+            table.us_break_char = Some(buffer.get());
+            table.us_max_context = Some(buffer.get());
         }
         // Version 5
         if table._version >= 5 {
-            table.us_lower_optical_point_size = Some(buffer.get::<u16>());
-            table.us_upper_optical_point_size = Some(buffer.get::<u16>());
+            table.us_lower_optical_point_size = Some(buffer.get());
+            table.us_upper_optical_point_size = Some(buffer.get());
         }
         self.OS_2 = Some(table);
     }

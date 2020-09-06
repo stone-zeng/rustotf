@@ -191,7 +191,7 @@ impl PartialEq<i32> for Fixed {
 
 impl ReadBuffer for Fixed {
     fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get::<i32>() }
+        Self { _num: buffer.get() }
     }
 }
 
@@ -215,7 +215,7 @@ impl PartialEq<i16> for F2Dot14 {
 
 impl ReadBuffer for F2Dot14 {
     fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get::<i16>() }
+        Self { _num: buffer.get() }
     }
 }
 
@@ -239,7 +239,7 @@ impl fmt::Debug for LongDateTime {
 
 impl ReadBuffer for LongDateTime {
     fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get::<i64>() }
+        Self { _num: buffer.get() }
     }
 }
 

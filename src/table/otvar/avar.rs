@@ -25,8 +25,8 @@ impl Font {
     pub fn parse_avar(&mut self, buffer: &mut Buffer) {
         let _version = buffer.get_version::<u16>();
         buffer.skip::<u16>(1);
-        let _axis_count = buffer.get::<u16>();
-        let _axis_segment_maps = buffer.get_vec::<SegmentMaps>(_axis_count as usize);
+        let _axis_count = buffer.get();
+        let _axis_segment_maps = buffer.get_vec(_axis_count as usize);
 
         self.avar = Some(Table_avar {
             _version,
@@ -44,8 +44,8 @@ struct SegmentMaps {
 
 impl ReadBuffer for SegmentMaps {
     fn read(buffer: &mut Buffer) -> Self {
-        let _position_map_count = buffer.get::<u16>();
-        let _axis_value_maps = buffer.get_vec::<AxisValueMap>(_position_map_count as usize);
+        let _position_map_count = buffer.get();
+        let _axis_value_maps = buffer.get_vec(_position_map_count as usize);
         Self {
             _position_map_count,
             _axis_value_maps,
@@ -62,8 +62,8 @@ struct AxisValueMap {
 impl ReadBuffer for AxisValueMap {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            from_coordinate: buffer.get::<F2Dot14>(),
-            to_coordinate: buffer.get::<F2Dot14>(),
+            from_coordinate: buffer.get(),
+            to_coordinate: buffer.get(),
         }
     }
 }

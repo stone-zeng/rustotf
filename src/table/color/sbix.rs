@@ -21,11 +21,11 @@ impl Font {
 
         let _version = buffer.get::<u16>();
         let _flags = buffer.get::<u16>();
-        let _num_strikes = buffer.get::<u32>();
-        let mut _strike_offsets = buffer.get_vec::<u32>(_num_strikes as usize);
+        let num_strikes = buffer.get::<u32>();
+        let strike_offsets = buffer.get_vec::<u32>(num_strikes as usize);
 
         self.sbix = Some(Table_sbix {
-            strikes: _strike_offsets.iter().map(|&strike_offset| {
+            strikes: strike_offsets.iter().map(|&strike_offset| {
                 let strike_start_offset = sbix_start_offset + strike_offset as usize;
                 buffer.offset = strike_start_offset;
                 let ppem = buffer.get();

@@ -22,7 +22,7 @@ impl Font {
         let mut glyphs = Vec::new();
         for i in &self.loca.as_ref().unwrap().offsets {
             buffer.offset = start_offset + *i;
-            glyphs.push(buffer.get::<Glyph>());
+            glyphs.push(buffer.get());
         }
         self.glyf = Some(Table_glyf { glyphs });
     }
@@ -43,13 +43,13 @@ pub struct Glyph {
 
 impl ReadBuffer for Glyph {
     fn read(buffer: &mut Buffer) -> Self {
-        let number_of_contours = buffer.get::<i16>();
+        let number_of_contours = buffer.get();
 
         let mut glyph = Glyph {
-            x_min: buffer.get::<i16>(),
-            y_min: buffer.get::<i16>(),
-            x_max: buffer.get::<i16>(),
-            y_max: buffer.get::<i16>(),
+            x_min: buffer.get(),
+            y_min: buffer.get(),
+            x_max: buffer.get(),
+            y_max: buffer.get(),
             ..Default::default()
         };
 
@@ -86,9 +86,9 @@ impl Glyph {
     // const UNSCALED_COMPONENT_OFFSET: u16 = 0x1000;
 
     fn parse_simple_glyph(&mut self, buffer: &mut Buffer, number_of_contours: i16) {
-        let end_points_of_contours = buffer.get_vec::<u16>(number_of_contours as usize);
-        self.instruction_length = buffer.get::<u16>();
-        self.instructions = buffer.get_vec::<u8>(self.instruction_length as usize);
+        let end_points_of_contours = buffer.get_vec(number_of_contours as usize);
+        self.instruction_length = buffer.get();
+        self.instructions = buffer.get_vec(self.instruction_length as usize);
         self.parse_contours(buffer, end_points_of_contours);
     }
 
@@ -122,19 +122,19 @@ impl Glyph {
 
     fn parse_composite_glyph(&mut self, buffer: &mut Buffer) {
         let mut flags = 0xFFFF;
-        
+
         while flags & Self::MORE_COMPONENTS != 0 {
             let mut comp: Component = Default::default();
 
-            flags = buffer.get::<u16>();
-            comp.glyph_index = buffer.get::<u16>();
+            flags = buffer.get();
+            comp.glyph_index = buffer.get();
 
             // Offsets and anchors
             if flags & Self::ARGS_ARE_XY_VALUES != 0 {
                 // Arguments are signed xy value
                 if flags & Self::ARG_1_AND_2_ARE_WORDS != 0 {
-                    comp.x = buffer.get::<i16>();
-                    comp.y = buffer.get::<i16>();
+                    comp.x = buffer.get();
+                    comp.y = buffer.get();
                 } else {
                     comp.x = buffer.get::<i8>() as i16;
                     comp.y = buffer.get::<i8>() as i16;
@@ -143,7 +143,7 @@ impl Glyph {
                 // Arguments are unsigned point numbers
                 // TODO: not used
                 let (outer, inner) = if flags & Self::ARG_1_AND_2_ARE_WORDS != 0 {
-                    (buffer.get::<u16>(), buffer.get::<u16>())
+                    (buffer.get(), buffer.get())
                 } else {
                     (buffer.get::<u8>() as u16, buffer.get::<u8>() as u16)
                 };
@@ -153,16 +153,16 @@ impl Glyph {
             // Scale
             // TODO: scale matrix is not initialized
             if flags & Self::WE_HAVE_A_SCALE != 0 {
-                (comp.scale.0).0 = buffer.get::<F2Dot14>();
+                (comp.scale.0).0 = buffer.get();
                 (comp.scale.1).1 = (comp.scale.0).0;
             } else if flags & Self::WE_HAVE_AN_X_AND_Y_SCALE != 0 {
-                (comp.scale.0).0 = buffer.get::<F2Dot14>();
-                (comp.scale.1).1 = buffer.get::<F2Dot14>();
+                (comp.scale.0).0 = buffer.get();
+                (comp.scale.1).1 = buffer.get();
             } else if flags & Self::WE_HAVE_A_TWO_BY_TWO != 0 {
-                (comp.scale.0).0 = buffer.get::<F2Dot14>();
-                (comp.scale.0).1 = buffer.get::<F2Dot14>();
-                (comp.scale.1).0 = buffer.get::<F2Dot14>();
-                (comp.scale.1).1 = buffer.get::<F2Dot14>();
+                (comp.scale.0).0 = buffer.get();
+                (comp.scale.0).1 = buffer.get();
+                (comp.scale.1).0 = buffer.get();
+                (comp.scale.1).1 = buffer.get();
             }
 
             // Flags
@@ -178,8 +178,8 @@ impl Glyph {
 
     fn parse_instructions(&mut self, buffer: &mut Buffer, flags: u16) {
         if flags & Self::WE_HAVE_INSTRUCTIONS != 0 {
-            self.instruction_length = buffer.get::<u16>();
-            self.instructions = buffer.get_vec::<u8>(self.instruction_length as usize);
+            self.instruction_length = buffer.get();
+            self.instructions = buffer.get_vec(self.instruction_length as usize);
         }
     }
 }

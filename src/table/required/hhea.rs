@@ -34,21 +34,21 @@ impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer) {
         self.hhea = Some(Table_hhea {
             _version: buffer.get_version::<u16>(),
-            ascender: buffer.get::<i16>(),
-            descender: buffer.get::<i16>(),
-            line_gap: buffer.get::<i16>(),
-            advance_width_max: buffer.get::<u16>(),
-            min_left_side_bearing: buffer.get::<i16>(),
-            min_right_side_bearing: buffer.get::<i16>(),
-            x_max_extent: buffer.get::<i16>(),
-            caret_slope_rise: buffer.get::<i16>(),
-            caret_slope_run: buffer.get::<i16>(),
-            caret_offset: buffer.get::<i16>(),
+            ascender: buffer.get(),
+            descender: buffer.get(),
+            line_gap: buffer.get(),
+            advance_width_max: buffer.get(),
+            min_left_side_bearing: buffer.get(),
+            min_right_side_bearing: buffer.get(),
+            x_max_extent: buffer.get(),
+            caret_slope_rise: buffer.get(),
+            caret_slope_run: buffer.get(),
+            caret_offset: buffer.get(),
             metric_data_format: {
                 buffer.skip::<i16>(4);
-                buffer.get::<i16>()
+                buffer.get()
             },
-            num_hor_metrics: buffer.get::<u16>(),
+            num_hor_metrics: buffer.get(),
         });
     }
 }

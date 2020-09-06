@@ -33,27 +33,27 @@ pub struct Table_post {
 impl Font {
     pub fn parse_post(&mut self, buffer: &mut Buffer) {
         let mut table = Table_post {
-            _version: buffer.get::<Fixed>(),
-            italic_angle: buffer.get::<Fixed>(),
-            underline_position: buffer.get::<i16>(),
-            underline_thickness: buffer.get::<i16>(),
-            is_fixed_pitch: buffer.get::<u32>(),
-            min_mem_type42: buffer.get::<u32>(),
-            max_mem_type42: buffer.get::<u32>(),
-            min_mem_type1: buffer.get::<u32>(),
-            max_mem_type1: buffer.get::<u32>(),
+            _version: buffer.get(),
+            italic_angle: buffer.get(),
+            underline_position: buffer.get(),
+            underline_thickness: buffer.get(),
+            is_fixed_pitch: buffer.get(),
+            min_mem_type42: buffer.get(),
+            max_mem_type42: buffer.get(),
+            min_mem_type1: buffer.get(),
+            max_mem_type1: buffer.get(),
             ..Default::default()
         };
         if table._version == 0x0002_0000 {
-            table.num_glyphs = Some(buffer.get::<u16>());
-            let num_glyphs = table.num_glyphs.unwrap() as usize;
-            table.glyph_name_index = Some(buffer.get_vec::<u16>(num_glyphs));
-            table.names = Some(buffer.get_vec::<i8>(num_glyphs));
+            let num_glyphs = buffer.get();
+            table.num_glyphs = Some(num_glyphs);
+            table.glyph_name_index = Some(buffer.get_vec(num_glyphs as usize));
+            table.names = Some(buffer.get_vec(num_glyphs as usize));
         }
         if table._version == 0x0002_5000 {
-            table.num_glyphs = Some(buffer.get::<u16>());
-            let num_glyphs = table.num_glyphs.unwrap() as usize;
-            table.offset = Some(buffer.get_vec::<i8>(num_glyphs));
+            let num_glyphs = buffer.get();
+            table.num_glyphs = Some(num_glyphs);
+            table.offset = Some(buffer.get_vec(num_glyphs as usize));
         }
         self.post = Some(table);
     }
