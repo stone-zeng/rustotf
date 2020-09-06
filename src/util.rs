@@ -1,6 +1,6 @@
 // extern crate byteorder;
 
-use std::{fmt, io::Read, mem};
+use std::{fmt, io::Read, mem, str};
 
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
@@ -266,8 +266,8 @@ impl Tag {
         }
     }
 
-    pub fn to_string(&self) -> String {
-        self._internal.iter().map(|i| *i as char).collect::<String>()
+    pub fn to_str(&self) -> &str {
+        str::from_utf8(&self._internal).unwrap()
     }
 }
 
@@ -275,10 +275,10 @@ impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
             _internal: [
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
-                buffer.get::<u8>(),
+                buffer.get(),
+                buffer.get(),
+                buffer.get(),
+                buffer.get(),
             ]
         }
     }

@@ -421,7 +421,7 @@ impl Font {
     }
 
     fn _parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
-        match tag.to_string().as_str() {
+        match tag.to_str() {
             "head" => self.parse_head(buffer),
             "hhea" => self.parse_hhea(buffer),
             "maxp" => self.parse_maxp(buffer),
