@@ -13,8 +13,10 @@ for url in \
     $gh_url/adobe-fonts/source-han-sans/release/OTC/SourceHanSans-Heavy.ttc                              \
     $gh_url/adobe-fonts/source-han-serif/release/OTC/SourceHanSerif-Regular.ttc                          \
     https://github.com/adobe-fonts/source-han-super-otc/releases/download/20190603/SourceHanNotoCJK.ttc  \
-    $gh_url/adobe-fonts/source-sans-pro/release/WOFF/TTF/SourceSansPro-ExtraLight.ttf.woff               \
+    $gh_url/adobe-fonts/source-sans-pro/release/WOFF/TTF/SourceSans3-ExtraLight.ttf.woff                 \
+    $gh_url/adobe-fonts/source-sans-pro/release/WOFF/VAR/SourceSans3VF-Roman.ttf.woff                    \
     $gh_url/adobe-fonts/source-serif-pro/release/WOFF/OTF/SourceSerifPro-Bold.otf.woff                   \
+    $gh_url/adobe-fonts/source-serif-pro/release/WOFF/VAR/SourceSerifVariable-Italic.otf.woff            \
 
 do
     font=$(basename $url)

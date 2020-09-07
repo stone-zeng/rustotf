@@ -21,9 +21,11 @@ const TTC_FONTS: [&str; 3] = [
     "SourceHanNotoCJK.ttc",
 ];
 
-const WOFF_FONTS: [&str; 2] = [
-    "SourceSansPro-ExtraLight.ttf.woff",
+const WOFF_FONTS: [&str; 4] = [
+    "SourceSans3-ExtraLight.ttf.woff",
+    "SourceSans3VF-Roman.ttf.woff",
     "SourceSerifPro-Bold.otf.woff",
+    "SourceSerifVariable-Italic.otf.woff",
 ];
 
 fn check_font(font_file_path: &str, flag: &str) {
