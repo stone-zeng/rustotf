@@ -368,7 +368,7 @@ impl Number {
 }
 
 impl fmt::Debug for Number {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Self::Integer(n) => write!(f, "{}", n),
             Self::Real(n) => write!(f, "{}", n),

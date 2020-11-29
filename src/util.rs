@@ -73,7 +73,7 @@ impl Buffer {
 }
 
 impl fmt::Debug for Buffer {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
             "Buffer {{len: {}, elems: [{}, ..., {}]}}",
@@ -151,7 +151,7 @@ pub struct u24 {
 }
 
 impl fmt::Debug for u24 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", usize::from(*self))
     }
 }
@@ -178,7 +178,7 @@ pub struct Fixed {
 }
 
 impl fmt::Debug for Fixed {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:.3}", f64::from(self._num) / 65536.0)
     }
 }
@@ -202,7 +202,7 @@ pub struct F2Dot14 {
 }
 
 impl fmt::Debug for F2Dot14 {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:.3}", self._num as f64 / 16384.0)
     }
 }
@@ -231,7 +231,7 @@ impl LongDateTime {
 }
 
 impl fmt::Debug for LongDateTime {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let timestamp = self._num - Self::DATE_TIME_OFFSET;
         write!(f, "{}", NaiveDateTime::from_timestamp(timestamp, 0))
     }
@@ -248,7 +248,7 @@ impl ReadBuffer for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-#[derive(Debug, Default, Eq, PartialEq, Hash)]
+#[derive(Default, Eq, PartialEq, Hash)]
 pub struct Tag {
     _internal: [u8; 4],
 }
@@ -284,8 +284,14 @@ impl ReadBuffer for Tag {
     }
 }
 
+impl fmt::Debug for Tag {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\"{}\"", self.to_str())
+    }
+}
+
 impl fmt::Display for Tag {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self._internal.iter().map(|i| *i as char).collect::<String>())
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "\"{}\"", self.to_str())
     }
 }
