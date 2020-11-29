@@ -3,10 +3,11 @@ use std::fs;
 
 const FONTS_PATH: &str = "./tests/fonts/";
 
-const TTF_FONTS: [&str; 3] = [
+const TTF_FONTS: [&str; 4] = [
     "NotoSans-SemiCondensed.ttf",
     "SourceSerifPro-LightIt.ttf",
     "WorkSans-Regular.ttf",
+    "cozette_bitmap.ttf",
 ];
 
 const OTF_FONTS: [&str; 3] = [

@@ -1,5 +1,7 @@
+use std::mem;
+
 use crate::font::Font;
-use crate::util::Buffer;
+use crate::util::{Buffer, Tag};
 
 /// ## `loca` &mdash; Index to Location
 ///
@@ -18,7 +20,16 @@ pub struct Table_loca {
 impl Font {
     pub fn parse_loca(&mut self, buffer: &mut Buffer) {
         let index_to_loc_format = self.head.as_ref().unwrap().index_to_loc_format;
-        let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
+        let loca_len = self.get_table_len(&Tag::from("loca"));
+        let num_glyphs = loca_len / match index_to_loc_format {
+            0 => mem::size_of::<u16>(),
+            1 => mem::size_of::<u32>(),
+            _ => unreachable!(),
+        };
+        let maxp_num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
+        if maxp_num_glyphs != num_glyphs {
+            eprintln!("Table 'loca' corrupted.");
+        }
         let mut offsets = Vec::new();
         match index_to_loc_format {
             0 => for _ in 0..num_glyphs {
