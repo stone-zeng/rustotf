@@ -4,15 +4,15 @@ use std::fs;
 const FONTS_PATH: &str = "./tests/fonts/";
 
 const TTF_FONTS: [&str; 4] = [
+    "cozette_bitmap.ttf",
     "NotoSans-SemiCondensed.ttf",
     "SourceSerifPro-LightIt.ttf",
     "WorkSans-Regular.ttf",
-    "cozette_bitmap.ttf",
 ];
 
 const OTF_FONTS: [&str; 3] = [
     "SourceHanSansSC-Regular.otf",
-    "SourceSansPro-Black.otf",
+    "SourceSans3-Black.otf",
     "XITSMath-Regular.otf",
 ];
 
