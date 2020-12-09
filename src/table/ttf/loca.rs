@@ -25,7 +25,7 @@ impl Font {
             0 => mem::size_of::<u16>(),
             1 => mem::size_of::<u32>(),
             _ => unreachable!(),
-        };
+        } - 1;
         let maxp_num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         if maxp_num_glyphs != num_glyphs {
             eprintln!("Table 'loca' corrupted.");
