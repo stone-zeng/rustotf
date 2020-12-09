@@ -22,6 +22,11 @@ use crate::table::{
         // cff2::Table_CFF2,
         // vorg::Table_VORG,
     },
+    bitmap::{
+        ebdt::Table_EBDT,
+        eblc::Table_EBLC,
+        ebsc::Table_EBSC,
+    },
     otvar::{
         avar::Table_avar,
         fvar::Table_fvar,
@@ -48,10 +53,12 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     font_container.init();
     font_container.parse();
     // TODO: for debug
-    // for i in &font_container.fonts {
-    //     println!("{:#?}", i.table_records);
-    //     println!("{:#?}", i.CFF_);
-    // }
+    for i in &font_container.fonts {
+        println!("{:#?}", i.table_records);
+        println!("\"EBDT\": {:#?}", i.EBDT);
+        println!("\"EBLC\": {:#?}", i.EBLC);
+        println!("\"EBSC\": {:#?}", i.EBSC);
+    }
     Ok(())
 }
 
@@ -188,11 +195,10 @@ pub struct Font {
     // /// Vertical Origin (optional table)
     // pub VORG: Option<Table_VORG>,
 
-/*
     // Table Related to SVG Outlines
 
-    /// The SVG (Scalable Vector Graphics) table
-    pub SVG_: Option<Table_SVG_>,
+    // /// The SVG (Scalable Vector Graphics) table
+    // pub SVG_: Option<Table_SVG_>,
 
     // Tables Related to Bitmap Glyphs
 
@@ -203,6 +209,7 @@ pub struct Font {
     /// Embedded bitmap scaling data
     pub EBSC: Option<Table_EBSC>,
 
+/*
     // Advanced Typographic Tables
 
     /// Baseline data
@@ -375,7 +382,9 @@ impl Font {
         }
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
-            "CFF ", "CFF2", "sbix"
+            "CFF ",
+            "EBDT", "EBLC", "EBSC",
+            "sbix"
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -442,6 +451,10 @@ impl Font {
             "CFF " => self.parse_CFF_(buffer),
             // "CFF2" => self.parse_CFF2(buffer),
             // "VORG" => self.parse_VORG(buffer),
+
+            "EBDT" => self.parse_EBDT(buffer),
+            "EBLC" => self.parse_EBLC(buffer),
+            "EBSC" => self.parse_EBSC(buffer),
 
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),

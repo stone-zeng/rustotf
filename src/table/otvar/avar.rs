@@ -3,7 +3,7 @@ use crate::util::{Buffer, F2Dot14, ReadBuffer};
 
 /// ## `avar` &mdash; Axis Variations Table
 ///
-/// Specification: <https://docs.microsoft.com/zh-cn/typography/opentype/spec/avar>.
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/avar>.
 ///
 /// The axis variations table (`avar`) is an optional table used in variable
 /// fonts that use OpenType Font Variations mechanisms. It can be used to

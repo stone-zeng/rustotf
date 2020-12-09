@@ -24,6 +24,11 @@ mod table {
         // pub mod cff2;
         // pub mod vorg;
     }
+    pub mod bitmap {
+        pub mod ebdt;
+        pub mod eblc;
+        pub mod ebsc;
+    }
     pub mod otvar {
         pub mod avar;
         pub mod fvar;
@@ -68,6 +73,11 @@ pub use table::{
         cff_::Table_CFF_,
         // cff2::Table_CFF2,
         // vorg::Table_VORG,
+    },
+    bitmap::{
+        ebdt::Table_EBDT,
+        eblc::Table_EBLC,
+        ebsc::Table_EBSC,
     },
     otvar::{
         avar::Table_avar,

@@ -3,7 +3,7 @@ use crate::util::Buffer;
 
 /// ## `HVAR` &mdash; Horizontal Metrics Variations Table
 ///
-/// Specification: <https://docs.microsoft.com/zh-cn/typography/opentype/spec/hvar>.
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/hvar>.
 ///
 /// The `HVAR` table is used in variable fonts to provide variations for
 /// horizontal glyph metrics values. This can be used to provide variation data

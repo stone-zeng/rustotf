@@ -3,13 +3,13 @@ use crate::util::{Buffer, Tag, ReadBuffer};
 
 /// ## `MVAR` &mdash; Metrics Variations Table
 ///
-/// Specification: <https://docs.microsoft.com/zh-cn/typography/opentype/spec/mvar>.
+/// Specification: <https://docs.microsoft.com/en-us/typography/opentype/spec/mvar>.
 ///
 /// The metrics variations table is used in variable fonts to provide
 /// variations for font-wide metric values found in the `OS/2` table and other
 /// font tables. For a general overview of OpenType Font Variation and
 /// terminology related to variations, see the chapter,
-/// [OpenType Font Variations Overview](https://docs.microsoft.com/zh-cn/typography/opentype/spec/otvaroverview).
+/// [OpenType Font Variations Overview](https://docs.microsoft.com/en-us/typography/opentype/spec/otvaroverview).
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
