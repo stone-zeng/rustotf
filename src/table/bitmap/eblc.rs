@@ -27,7 +27,7 @@ impl Font {
         self.EBLC = Some(Table_EBLC {
             _version,
             _num_strikes,
-            strikes: Strike::read_strikes(buffer, _num_strikes as usize, eblc_start_offset),
+            strikes: Strike::read_vec(buffer, _num_strikes as usize, eblc_start_offset),
         })
     }
 }
@@ -39,22 +39,25 @@ struct Strike {
 }
 
 impl Strike {
-    fn read_strikes(buffer: &mut Buffer, num: usize, eblc_start_offset: usize) -> Vec<Self> {
-        (0..num).map(|_| {
-            let bitmap_size: BitmapSize = buffer.get();
-            let start_offset = eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
-            buffer.offset = start_offset;
+    fn read_vec(buffer: &mut Buffer, num: usize, eblc_start_offset: usize) -> Vec<Self> {
+        let bitmap_size_vec: Vec<BitmapSize> = buffer.get_vec(num);
+        let mut strikes = Vec::new();
+        for bitmap_size in bitmap_size_vec {
+            let index_sub_table_start_offset =
+                eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
+            buffer.offset = index_sub_table_start_offset;
             let index_sub_table_arrays: Vec<IndexSubTableArray> =
                 buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
             let index_sub_tables = index_sub_table_arrays.iter().map(|i| {
-                buffer.offset = start_offset + i.additional_offset as usize;
-                IndexSubTable::read_index_sub_table(buffer, i)
+                buffer.offset = index_sub_table_start_offset + i.additional_offset as usize;
+                IndexSubTable::read(buffer, i)
             }).collect();
-            Self {
+            strikes.push(Self {
                 bitmap_size,
                 index_sub_tables,
-            }
-        }).collect()
+            });
+        }
+        strikes
     }
 }
 
@@ -149,7 +152,7 @@ struct IndexSubTable {
 }
 
 impl IndexSubTable {
-    fn read_index_sub_table(buffer: &mut Buffer, array: &IndexSubTableArray) -> Self {
+    fn read(buffer: &mut Buffer, array: &IndexSubTableArray) -> Self {
         let index_format = buffer.get();
         let image_format = buffer.get();
         let image_data_offset = buffer.get();

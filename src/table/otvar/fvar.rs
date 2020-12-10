@@ -37,7 +37,7 @@ impl Font {
         let _instance_size = buffer.get();
         let _axes = buffer.get_vec(_axis_count as usize);
         let _instances = (0.._instance_count)
-            .map(|_| Instance::read_instance(buffer, _axis_count as usize))
+            .map(|_| Instance::read(buffer, _axis_count as usize))
             .collect();
 
         self.fvar = Some(Table_fvar {
@@ -87,7 +87,7 @@ struct Instance {
 // We can't use trait `ReadBuffer` here because reading `Instance` requires
 // `axis_count`, which from the outside structure.
 impl Instance {
-    fn read_instance(buffer: &mut Buffer, axis_count: usize) -> Self {
+    fn read(buffer: &mut Buffer, axis_count: usize) -> Self {
         Self {
             subfamily_name_id: buffer.get(),
             flags: buffer.get(),
