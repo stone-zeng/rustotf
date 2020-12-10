@@ -216,9 +216,7 @@ impl Buffer {
                 i += 1;
             } else {
                 let repeated = self.get::<u8>();
-                for _ in 0..repeated {
-                    flags_vec.push(flags);
-                }
+                (0..repeated).for_each(|_| flags_vec.push(flags));
                 i += repeated as u16 + 1;
             }
         }

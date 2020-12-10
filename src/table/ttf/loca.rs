@@ -30,16 +30,11 @@ impl Font {
         if maxp_num_glyphs != num_glyphs {
             eprintln!("Table 'loca' corrupted.");
         }
-        let mut offsets = Vec::new();
-        match index_to_loc_format {
-            0 => for _ in 0..num_glyphs {
-                offsets.push(buffer.get::<u16>() as usize * 2)
-            },
-            1 => for _ in 0..num_glyphs {
-                offsets.push(buffer.get::<u32>() as usize)
-            },
+        let offsets = match index_to_loc_format {
+            0 => (0..num_glyphs).map(|_| buffer.get::<u16>() as usize * 2).collect(),
+            1 => (0..num_glyphs).map(|_| buffer.get::<u32>() as usize).collect(),
             _ => unreachable!(),
-        }
+        };
         self.loca = Some(Table_loca { offsets });
     }
 }
