@@ -55,8 +55,8 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         println!("{:#?}", i.table_records);
-        println!("\"EBDT\": {:#?}", i.EBDT);
         println!("\"EBLC\": {:#?}", i.EBLC);
+        println!("\"EBDT\": {:#?}", i.EBDT);
         println!("\"EBSC\": {:#?}", i.EBSC);
     }
     Ok(())
@@ -383,7 +383,7 @@ impl Font {
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ",
-            "EBDT", "EBLC", "EBSC",
+            "EBLC", "EBDT", "EBSC",
             "sbix"
         ] {
             let tag = &Tag::from(tag_str);

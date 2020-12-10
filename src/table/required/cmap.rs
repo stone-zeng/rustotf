@@ -219,9 +219,9 @@ impl ReadBuffer for CmapFormat4 {
                 filtered_char_range
                     .map(|c| {
                         // TODO: otfcc is different from the C code in MS reference page.
-                        buffer.offset =
+                        buffer.offset
                             // Address of `id_range_offset[i]`...
-                            id_range_offset_begin_offset + i * 2
+                            = id_range_offset_begin_offset + i * 2
                             // ... plus some offset
                             + (id_range_offset[i] as u32 + (c - start) * 2) as usize;
                         ((buffer.get::<u16>() as i32 + id_delta[i] as i32) % 0xFFFF) as u32

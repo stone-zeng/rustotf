@@ -15,7 +15,7 @@ use crate::util::{Buffer, ReadBuffer};
 pub struct Table_EBLC {
     _version: String,
     _num_strikes: u32,
-    strikes: Vec<Strike>,
+    pub strikes: Vec<Strike>,
 }
 
 impl Font {
@@ -33,9 +33,9 @@ impl Font {
 }
 
 #[derive(Debug)]
-struct Strike {
-    bitmap_size: BitmapSize,
-    index_sub_tables: Vec<IndexSubTable>,
+pub struct Strike {
+    pub bitmap_size: BitmapSize,
+    pub index_sub_tables: Vec<IndexSubTable>,
 }
 
 impl Strike {
@@ -43,11 +43,11 @@ impl Strike {
         let bitmap_size_vec: Vec<BitmapSize> = buffer.get_vec(num);
         let mut strikes = Vec::new();
         for bitmap_size in bitmap_size_vec {
-            let index_sub_table_start_offset =
-                eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
+            let index_sub_table_start_offset
+                = eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
             buffer.offset = index_sub_table_start_offset;
-            let index_sub_table_arrays: Vec<IndexSubTableArray> =
-                buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
+            let index_sub_table_arrays: Vec<IndexSubTableArray>
+                = buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
             let index_sub_tables = index_sub_table_arrays.iter().map(|i| {
                 buffer.offset = index_sub_table_start_offset + i.additional_offset as usize;
                 IndexSubTable::read(buffer, i)
@@ -62,19 +62,19 @@ impl Strike {
 }
 
 #[derive(Debug)]
-struct BitmapSize {
+pub struct BitmapSize {
     _index_sub_table_offset: u32,
     _index_sub_tables_size: u32,
     _num_index_sub_tables: u32,
-    color_ref: u32,
-    hori: SbitLineMetrics,
-    vert: SbitLineMetrics,
-    start_glyph_index: u16,
-    end_glyph_index: u16,
-    ppem_x: u8,
-    ppem_y: u8,
-    bit_depth: u8,
-    flags: i8,
+    pub color_ref: u32,
+    pub hori: SbitLineMetrics,
+    pub vert: SbitLineMetrics,
+    pub start_glyph_index: u16,
+    pub end_glyph_index: u16,
+    pub ppem_x: u8,
+    pub ppem_y: u8,
+    pub bit_depth: u8,
+    pub flags: i8,
 }
 
 impl ReadBuffer for BitmapSize {
@@ -97,19 +97,19 @@ impl ReadBuffer for BitmapSize {
 }
 
 #[derive(Debug)]
-struct SbitLineMetrics {
-    ascender: i8,
-    descender: i8,
-    width_max: u8,
-    caret_slope_numerator: i8,
-    caret_slope_denominator: i8,
-    caret_offset: i8,
-    min_origin_sb: i8,
-    min_advance_sb: i8,
-    max_before_bl: i8,
-    min_after_bl: i8,
-    pad1: i8,
-    pad2: i8,
+pub struct SbitLineMetrics {
+    pub ascender: i8,
+    pub descender: i8,
+    pub width_max: u8,
+    pub caret_slope_numerator: i8,
+    pub caret_slope_denominator: i8,
+    pub caret_offset: i8,
+    pub min_origin_sb: i8,
+    pub min_advance_sb: i8,
+    pub max_before_bl: i8,
+    pub min_after_bl: i8,
+    pub pad1: i8,
+    pub pad2: i8,
 }
 
 impl ReadBuffer for SbitLineMetrics {
@@ -132,23 +132,23 @@ impl ReadBuffer for SbitLineMetrics {
 }
 
 #[derive(Debug)]
-struct IndexSubTable {
-    first_glyph_index: u16,
-    last_glyph_index: u16,
+pub struct IndexSubTable {
+    pub first_glyph_index: u16,
+    pub last_glyph_index: u16,
     // Header
-    index_format: u16,
-    image_format: u16,
-    image_data_offset: u32,
+    pub index_format: u16,
+    pub image_format: u16,
+    pub image_data_offset: u32,
     // Format 1, 3
-    sbit_offsets: Option<Vec<u32>>,
+    pub sbit_offsets: Option<Vec<u32>>,
     // Format 2, 5
-    image_size: Option<u32>,
-    big_metrics: Option<BigGlyphMetrics>,
+    pub image_size: Option<u32>,
+    pub big_metrics: Option<BigGlyphMetrics>,
     // Format 4, 5
-    num_glyphs: Option<u32>,
-    glyph_array: Option<Vec<GlyphIdOffsetPair>>,
+    pub num_glyphs: Option<u32>,
+    pub glyph_array: Option<Vec<GlyphIdOffsetPair>>,
     // Format 5
-    glyph_id_array: Option<Vec<u16>>,
+    pub glyph_id_array: Option<Vec<u16>>,
 }
 
 impl IndexSubTable {
@@ -162,7 +162,7 @@ impl IndexSubTable {
         let mut num_glyphs = None;
         let mut glyph_array = None;
         let mut glyph_id_array = None;
-        let sbit_offsets_size = (array.last_glyph_index - array.first_glyph_index + 1) as usize;
+        let sbit_offsets_size = (array.last_glyph_index - array.first_glyph_index + 2) as usize;
         match index_format {
             1 => {
                 sbit_offsets = Some(buffer.get_vec(sbit_offsets_size));
@@ -172,8 +172,9 @@ impl IndexSubTable {
                 big_metrics = Some(buffer.get());
             }
             3 => {
-                let sbit_offsets_u16: Vec<u16> = buffer.get_vec(sbit_offsets_size);
-                sbit_offsets = Some(sbit_offsets_u16.iter().map(|&i| i as u32).collect());
+                sbit_offsets = Some(
+                    (0..sbit_offsets_size).map(|_| buffer.get::<u16>() as u32).collect()
+                );
             }
             4 => {
                 num_glyphs = Some(buffer.get());
@@ -269,9 +270,9 @@ impl ReadBuffer for SmallGlyphMetrics {
 }
 
 #[derive(Debug)]
-struct GlyphIdOffsetPair {
-    glyph_id: u16,
-    sbit_offset: u16,
+pub struct GlyphIdOffsetPair {
+    pub glyph_id: u16,
+    pub sbit_offset: u16,
 }
 
 impl ReadBuffer for GlyphIdOffsetPair {
