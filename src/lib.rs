@@ -41,6 +41,7 @@ mod table {
         // pub mod CBDT;
         // pub mod CBLC;
         pub mod sbix;
+        pub mod svg_;
     }
 }
 
@@ -91,6 +92,7 @@ pub use table::{
         // CBDT::Table_CBDT,
         // CBLC::Table_CBLC,
         sbix::Table_sbix,
+        svg_::Table_SVG_,
     },
 };
 

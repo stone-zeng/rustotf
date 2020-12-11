@@ -1,4 +1,4 @@
-use std::mem;
+use std::mem::size_of;
 
 use crate::font::Font;
 use crate::util::Buffer;
@@ -36,7 +36,7 @@ impl Font {
                         (0..sbit.len() - 1).for_each(|i| {
                             let image_data_size
                                 = (sbit[i + 1] - sbit[i]) as usize
-                                - mem::size_of::<SmallGlyphMetrics>();
+                                - size_of::<SmallGlyphMetrics>();
                             strike_bitmap_data.push(BitmapData {
                                 small_metrics: Some(buffer.get()),
                                 image_data: Some(buffer.get_vec(image_data_size)),

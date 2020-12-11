@@ -1,4 +1,4 @@
-use std::mem;
+use std::mem::size_of;
 
 use crate::font::Font;
 use crate::util::{Buffer, Tag};
@@ -22,8 +22,8 @@ impl Font {
         let index_to_loc_format = self.head.as_ref().unwrap().index_to_loc_format;
         let loca_len = self.get_table_len(&Tag::from("loca"));
         let num_glyphs = loca_len / match index_to_loc_format {
-            0 => mem::size_of::<u16>(),
-            1 => mem::size_of::<u32>(),
+            0 => size_of::<u16>(),
+            1 => size_of::<u32>(),
             _ => unreachable!(),
         } - 1;
         let maxp_num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;

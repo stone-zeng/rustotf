@@ -4,7 +4,7 @@ use std::{fmt, io::Read, mem, str};
 
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
-use flate2::read::ZlibDecoder;
+use flate2::read::{GzDecoder, ZlibDecoder};
 
 pub struct Buffer {
     raw_buffer: Vec<u8>,
@@ -18,6 +18,11 @@ impl Buffer {
             raw_buffer,
             offset: 0,
         }
+    }
+
+    /// Return the length of the buffer.
+    pub fn len(&self) -> usize {
+        self.raw_buffer.len()
     }
 
     /// Get a value as type `T` from the buffer.
@@ -41,7 +46,7 @@ impl Buffer {
     }
 
     pub fn slice(&self, start: usize, end: usize) -> &[u8] {
-        &self.raw_buffer[self.offset + start..self.offset + end]
+        &self.raw_buffer[(self.offset + start)..(self.offset + end)]
     }
 
     pub fn duplicate(self, offset: usize) -> Self {
@@ -51,13 +56,21 @@ impl Buffer {
         }
     }
 
-    pub fn decompress(&self, comp_length: usize) -> Buffer {
+    pub fn zlib_decompress(&self, comp_length: usize) -> Self {
         let comp_buffer = self.slice(0, comp_length);
         let mut orig_buffer: Vec<u8> = Vec::new();
-        if ZlibDecoder::new(comp_buffer).read_to_end(&mut orig_buffer).is_ok() {
-            Buffer::new(orig_buffer)
-        } else {
-            Buffer::new(comp_buffer.to_vec())
+        match ZlibDecoder::new(comp_buffer).read_to_end(&mut orig_buffer) {
+            Ok(_) => Self::new(orig_buffer),
+            Err(_) => Self::new(comp_buffer.to_vec()),
+        }
+    }
+
+    pub fn gz_decompress(&self, comp_length: usize) -> Self {
+        let comp_buffer = self.slice(0, comp_length);
+        let mut orig_buffer: Vec<u8> = Vec::new();
+        match GzDecoder::new(comp_buffer).read_to_end(&mut orig_buffer) {
+            Ok(_) => Self::new(orig_buffer),
+            Err(_) => Self::new(comp_buffer.to_vec()),
         }
     }
 

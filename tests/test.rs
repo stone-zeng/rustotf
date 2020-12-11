@@ -10,7 +10,8 @@ const TTF_FONTS: [&str; 4] = [
     "WorkSans-Regular.ttf",
 ];
 
-const OTF_FONTS: [&str; 3] = [
+const OTF_FONTS: [&str; 4] = [
+    "emojione-svg.otf",
     "SourceHanSansSC-Regular.otf",
     "SourceSans3-Black.otf",
     "XITSMath-Regular.otf",

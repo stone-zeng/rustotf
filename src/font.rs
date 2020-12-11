@@ -39,6 +39,7 @@ use crate::table::{
         // CBDT::Table_CBDT,
         // CBLC::Table_CBLC,
         sbix::Table_sbix,
+        svg_::Table_SVG_,
     },
 };
 use crate::util::{Buffer, Tag};
@@ -55,9 +56,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         println!("{:#?}", i.table_records);
-        println!("\"EBLC\": {:#?}", i.EBLC);
-        println!("\"EBDT\": {:#?}", i.EBDT);
-        println!("\"EBSC\": {:#?}", i.EBSC);
+        println!("\"SVG\": {:#?}", i.SVG_);
     }
     Ok(())
 }
@@ -195,11 +194,6 @@ pub struct Font {
     // /// Vertical Origin (optional table)
     // pub VORG: Option<Table_VORG>,
 
-    // Table Related to SVG Outlines
-
-    // /// The SVG (Scalable Vector Graphics) table
-    // pub SVG_: Option<Table_SVG_>,
-
     // Tables Related to Bitmap Glyphs
 
     /// Embedded bitmap data
@@ -257,6 +251,8 @@ pub struct Font {
     // pub CBLC: Option<Table_CBLC>,
     /// Standard bitmap graphics
     pub sbix: Option<Table_sbix>,
+    /// The SVG (Scalable Vector Graphics) table
+    pub SVG_: Option<Table_SVG_>,
 
 /*
     // Other OpenType Tables
@@ -384,7 +380,8 @@ impl Font {
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ",
             "EBLC", "EBDT", "EBSC",
-            "sbix"
+            "sbix",
+            "SVG ",
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -417,7 +414,7 @@ impl Font {
     fn woff_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
         buffer.offset = self.get_table_offset(tag);
         let comp_length = self.get_table_comp_len(tag);
-        self._parse_table(tag, &mut buffer.decompress(comp_length));
+        self._parse_table(tag, &mut buffer.zlib_decompress(comp_length));
     }
 
     #[allow(unused_variables)]
@@ -470,6 +467,7 @@ impl Font {
             // "CBDT" => self.parse_CBDT(buffer),
             // "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
+            "SVG " => self.parse_SVG_(buffer),
 
             _ => eprintln!("Table `{}` is not supported", tag),
         };

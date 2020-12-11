@@ -230,7 +230,7 @@ impl Buffer {
                 n if n == flag1 => 0,
                 n if n == flag2 => -(self.get::<u8>() as i16),
                 n if n == flag3 => self.get::<u8>() as i16,
-                _=> unreachable!(),
+                _ => unreachable!(),
             })
             .scan(0, |acc, x| { *acc = *acc + x; Some(*acc) })  // Accumulate
             .collect()

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-path=./tests/fonts
+path=./tests/fonts/1
 gh_url=https://raw.githubusercontent.com
 
 for url in \
@@ -17,7 +17,9 @@ for url in \
     $gh_url/googlefonts/noto-fonts/master/hinted/ttf/NotoSans/NotoSans-SemiCondensed.ttf                 \
     $gh_url/weiweihuanghuang/Work-Sans/master/fonts/static/TTF/WorkSans-Regular.ttf                      \
     https://github.com/adobe-fonts/source-han-super-otc/releases/download/20190603/SourceHanNotoCJK.ttc  \
-    https://github.com/slavfox/Cozette/releases/download/v.1.9.3/cozette_bitmap.ttf
+    https://github.com/emojione/emojione-assets/releases/download/3.1.2/emojione-svg.otf                 \
+    https://github.com/slavfox/Cozette/releases/download/v.1.9.3/cozette_bitmap.ttf                      \
+
 do
     font=$(basename $url)
     echo "Downloading $font..."
