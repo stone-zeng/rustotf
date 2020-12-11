@@ -12,6 +12,93 @@ use crate::util::{Buffer, ReadBuffer, u24};
 /// [*Adobe Technical Note #5176: The Compact Font Format Specification*](https://wwwimages2.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf)
 /// and [*Adobe Technical Note #5177: Type 2 Charstring Format*](https://wwwimages2.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf).
 
+impl Font {
+    #[allow(non_snake_case)]
+    pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
+        let cff_start_offset = buffer.offset;
+        let _version = buffer.get_version::<u8>();
+        let _header_size = buffer.get();
+        let _offset_size = buffer.get();
+        buffer.offset = cff_start_offset + _header_size as usize;
+        // We assume that the fontset contains only one element.
+        let name = String::from_utf8(buffer.get::<Index>().data[0].to_vec()).unwrap();
+        let mut cff = Table_CFF_ {
+            _version,
+            _header_size,
+            _offset_size,
+            name,
+            ..Default::default()
+        };
+        // Top dict
+        let top_dict_index_data = buffer.get::<Index>().data[0].to_vec();
+        let string_index_data = buffer.get::<Index>().to_string_vec();
+        // TODO: Global subr
+        let _global_subr_index_data = buffer.get::<Index>().data;
+        cff.parse_top_dict(&top_dict_index_data, &string_index_data);
+        // Encoding
+        cff.encoding = match cff._encoding_offset {
+            0 => Encoding::StandardEncoding,
+            1 => Encoding::ExpertEncoding,
+            _ => {
+                buffer.offset = cff_start_offset + cff._encoding_offset;
+                buffer.get()
+            }
+        };
+        // Private dict
+        if cff._private_size != 0 {
+            buffer.offset = cff_start_offset + cff._private_offset;
+            let private_dict_index_data: Vec<u8> = buffer.get_vec(cff._private_size);
+            cff.parse_private_dict(&private_dict_index_data);
+        }
+
+        // println!("{:?}", global_subr_index_data.len());
+
+        // TODO: parser not implemented
+        /*
+        let char_strings = match top_dict.char_strings {
+            Some(offset) => {
+                buffer.offset = cff_start_offset + offset as usize;
+                buffer.get::<Index>()
+            },
+            _ => Default::default(),
+        };
+        let num_glyphs = char_strings.count;
+        let charsets = match top_dict.charset {
+            0 => unimplemented!("Charset: ISOAdobe"),
+            1 => unimplemented!("Charset: Expert"),
+            2 => unimplemented!("Charset: ExpertSubset"),
+            offset => {
+                macro_rules! _get_charsets {
+                    ($t:ty) => {{
+                        // ".notdef" is omitted in the array.
+                        let mut count = 1;
+                        let mut result = vec![CFF_STD_STRINGS[0].to_string()];
+                        while count < num_glyphs {
+                            let sid = buffer.get::<u16>() as usize;
+                            let num_left = buffer.get::<$t>() as usize;
+                            (0..=num_left).for_each(|i| result.push((sid + i).to_string()));
+                            count += num_left as usize + 1;
+                        }
+                        result
+                    }};
+                };
+                buffer.offset = cff_start_offset + offset as usize;
+                let format: u8 = buffer.get();
+                match format {
+                    0 => (0..num_glyphs)
+                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
+                        .collect(),
+                    1 => _get_charsets!(u8),
+                    2 => _get_charsets!(u16),
+                    _ => unreachable!(),
+                }
+            }
+        };
+        */
+        self.CFF_ = Some(cff);
+    }
+}
+
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CFF_ {
@@ -42,20 +129,17 @@ pub struct Table_CFF_ {
     base_font_name: Option<String>,
     base_font_blend: Option<Delta>,
 
+    _encoding_offset: usize,
+    encoding: Encoding,
+
     charset: i32,
-    encoding: i32,
     char_strings: i32,
 
     _private_size: usize,
     _private_offset: usize,
     private: Option<Private>,
-    cid: Option<CID>,
 
-    // top_dict: TopDict,
-    // strings: Vec<String>,
-    // encodings: Encoding
-    // charsets: Vec<String>,
-    // char_strings: Index,
+    cid: Option<CID>,
 }
 
 impl Table_CFF_ {
@@ -150,7 +234,7 @@ impl Table_CFF_ {
                 13 => self.unique_id = Some(get_num(&mut temp).integer()),
                 14 => self.xuid = Some(get_array(&mut temp)),
                 15 => self.charset = get_num(&mut temp).integer(),
-                16 => self.encoding = get_num(&mut temp).integer(),
+                16 => self._encoding_offset = get_num(&mut temp).integer() as usize,
                 17 => {} // TODO: self.char_strings = Some(get_num(&mut temp).integer()),
                 18 => {
                     let private = get_private(&mut temp);
@@ -330,90 +414,14 @@ impl Default for Table_CFF_ {
             base_font_name: Default::default(),
             base_font_blend: Default::default(),
             charset: 0,
-            encoding: 0,
+            _encoding_offset: 0,
+            encoding: Default::default(),
             char_strings: Default::default(),
             _private_size: Default::default(),
             _private_offset: Default::default(),
             private: Default::default(),
             cid: Default::default(),
         }
-    }
-}
-
-impl Font {
-    #[allow(non_snake_case)]
-    pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
-        let cff_start_offset = buffer.offset;
-        let _version = buffer.get_version::<u8>();
-        let _header_size = buffer.get();
-        let _offset_size = buffer.get();
-        buffer.offset = cff_start_offset + _header_size as usize;
-
-        // We assume that the name index only contains 1 element.
-        let name = String::from_utf8(buffer.get::<Index>().data[0].to_vec()).unwrap();
-
-        let mut cff = Table_CFF_ {
-            _version,
-            _header_size,
-            _offset_size,
-            name,
-            ..Default::default()
-        };
-
-        let top_dict_data = buffer.get::<Index>().data[0].to_vec();
-        let strings = buffer.get::<Index>().to_string_vec();
-        cff.parse_top_dict(&top_dict_data, &strings);
-
-        if cff._private_size != 0 {
-            buffer.offset = cff_start_offset + cff._private_offset;
-            let private_dict_data: Vec<u8> = buffer.get_vec(cff._private_size);
-            cff.parse_private_dict(&private_dict_data);
-        }
-
-        // let top_dict = TopDict::new(top_dict_data, &strings);
-        // TODO: parser not implemented
-        /*
-        let char_strings = match top_dict.char_strings {
-            Some(offset) => {
-                buffer.offset = cff_start_offset + offset as usize;
-                buffer.get::<Index>()
-            },
-            _ => Default::default(),
-        };
-        let num_glyphs = char_strings.count;
-        let charsets = match top_dict.charset {
-            0 => unimplemented!("Charset: ISOAdobe"),
-            1 => unimplemented!("Charset: Expert"),
-            2 => unimplemented!("Charset: ExpertSubset"),
-            offset => {
-                macro_rules! _get_charsets {
-                    ($t:ty) => {{
-                        // ".notdef" is omitted in the array.
-                        let mut count = 1;
-                        let mut result = vec![CFF_STD_STRINGS[0].to_string()];
-                        while count < num_glyphs {
-                            let sid = buffer.get::<u16>() as usize;
-                            let num_left = buffer.get::<$t>() as usize;
-                            (0..=num_left).for_each(|i| result.push((sid + i).to_string()));
-                            count += num_left as usize + 1;
-                        }
-                        result
-                    }};
-                };
-                buffer.offset = cff_start_offset + offset as usize;
-                let format: u8 = buffer.get();
-                match format {
-                    0 => (0..num_glyphs)
-                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
-                        .collect(),
-                    1 => _get_charsets!(u8),
-                    2 => _get_charsets!(u16),
-                    _ => unreachable!(),
-                }
-            }
-        };
-        */
-        self.CFF_ = Some(cff);
     }
 }
 
@@ -493,6 +501,70 @@ impl Default for Private {
             subrs: Default::default(),
             default_width_x: Number::Integer(0),
             nominal_width_x: Number::Integer(0),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Encoding {
+    StandardEncoding,
+    ExpertEncoding,
+    CustomEncoding {
+        _format: u8,
+        // Format 0
+        num_codes: Option<u8>,
+        code: Option<Vec<u8>>,
+        // Format 1
+        num_ranges: Option<u8>,
+        range: Option<Vec<EncodingRange>>,
+    }
+}
+
+impl Default for Encoding {
+    fn default() -> Self {
+        Self::StandardEncoding
+    }
+}
+
+impl ReadBuffer for Encoding {
+    fn read(buffer: &mut Buffer) -> Self {
+        let _format = buffer.get();
+        let mut num_codes = None;
+        let mut code = None;
+        let mut num_ranges = None;
+        let mut range = None;
+        match _format {
+            0 => {
+                num_codes = Some(buffer.get());
+                code = Some(buffer.get_vec(num_codes.unwrap() as usize));
+            }
+            1 => {
+                num_ranges = Some(buffer.get());
+                range = Some(buffer.get_vec(num_ranges.unwrap() as usize));
+            }
+            _ => unreachable!(),
+        }
+        Self::CustomEncoding {
+            _format,
+            num_codes,
+            code,
+            num_ranges,
+            range,
+        }
+    }
+}
+
+#[derive(Debug)]
+struct EncodingRange {
+    first: u8,
+    num_left: u8,
+}
+
+impl ReadBuffer for EncodingRange {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self {
+            first: buffer.get(),
+            num_left: buffer.get(),
         }
     }
 }
