@@ -37,11 +37,49 @@ impl Font {
         cff.parse_top_dict(&top_dict_index_data, &string_index_data);
         // Encoding
         cff.encoding = match cff._encoding_offset {
-            0 => Encoding::StandardEncoding,
-            1 => Encoding::ExpertEncoding,
+            0 => Encoding::Standard,
+            1 => Encoding::Expert,
             _ => {
                 buffer.offset = cff_start_offset + cff._encoding_offset;
                 buffer.get()
+            }
+        };
+        // Char strings
+        buffer.offset = cff_start_offset + cff._char_strings_offset;
+        let char_strings = buffer.get::<Index>();
+        let num_glyphs = char_strings.count;
+        // Charset
+        macro_rules! _get_charsets {
+            ($t:ty) => {{
+                // ".notdef" is omitted in the array.
+                let mut count = 1;
+                let mut result = vec![CFF_STD_STRINGS[0].to_string()];
+                while count < num_glyphs {
+                    let sid = buffer.get::<u16>() as usize;
+                    let num_left = buffer.get::<$t>() as usize;
+                    (0..=num_left).for_each(|i| {
+                        result.push(from_sid(sid + i, &string_index_data))
+                    });
+                    count += num_left as usize + 1;
+                }
+                result
+            }};
+        };
+        cff.charset = match cff._charset_offset {
+            0 => Charset::ISOAdobe,
+            1 => Charset::Expert,
+            2 => Charset::ExpertSubset,
+            offset => {
+                buffer.offset = cff_start_offset + offset as usize;
+                let format: u8 = buffer.get();
+                Charset::Custom(match format {
+                    0 => (0..num_glyphs)
+                        .map(|_| from_sid(buffer.get::<u16>() as usize, &string_index_data))
+                        .collect(),
+                    1 => _get_charsets!(u8),
+                    2 => _get_charsets!(u16),
+                    _ => unreachable!(),
+                })
             }
         };
         // Private dict
@@ -50,51 +88,6 @@ impl Font {
             let private_dict_index_data: Vec<u8> = buffer.get_vec(cff._private_size);
             cff.parse_private_dict(&private_dict_index_data);
         }
-
-        // println!("{:?}", global_subr_index_data.len());
-
-        // TODO: parser not implemented
-        /*
-        let char_strings = match top_dict.char_strings {
-            Some(offset) => {
-                buffer.offset = cff_start_offset + offset as usize;
-                buffer.get::<Index>()
-            },
-            _ => Default::default(),
-        };
-        let num_glyphs = char_strings.count;
-        let charsets = match top_dict.charset {
-            0 => unimplemented!("Charset: ISOAdobe"),
-            1 => unimplemented!("Charset: Expert"),
-            2 => unimplemented!("Charset: ExpertSubset"),
-            offset => {
-                macro_rules! _get_charsets {
-                    ($t:ty) => {{
-                        // ".notdef" is omitted in the array.
-                        let mut count = 1;
-                        let mut result = vec![CFF_STD_STRINGS[0].to_string()];
-                        while count < num_glyphs {
-                            let sid = buffer.get::<u16>() as usize;
-                            let num_left = buffer.get::<$t>() as usize;
-                            (0..=num_left).for_each(|i| result.push((sid + i).to_string()));
-                            count += num_left as usize + 1;
-                        }
-                        result
-                    }};
-                };
-                buffer.offset = cff_start_offset + offset as usize;
-                let format: u8 = buffer.get();
-                match format {
-                    0 => (0..num_glyphs)
-                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
-                        .collect(),
-                    1 => _get_charsets!(u8),
-                    2 => _get_charsets!(u16),
-                    _ => unreachable!(),
-                }
-            }
-        };
-        */
         self.CFF_ = Some(cff);
     }
 }
@@ -132,8 +125,11 @@ pub struct Table_CFF_ {
     _encoding_offset: usize,
     encoding: Encoding,
 
-    charset: i32,
-    char_strings: i32,
+    _charset_offset: usize,
+    charset: Charset,
+
+    _char_strings_offset: usize,
+    // char_strings: CharString,
 
     _private_size: usize,
     _private_offset: usize,
@@ -233,9 +229,9 @@ impl Table_CFF_ {
                 }
                 13 => self.unique_id = Some(get_num(&mut temp).integer()),
                 14 => self.xuid = Some(get_array(&mut temp)),
-                15 => self.charset = get_num(&mut temp).integer(),
+                15 => self._charset_offset = get_num(&mut temp).integer() as usize,
                 16 => self._encoding_offset = get_num(&mut temp).integer() as usize,
-                17 => {} // TODO: self.char_strings = Some(get_num(&mut temp).integer()),
+                17 => self._char_strings_offset = get_num(&mut temp).integer() as usize,
                 18 => {
                     let private = get_private(&mut temp);
                     self._private_size = private.0;
@@ -413,10 +409,12 @@ impl Default for Table_CFF_ {
             postscript: Default::default(),
             base_font_name: Default::default(),
             base_font_blend: Default::default(),
-            charset: 0,
             _encoding_offset: 0,
             encoding: Default::default(),
-            char_strings: Default::default(),
+            _charset_offset: 0,
+            charset: Default::default(),
+            _char_strings_offset: Default::default(),
+            // char_strings: Default::default(),
             _private_size: Default::default(),
             _private_offset: Default::default(),
             private: Default::default(),
@@ -507,10 +505,10 @@ impl Default for Private {
 
 #[derive(Debug)]
 enum Encoding {
-    StandardEncoding,
-    ExpertEncoding,
-    CustomEncoding {
-        _format: u8,
+    Standard,
+    Expert,
+    Custom {
+        format: u8,
         // Format 0
         num_codes: Option<u8>,
         code: Option<Vec<u8>>,
@@ -522,18 +520,18 @@ enum Encoding {
 
 impl Default for Encoding {
     fn default() -> Self {
-        Self::StandardEncoding
+        Self::Standard
     }
 }
 
 impl ReadBuffer for Encoding {
     fn read(buffer: &mut Buffer) -> Self {
-        let _format = buffer.get();
+        let format = buffer.get();
         let mut num_codes = None;
         let mut code = None;
         let mut num_ranges = None;
         let mut range = None;
-        match _format {
+        match format {
             0 => {
                 num_codes = Some(buffer.get());
                 code = Some(buffer.get_vec(num_codes.unwrap() as usize));
@@ -544,8 +542,8 @@ impl ReadBuffer for Encoding {
             }
             _ => unreachable!(),
         }
-        Self::CustomEncoding {
-            _format,
+        Self::Custom {
+            format,
             num_codes,
             code,
             num_ranges,
@@ -566,6 +564,20 @@ impl ReadBuffer for EncodingRange {
             first: buffer.get(),
             num_left: buffer.get(),
         }
+    }
+}
+
+#[derive(Debug)]
+enum Charset {
+    ISOAdobe,
+    Expert,
+    ExpertSubset,
+    Custom(Vec<String>),
+}
+
+impl Default for Charset {
+    fn default() -> Self {
+        Self::ISOAdobe
     }
 }
 
