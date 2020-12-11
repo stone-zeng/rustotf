@@ -15,8 +15,8 @@ use crate::util::{Buffer, ReadBuffer, u24};
 #[derive(Debug)]
 pub struct Table_CFF_ {
     _version: String,
-    header_size: u8,
-    offset_size: u8,
+    _header_size: u8,
+    _offset_size: u8,
     name: String,
     top_dict: TopDict,
     strings: Vec<String>,
@@ -30,18 +30,14 @@ impl Font {
     pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
         let cff_start_offset = buffer.offset;
         let _version = buffer.get_version::<u8>();
-        let header_size = buffer.get();
-        let offset_size = buffer.get();
-        buffer.offset = cff_start_offset + header_size as usize;
+        let _header_size = buffer.get();
+        let _offset_size = buffer.get();
+        buffer.offset = cff_start_offset + _header_size as usize;
         // We assume that the name index only contains 1 element.
-        let name = String::from_utf8(
-            buffer.get::<Index>().data.first().unwrap().to_vec()).unwrap();
-        let mut top_dict = TopDict {
-            _data: buffer.get::<Index>().data.first().unwrap().to_vec(),
-            ..Default::default()
-        };
+        let name = String::from_utf8(buffer.get::<Index>().data[0].to_vec()).unwrap();
+        let top_dict_data = buffer.get::<Index>().data[0].to_vec();
         let strings = buffer.get::<Index>().to_string_vec();
-        top_dict.parse(&strings);
+        let top_dict = TopDict::new(top_dict_data, &strings);
         // TODO: parser not implemented
         let char_strings = match top_dict.char_strings {
             Some(offset) => {
@@ -84,8 +80,8 @@ impl Font {
         };
         self.CFF_ = Some(Table_CFF_ {
             _version,
-            header_size,
-            offset_size,
+            _header_size,
+            _offset_size,
             name,
             top_dict,
             strings,
@@ -97,7 +93,6 @@ impl Font {
 
 #[derive(Debug)]
 struct TopDict {
-    _data: Vec<u8>,
     version: String,
     notice: String,
     copyright: String,
@@ -127,11 +122,12 @@ struct TopDict {
 }
 
 impl TopDict {
-    fn parse(&mut self, strings: &Vec<String>) {
+    fn new(data: Vec<u8>, strings: &Vec<String>) -> Self {
         let mut i = 0;
         let mut temp = Vec::new();
-        let mut is_cid = false;
+        let mut dict = TopDict::default();
         let mut cid = CID::default();
+        let mut is_cid = false;
 
         let get_num = |nums: &mut Vec<Number>| {
             let num = nums.pop().unwrap();
@@ -144,7 +140,7 @@ impl TopDict {
         };
 
         let get_array = |nums: &mut Vec<Number>| {
-            let nums_copy = nums.to_vec(); // FIXME:
+            let nums_copy = nums.to_vec();
             nums.clear();
             nums_copy
         };
@@ -169,80 +165,86 @@ impl TopDict {
             (from_sid(index1, strings), from_sid(index2, strings), supplement)
         };
 
-        while i < self._data.len() {
-            let b0 = self._data[i] as i32;
+        macro_rules! _update_cid {
+            ($i:ident, $e:expr) => {{
+                is_cid = true;
+                cid.$i = $e
+            }}
+        }
+
+        while i < data.len() {
+            let b0 = data[i];
             match b0 {
                 // Operators
-                0 => self.version = get_string(&mut temp),
-                1 => self.notice = get_string(&mut temp),
-                2 => self.full_name = get_string(&mut temp),
-                3 => self.family_name = get_string(&mut temp),
-                4 => self.weight = get_string(&mut temp),
-                5 => self.font_bbox = get_array(&mut temp),
+                0 => dict.version = get_string(&mut temp),
+                1 => dict.notice = get_string(&mut temp),
+                2 => dict.full_name = get_string(&mut temp),
+                3 => dict.family_name = get_string(&mut temp),
+                4 => dict.weight = get_string(&mut temp),
+                5 => dict.font_bbox = get_array(&mut temp),
                 12 => {
-                    let b1 = self._data[i + 1];
+                    let b1 = data[i + 1];
                     match b1 {
-                        0 => self.copyright = get_string(&mut temp),
-                        1 => self.is_fixed_pitch = get_bool(&mut temp),
-                        2 => self.italic_angle = get_num(&mut temp),
-                        3 => self.underline_position = get_num(&mut temp),
-                        4 => self.underline_thickness = get_num(&mut temp),
-                        5 => self.paint_type = get_num(&mut temp).integer(),
-                        6 => self.char_string_type = get_num(&mut temp).integer(),
-                        7 => self.font_matrix = get_array(&mut temp),
-                        8 => self.stroke_width = get_num(&mut temp),
-                        20 => self.synthetic_base = Some(get_num(&mut temp).integer()),
-                        21 => self.postscript = Some(get_string(&mut temp)),
-                        22 => self.base_font_name = Some(get_string(&mut temp)),
-                        23 => self.base_font_blend = Some(get_array(&mut temp)),
-                        30..=38 => {
-                            is_cid = true;
-                            match b1 {
-                                30 => cid.ros = get_ros(&mut temp),
-                                31 => cid.cid_font_version = get_num(&mut temp),
-                                32 => cid.cid_font_revision = get_num(&mut temp),
-                                33 => cid.cid_font_type = get_num(&mut temp).integer(),
-                                34 => cid.cid_count = get_num(&mut temp).integer(),
-                                35 => cid.uid_base = get_num(&mut temp).integer(),
-                                36 => cid.fd_array = get_num(&mut temp).integer(),
-                                37 => cid.fd_select = get_num(&mut temp).integer(),
-                                38 => cid.font_name = get_string(&mut temp),
-                                _ => unreachable!(),
-                            }
-                        }
-                        _ => println!("[DEBUG] \"{}:{}\" 12 {}", file!(), line!(), self._data[i + 1]),
+                        0 => dict.copyright = get_string(&mut temp),
+                        1 => dict.is_fixed_pitch = get_bool(&mut temp),
+                        2 => dict.italic_angle = get_num(&mut temp),
+                        3 => dict.underline_position = get_num(&mut temp),
+                        4 => dict.underline_thickness = get_num(&mut temp),
+                        5 => dict.paint_type = get_num(&mut temp).integer(),
+                        6 => dict.char_string_type = get_num(&mut temp).integer(),
+                        7 => dict.font_matrix = get_array(&mut temp),
+                        8 => dict.stroke_width = get_num(&mut temp),
+                        20 => dict.synthetic_base = Some(get_num(&mut temp).integer()),
+                        21 => dict.postscript = Some(get_string(&mut temp)),
+                        22 => dict.base_font_name = Some(get_string(&mut temp)),
+                        23 => dict.base_font_blend = Some(get_array(&mut temp)),
+                        30 => _update_cid!(ros, get_ros(&mut temp)),
+                        31 => _update_cid!(cid_font_version, get_num(&mut temp)),
+                        32 => _update_cid!(cid_font_revision, get_num(&mut temp)),
+                        33 => _update_cid!(cid_font_type, get_num(&mut temp).integer()),
+                        34 => _update_cid!(cid_count, get_num(&mut temp).integer()),
+                        35 => _update_cid!(uid_base, get_num(&mut temp).integer()),
+                        36 => _update_cid!(fd_array, get_num(&mut temp).integer()),
+                        37 => _update_cid!(fd_select, get_num(&mut temp).integer()),
+                        38 => _update_cid!(font_name, get_string(&mut temp)),
+                        _ => println!("[DEBUG] \"{}:{}\" 12 {}", file!(), line!(), data[i + 1]),
                     }
                     i += 1;
                 }
-                13 => self.unique_id = Some(get_num(&mut temp).integer()),
-                14 => self.xuid = Some(get_array(&mut temp)),
-                15 => self.charset = get_num(&mut temp).integer(),
-                16 => self.encoding = get_num(&mut temp).integer(),
-                17 => self.char_strings = Some(get_num(&mut temp).integer()),
-                18 => self.private = Some(get_private(&mut temp)),
+                13 => dict.unique_id = Some(get_num(&mut temp).integer()),
+                14 => dict.xuid = Some(get_array(&mut temp)),
+                15 => dict.charset = get_num(&mut temp).integer(),
+                16 => dict.encoding = get_num(&mut temp).integer(),
+                17 => dict.char_strings = Some(get_num(&mut temp).integer()),
+                18 => dict.private = Some(get_private(&mut temp)),
                 // Operands: integer
-                32..=246 => temp.push(Number::Integer(b0 - 139)),
+                32..=246 => {
+                    let b0 = b0 as i32;
+                    temp.push(Number::Integer(b0 - 139))
+                },
                 247..=250 => {
-                    let b1 = self._data[i + 1] as i32;
+                    let b0 = b0 as i32;
+                    let b1 = data[i + 1] as i32;
                     temp.push(Number::Integer((b0 - 247) * 256 + b1 + 108));
                     i += 1;
                 },
                 251..=254 => {
-                    let b1 = self._data[i + 1] as i32;
+                    let b0 = b0 as i32;
+                    let b1 = data[i + 1] as i32;
                     temp.push(Number::Integer(-(b0 - 251) * 256 - b1 - 108));
                     i += 1;
                 },
                 28 => {
-                    let b1 = self._data[i + 1] as i32;
-                    let b2 = self._data[i + 2] as i32;
-                    temp.push(Number::Integer(b1 << 8 | b2));
+                    let b1 = data[i + 1] as i16;
+                    let b2 = data[i + 2] as i16;
+                    temp.push(Number::Integer((b1 << 8 | b2) as i32));
                     i += 2;
                 },
                 29 => {
-                    let b1 = self._data[i + 1] as i32;
-                    let b2 = self._data[i + 2] as i32;
-                    let b3 = self._data[i + 3] as i32;
-                    let b4 = self._data[i + 4] as i32;
+                    let b1 = data[i + 1] as i32;
+                    let b2 = data[i + 2] as i32;
+                    let b3 = data[i + 3] as i32;
+                    let b4 = data[i + 4] as i32;
                     temp.push(Number::Integer(b1 << 24 | b2 << 16 | b3 << 8 | b4));
                     i += 4;
                 },
@@ -267,7 +269,7 @@ impl TopDict {
                                 }
                             };
                         }
-                        let b1 = self._data[i + 1];
+                        let b1 = data[i + 1];
                         _match_nibble!(b1 >> 4);
                         _match_nibble!((b1 << 4) >> 4);
                         i += 1;
@@ -278,15 +280,15 @@ impl TopDict {
             i += 1;
         }
         if is_cid {
-            self.cid = Some(cid);
+            dict.cid = Some(cid);
         }
+        dict
     }
 }
 
 impl Default for TopDict {
     fn default() -> Self {
         Self {
-            _data: Default::default(),
             version: Default::default(),
             notice: Default::default(),
             copyright: Default::default(),
@@ -299,15 +301,19 @@ impl Default for TopDict {
             underline_thickness: Number::Integer(50),
             paint_type: 0,
             char_string_type: 2,
-            font_matrix: vec![0.001, 0.0, 0.001, 0.0]
-                .iter()
-                .map(|&i| Number::Real(i.to_string()))
-                .collect(),
+            font_matrix: vec![
+                Number::Real((0.001).to_string()),
+                Number::Real((0.0).to_string()),
+                Number::Real((0.001).to_string()),
+                Number::Real((0.0).to_string()),
+            ],
             unique_id: Default::default(),
-            font_bbox: vec![0, 0, 0, 0]
-                .iter()
-                .map(|&i| Number::Integer(i))
-                .collect(),
+            font_bbox: vec![
+                Number::Integer(0),
+                Number::Integer(0),
+                Number::Integer(0),
+                Number::Integer(0),
+            ],
             stroke_width: Number::Integer(0),
             xuid: Default::default(),
             charset: 0,
