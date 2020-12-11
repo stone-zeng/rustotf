@@ -1,6 +1,6 @@
 #!/bin/bash
 
-path=./tests/fonts/1
+path=./tests/fonts
 gh_url=https://raw.githubusercontent.com
 
 for url in \
