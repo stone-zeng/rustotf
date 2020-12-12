@@ -46,6 +46,9 @@ impl Font {
                 .map(|(name, top_dict)| {
                     let mut cff = CFFFont::new(name);
                     cff.parse(buffer, cff_start_offset, top_dict, &strings);
+                    // FIXME: debug code
+                    // cff.char_strings = Default::default();
+                    // cff.charset = Default::default();
                     cff
                 })
                 .collect(),
@@ -101,7 +104,9 @@ pub struct CFFFont {
     cid_count: Option<i32>,
     uid_base: Option<i32>,
     _fd_array_offset: Option<usize>,
+    fd_array: Vec<FDArray>,
     _fd_select_offset: Option<usize>,
+    fd_select: Option<FDSelect>,
     cid_font_name: Option<String>,
 }
 
@@ -173,28 +178,44 @@ impl CFFFont {
                 result
             });
         }
-        self.charset = match self._charset_offset {
-            0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            2 => CFF_EXPERT_SUBSET_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            offset => {
-                buffer.offset = cff_start_offset + offset as usize;
-                let format: u8 = buffer.get();
-                match format {
-                    0 => (0..num_glyphs)
-                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
-                        .collect(),
-                    1 => _get_charsets!(u8),
-                    2 => _get_charsets!(u16),
-                    _ => unreachable!(),
+        if !self.is_cid_font() {
+            self.charset = match self._charset_offset {
+                0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
+                1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
+                2 => CFF_EXPERT_SUBSET_CHARSET.iter().map(|&i| i.to_string()).collect(),
+                offset => {
+                    buffer.offset = cff_start_offset + offset as usize;
+                    let format: u8 = buffer.get();
+                    match format {
+                        0 => (0..num_glyphs)
+                            .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
+                            .collect(),
+                        1 => _get_charsets!(u8),
+                        2 => _get_charsets!(u16),
+                        _ => unreachable!(),
+                    }
                 }
+            };
+            // Private dict
+            if self._private_size != 0 {
+                buffer.offset = cff_start_offset + self._private_offset;
+                let private_dict = buffer.get_vec(self._private_size);
+                self.private = Some(Private::parse(&private_dict));
             }
-        };
-        // Private dict
-        if self._private_size != 0 {
-            buffer.offset = cff_start_offset + self._private_offset;
-            let private_dict = buffer.get_vec(self._private_size);
-            self.parse_private_dict(&private_dict);
+        } else {
+            // FD Array
+            buffer.offset = cff_start_offset + self._fd_array_offset.unwrap();
+            buffer.get::<Index>().data.iter().for_each(|font_dict| {
+                self.init_fd_array(font_dict, strings)
+            });
+            self.fd_array.iter_mut().for_each(|fd| {
+                buffer.offset = cff_start_offset + fd._private_offset;
+                let private_dict = buffer.get_vec(fd._private_size);
+                fd.private = Private::parse(&private_dict);
+            });
+            // FD Select
+            buffer.offset = cff_start_offset + self._fd_select_offset.unwrap();
+            self.fd_select = Some(FDSelect::read(buffer, num_glyphs));
         }
     }
 
@@ -247,11 +268,11 @@ impl CFFFont {
                         1 => self.is_fixed_pitch = _pop_bool!(),
                         2 => self.italic_angle = _pop_num!(),
                         3 => self.underline_position = _pop_num!(),
-                        4 => self.underline_thickness =_pop_num!(),
+                        4 => self.underline_thickness = _pop_num!(),
                         5 => self.paint_type = _pop_integer!(),
                         6 => self.char_string_type = _pop_integer!(),
                         7 => self.font_matrix = _pop_array!(),
-                        8 => self.stroke_width =_pop_num!(),
+                        8 => self.stroke_width = _pop_num!(),
                         20 => self.synthetic_base = Some(_pop_integer!()),
                         21 => self.postscript = Some(_pop_string!()),
                         22 => self.base_font_name = Some(_pop_string!()),
@@ -280,8 +301,8 @@ impl CFFFont {
                     self._private_offset = private.1;
                 },
                 // Operands
-                30 => temp.push(Self::get_real(&top_dict, &mut i)),
-                _ => temp.push(Self::get_integer(&top_dict, &mut i, b0)),
+                30 => temp.push(Number::get_real(&top_dict, &mut i)),
+                _ => temp.push(Number::get_integer(&top_dict, &mut i, b0)),
             }
             i += 1;
         }
@@ -289,62 +310,56 @@ impl CFFFont {
         self.init_cid();
     }
 
-    fn parse_private_dict(&mut self, private_dict: &Vec<u8>) {
+    fn init_fd_array(&mut self, font_dict: &Vec<u8>, strings: &Vec<String>) {
         let mut i = 0;
-        let mut temp = Vec::new();
-        let mut private = Private::new();
+        let mut temp: Vec<Number> = Vec::new();
+        let mut font_name = Default::default();
+        let mut _private_size = 0;
+        let mut _private_offset = 0;
 
         macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
-        macro_rules! _pop_bool { () => { _pop_num!().integer() != 0 }; }
-        macro_rules! _pop_array {
+        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
+        macro_rules! _pop_string { () => { from_sid(_pop_integer!() as usize, strings) }; }
+        macro_rules! _pop_private {
             () => ({
-                let nums_copy = temp.to_vec();
-                temp.clear();
-                nums_copy
+                let num2 = temp.pop().unwrap().integer() as usize;
+                let num1 = temp.pop().unwrap().integer() as usize;
+                (num1, num2)
             });
         }
-        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
 
-        while i < private_dict.len() {
-            let b0 = private_dict[i];
+        while i < font_dict.len() {
+            let b0 = font_dict[i];
             match b0 {
-                6 => private.blue_values = _pop_delta!(),
-                7 => private.other_blues = _pop_delta!(),
-                8 => private.family_blues = _pop_delta!(),
-                9 => private.family_other_blues = _pop_delta!(),
-                10 => private.std_hw =_pop_num!(),
-                11 => private.std_vw =_pop_num!(),
                 12 => {
-                    let b1 = private_dict[i + 1];
-                    match b1 {
-                        9 => private.blue_scale =_pop_num!(),
-                        10 => private.blue_shift =_pop_num!(),
-                        11 => private.blue_fuzz =_pop_num!(),
-                        12 => private.stem_snap_h = _pop_delta!(),
-                        13 => private.stem_snap_v = _pop_delta!(),
-                        14 => private.force_bold = _pop_bool!(),
-                        17 => private.language_group =_pop_num!(),
-                        18 => private.expansion_factor =_pop_num!(),
-                        19 => private.initial_random_seed =_pop_num!(),
-                        _ => unreachable!(),
+                    match font_dict[i + 1] {
+                        38 => font_name = _pop_string!(),
+                        _ => unreachable!()
                     }
                     i += 1;
                 }
-                19 => private.subrs = Some(_pop_num!()),
-                20 => private.default_width_x =_pop_num!(),
-                21 => private.nominal_width_x =_pop_num!(),
+                // 18 => _private_offset = _pop_integer!() as usize,
+                18 => {
+                    let private = _pop_private!();
+                    _private_size = private.0;
+                    _private_offset = private.1;
+                },
                 // Operands
-                30 => temp.push(Self::get_real(&private_dict, &mut i)),
-                _ => temp.push(Self::get_integer(&private_dict, &mut i, b0)),
+                30 => temp.push(Number::get_real(&font_dict, &mut i)),
+                _ => temp.push(Number::get_integer(&font_dict, &mut i, b0)),
             }
             i += 1;
         }
-
-        self.private = Some(private);
+        self.fd_array.push(FDArray {
+            font_name,
+            _private_size,
+            _private_offset,
+            ..Default::default()
+        });
     }
 
     fn init_cid(&mut self) {
-        if let Some(_) = self.ros {
+        if self.is_cid_font() {
             macro_rules! _init_cid {
                 ($i:ident, $e:expr) => {
                     if self.$i.is_none() { self.$i = Some($e); }
@@ -357,66 +372,8 @@ impl CFFFont {
         }
     }
 
-    fn get_real(data: &Vec<u8>, i: &mut usize) -> Number {
-        let mut s = String::new();
-        loop {
-            macro_rules! _match_nibble {
-                ($nibble:expr) => {
-                    match $nibble {
-                        0..=9 => s += &$nibble.to_string(),
-                        0xA => s += ".",
-                        0xB => s += "e",
-                        0xC => s += "e-",
-                        0xE => s += "-",
-                        0xF => {
-                            *i += 1;
-                            return Number::Real(s);
-                        }
-                        _ => unreachable!(),
-                    }
-                };
-            }
-            let b1 = data[*i + 1];
-            _match_nibble!(b1 >> 4);
-            _match_nibble!((b1 << 4) >> 4);
-            *i += 1;
-        }
-    }
-
-    fn get_integer(data: &Vec<u8>, i: &mut usize, b0: u8) -> Number {
-        match b0 {
-            32..=246 => {
-                let b0 = b0 as i32;
-                Number::Integer(b0 - 139)
-            },
-            247..=250 => {
-                let b0 = b0 as i32;
-                let b1 = data[*i + 1] as i32;
-                *i += 1;
-                Number::Integer((b0 - 247) * 256 + b1 + 108)
-            },
-            251..=254 => {
-                let b0 = b0 as i32;
-                let b1 = data[*i + 1] as i32;
-                *i += 1;
-                Number::Integer(-(b0 - 251) * 256 - b1 - 108)
-            },
-            28 => {
-                let b1 = data[*i + 1] as i16;
-                let b2 = data[*i + 2] as i16;
-                *i += 2;
-                Number::Integer((b1 << 8 | b2) as i32)
-            },
-            29 => {
-                let b1 = data[*i + 1] as i32;
-                let b2 = data[*i + 2] as i32;
-                let b3 = data[*i + 3] as i32;
-                let b4 = data[*i + 4] as i32;
-                *i += 4;
-                Number::Integer(b1 << 24 | b2 << 16 | b3 << 8 | b4)
-            },
-            _ => unreachable!(),
-        }
+    const fn is_cid_font(&self) -> bool {
+        self.ros.is_some()
     }
 }
 
@@ -523,6 +480,63 @@ impl Private {
             ..Default::default()
         }
     }
+
+    fn parse(private_dict: &Vec<u8>) -> Self {
+        let mut i = 0;
+        let mut temp = Vec::new();
+        let mut private = Self::new();
+
+        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
+        macro_rules! _pop_bool { () => { _pop_num!().integer() != 0 }; }
+        macro_rules! _pop_array {
+            () => ({
+                let nums_copy = temp.to_vec();
+                temp.clear();
+                nums_copy
+            });
+        }
+        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
+
+        while i < private_dict.len() {
+            let b0 = private_dict[i];
+            match b0 {
+                6 => private.blue_values = _pop_delta!(),
+                7 => private.other_blues = _pop_delta!(),
+                8 => private.family_blues = _pop_delta!(),
+                9 => private.family_other_blues = _pop_delta!(),
+                10 => private.std_hw = _pop_num!(),
+                11 => private.std_vw = _pop_num!(),
+                12 => {
+                    let b1 = private_dict[i + 1];
+                    match b1 {
+                        9 => private.blue_scale = _pop_num!(),
+                        10 => private.blue_shift = _pop_num!(),
+                        11 => private.blue_fuzz = _pop_num!(),
+                        12 => private.stem_snap_h = _pop_delta!(),
+                        13 => private.stem_snap_v = _pop_delta!(),
+                        14 => private.force_bold = _pop_bool!(),
+                        17 => private.language_group = _pop_num!(),
+                        18 => private.expansion_factor = _pop_num!(),
+                        19 => private.initial_random_seed = _pop_num!(),
+                        _ => {
+                            let x = _pop_num!();
+                            eprintln!("[DEBUG] {:?}", x);
+                            // unreachable!()
+                        }
+                    }
+                    i += 1;
+                }
+                19 => private.subrs = Some(_pop_num!()),
+                20 => private.default_width_x = _pop_num!(),
+                21 => private.nominal_width_x = _pop_num!(),
+                // Operands
+                30 => temp.push(Number::get_real(&private_dict, &mut i)),
+                _ => temp.push(Number::get_integer(&private_dict, &mut i, b0)),
+            }
+            i += 1;
+        }
+        private
+    }
 }
 
 #[derive(Debug)]
@@ -542,6 +556,62 @@ impl ROS {
     }
 }
 
+#[derive(Debug, Default)]
+struct FDArray {
+    font_name: String,
+    _private_size: usize,
+    _private_offset: usize,
+    private: Private,
+}
+
+#[derive(Debug, Default)]
+struct FDSelect {
+    format: u8,
+    // Format 0
+    fd_selector_array: Vec<u8>,
+    // Format 3
+    num_ranges: Option<u16>,
+    range: Vec<FDSelectRange>,
+    sentinel: Option<u16>,
+}
+
+impl FDSelect {
+    fn read(buffer: &mut Buffer, num_glyphs: usize) -> Self {
+        let format = buffer.get();
+        let mut fd_select = Self {
+            format,
+            ..Default::default()
+        };
+        match format {
+            0 => {
+                fd_select.fd_selector_array = buffer.get_vec(num_glyphs);
+            }
+            3 => {
+                fd_select.num_ranges = Some(buffer.get());
+                fd_select.range = buffer.get_vec(fd_select.num_ranges.unwrap() as usize);
+                fd_select.sentinel = Some(buffer.get());
+            }
+            _ => unreachable!(),
+        }
+        fd_select
+    }
+}
+
+#[derive(Debug, Default)]
+struct FDSelectRange {
+    first: u16,
+    fd: u8,
+}
+
+impl ReadBuffer for FDSelectRange {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self {
+            first: buffer.get(),
+            fd: buffer.get(),
+        }
+    }
+}
+
 #[derive(Clone)]
 enum Number {
     Integer(i32),
@@ -553,6 +623,71 @@ impl Number {
         match self {
             Self::Integer(n) => n,
             Self::Real(_) => panic!(),
+        }
+    }
+
+    fn get_real(data: &Vec<u8>, i: &mut usize) -> Self {
+        let mut s = String::new();
+        loop {
+            macro_rules! _match_nibble {
+                ($nibble:expr) => {
+                    match $nibble {
+                        0..=9 => s += &$nibble.to_string(),
+                        0xA => s += ".",
+                        0xB => s += "e",
+                        0xC => s += "e-",
+                        0xE => s += "-",
+                        0xF => {
+                            *i += 1;
+                            return Number::Real(s);
+                        }
+                        _ => unreachable!(),
+                    }
+                };
+            }
+            let b1 = data[*i + 1];
+            _match_nibble!(b1 >> 4);
+            _match_nibble!((b1 << 4) >> 4);
+            *i += 1;
+        }
+    }
+
+    fn get_integer(data: &Vec<u8>, i: &mut usize, b0: u8) -> Self {
+        match b0 {
+            32..=246 => {
+                let b0 = b0 as i32;
+                Number::Integer(b0 - 139)
+            },
+            247..=250 => {
+                let b0 = b0 as i32;
+                let b1 = data[*i + 1] as i32;
+                *i += 1;
+                Number::Integer((b0 - 247) * 256 + b1 + 108)
+            },
+            251..=254 => {
+                let b0 = b0 as i32;
+                let b1 = data[*i + 1] as i32;
+                *i += 1;
+                Number::Integer(-(b0 - 251) * 256 - b1 - 108)
+            },
+            28 => {
+                let b1 = data[*i + 1] as i16;
+                let b2 = data[*i + 2] as i16;
+                *i += 2;
+                Number::Integer((b1 << 8 | b2) as i32)
+            },
+            29 => {
+                let b1 = data[*i + 1] as i32;
+                let b2 = data[*i + 2] as i32;
+                let b3 = data[*i + 3] as i32;
+                let b4 = data[*i + 4] as i32;
+                *i += 4;
+                Number::Integer(b1 << 24 | b2 << 16 | b3 << 8 | b4)
+            },
+            _ => {
+                eprintln!("[DEBUG] get_integer() => {}", b0);
+                unreachable!()
+            }
         }
     }
 }

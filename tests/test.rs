@@ -12,15 +12,15 @@ const TTF_FONTS: &[&str] = &[
 
 const OTF_FONTS: &[&str] = &[
     "emojione-svg.otf",
-    // "SourceHanSansSC-Regular.otf",
+    "SourceHanSansSC-Regular.otf",
     "SourceSans3-Black.otf",
     "XITSMath-Regular.otf",
 ];
 
 const TTC_FONTS: &[&str] = &[
-    // "SourceHanSans-Heavy.ttc",
-    // "SourceHanSerif-Regular.ttc",
-    // "SourceHanNotoCJK.ttc",
+    "SourceHanSans-Heavy.ttc",
+    "SourceHanSerif-Regular.ttc",
+    "SourceHanNotoCJK.ttc",
 ];
 
 const WOFF_FONTS: &[&str] = &[
@@ -52,12 +52,14 @@ fn check_font(font_file_path: &str, flag: &str) {
 
     match flag {
         "ttf" => {
-            for table in &["loca", "glyf"] {
-                font_container.parse_table(table);
-            }
             for font in &font_container.fonts {
                 assert!(font.loca.is_some());
                 assert!(font.glyf.is_some());
+            }
+        }
+        "otf" => {
+            for font in &font_container.fonts {
+                assert!(font.CFF_.is_some());
             }
         }
         _ => ()
@@ -76,7 +78,7 @@ fn check_ttf() {
 fn check_otf() {
     for i in OTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name, "");
+        check_font(&font_file_name, "otf");
     }
 }
 
