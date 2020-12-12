@@ -3,27 +3,27 @@ use std::fs;
 
 const FONTS_PATH: &str = "./tests/fonts/";
 
-const TTF_FONTS: [&str; 4] = [
+const TTF_FONTS: &[&str] = &[
     "cozette_bitmap.ttf",
     "NotoSans-SemiCondensed.ttf",
     "SourceSerifPro-LightIt.ttf",
     "WorkSans-Regular.ttf",
 ];
 
-const OTF_FONTS: [&str; 4] = [
+const OTF_FONTS: &[&str] = &[
     "emojione-svg.otf",
-    "SourceHanSansSC-Regular.otf",
+    // "SourceHanSansSC-Regular.otf",
     "SourceSans3-Black.otf",
     "XITSMath-Regular.otf",
 ];
 
-const TTC_FONTS: [&str; 3] = [
-    "SourceHanSans-Heavy.ttc",
-    "SourceHanSerif-Regular.ttc",
-    "SourceHanNotoCJK.ttc",
+const TTC_FONTS: &[&str] = &[
+    // "SourceHanSans-Heavy.ttc",
+    // "SourceHanSerif-Regular.ttc",
+    // "SourceHanNotoCJK.ttc",
 ];
 
-const WOFF_FONTS: [&str; 4] = [
+const WOFF_FONTS: &[&str] = &[
     "SourceSans3-ExtraLight.ttf.woff",
     "SourceSans3VF-Roman.ttf.woff",
     "SourceSerifPro-Bold.otf.woff",
@@ -66,7 +66,7 @@ fn check_font(font_file_path: &str, flag: &str) {
 
 #[test]
 fn check_ttf() {
-    for i in &TTF_FONTS {
+    for i in TTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
         check_font(&font_file_name, "ttf");
     }
@@ -74,7 +74,7 @@ fn check_ttf() {
 
 #[test]
 fn check_otf() {
-    for i in &OTF_FONTS {
+    for i in OTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
         check_font(&font_file_name, "");
     }
@@ -82,7 +82,7 @@ fn check_otf() {
 
 #[test]
 fn check_ttc() {
-    for i in &TTC_FONTS {
+    for i in TTC_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
         check_font(&font_file_name, "");
     }
@@ -90,7 +90,7 @@ fn check_ttc() {
 
 #[test]
 fn check_woff() {
-    for i in &WOFF_FONTS {
+    for i in WOFF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
         check_font(&font_file_name, "");
     }

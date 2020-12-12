@@ -33,9 +33,9 @@ impl Font {
         // Top dict
         let top_dict_index_data = buffer.get::<Index>().data[0].to_vec();
         let string_index_data = buffer.get::<Index>().to_string_vec();
-        // TODO: Global subr
-        let _global_subr_index_data = buffer.get::<Index>().data;
         cff.parse_top_dict(&top_dict_index_data, &string_index_data);
+        // Global subroutines
+        cff.global_subr = buffer.get::<Index>().data;
         // Encoding
         cff.encoding = match cff._encoding_offset {
             0 => Encoding::Standard,
@@ -47,8 +47,9 @@ impl Font {
         };
         // Char strings
         buffer.offset = cff_start_offset + cff._char_strings_offset;
-        let char_strings = buffer.get::<Index>();
-        let num_glyphs = char_strings.count;
+        let char_strings_index = buffer.get::<Index>();
+        let num_glyphs = char_strings_index.count;
+        cff.char_strings = char_strings_index.data;
         // Charset
         macro_rules! _get_charsets {
             ($t:ty) => ({
@@ -130,11 +131,13 @@ pub struct Table_CFF_ {
     charset: Vec<String>,
 
     _char_strings_offset: usize,
-    // char_strings: CharString,
+    char_strings: Vec<Vec<u8>>,
 
     _private_size: usize,
     _private_offset: usize,
     private: Option<Private>,
+
+    global_subr: Vec<Vec<u8>>,
 
     cid: Option<CID>,
 }
@@ -143,8 +146,6 @@ impl Table_CFF_ {
     fn parse_top_dict(&mut self, data: &Vec<u8>, strings: &Vec<String>) {
         let mut i = 0;
         let mut temp = Vec::new();
-        let mut cid = CID::default();
-        let mut is_cid = false;
 
         let get_num = |nums: &mut Vec<Number>| {
             let num = nums.pop().unwrap();
@@ -183,10 +184,12 @@ impl Table_CFF_ {
         };
 
         macro_rules! _update_cid {
-            ($i:ident, $e:expr) => ({
-                is_cid = true;
-                cid.$i = $e
-            })
+            ($i:ident, $e:expr) => {
+                match &mut self.cid {
+                    Some(cid) => cid.$i = $e,
+                    None => self.cid = Some(CID { $i: $e, ..Default::default() }),
+                };
+            }
         }
 
         while i < data.len() {
@@ -243,10 +246,6 @@ impl Table_CFF_ {
                 _ => temp.push(Self::get_integer(&data, &mut i, b0)),
             }
             i += 1;
-        }
-
-        if is_cid {
-            self.cid = Some(cid);
         }
     }
 
@@ -415,10 +414,11 @@ impl Default for Table_CFF_ {
             _charset_offset: 0,
             charset: Default::default(),
             _char_strings_offset: Default::default(),
-            // char_strings: Default::default(),
+            char_strings: Default::default(),
             _private_size: Default::default(),
             _private_offset: Default::default(),
             private: Default::default(),
+            global_subr: Default::default(),
             cid: Default::default(),
         }
     }
