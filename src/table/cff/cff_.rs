@@ -66,7 +66,7 @@ impl Font {
                 }
                 result
             });
-        };
+        }
         cff.charset = match cff._charset_offset {
             0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
             1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
@@ -145,43 +145,35 @@ pub struct Table_CFF_ {
 impl Table_CFF_ {
     fn parse_top_dict(&mut self, data: &Vec<u8>, strings: &Vec<String>) {
         let mut i = 0;
-        let mut temp = Vec::new();
+        let mut temp: Vec<Number> = Vec::new();
 
-        let get_num = |nums: &mut Vec<Number>| {
-            let num = nums.pop().unwrap();
-            nums.clear();
-            num
-        };
-
-        let get_bool = |nums: &mut Vec<Number>| {
-            get_num(nums).integer() != 0
-        };
-
-        let get_array = |nums: &mut Vec<Number>| {
-            let nums_copy = nums.to_vec();
-            nums.clear();
-            nums_copy
-        };
-
-        let get_string = |nums: &mut Vec<Number>| {
-            let num = nums.pop().unwrap();
-            nums.clear();
-            from_sid(num.integer() as usize, strings)
-        };
-
-        let get_private = |nums: &mut Vec<Number>| {
-            let num2 = nums.pop().unwrap().integer() as usize;
-            let num1 = nums.pop().unwrap().integer() as usize;
-            nums.clear();
-            (num1, num2)
-        };
-
-        let get_ros = |nums: &mut Vec<Number>| {
-            let supplement = nums.pop().unwrap().integer();
-            let index2 = nums.pop().unwrap().integer() as usize;
-            let index1 = nums.pop().unwrap().integer() as usize;
-            (from_sid(index1, strings), from_sid(index2, strings), supplement)
-        };
+        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
+        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
+        macro_rules! _pop_bool { () => { _pop_integer!() != 0 }; }
+        macro_rules! _pop_string { () => { from_sid(_pop_integer!() as usize, strings) }; }
+        macro_rules! _pop_array {
+            () => ({
+                let nums_copy = temp.to_vec();
+                temp.clear();
+                nums_copy
+            });
+        }
+        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
+        macro_rules! _pop_private {
+            () => ({
+                let num2 = temp.pop().unwrap().integer() as usize;
+                let num1 = temp.pop().unwrap().integer() as usize;
+                (num1, num2)
+            });
+        }
+        macro_rules! _pop_ros {
+            () => ({
+                let supplement = temp.pop().unwrap().integer();
+                let index2 = temp.pop().unwrap().integer() as usize;
+                let index1 = temp.pop().unwrap().integer() as usize;
+                (from_sid(index1, strings), from_sid(index2, strings), supplement)
+            });
+        }
 
         macro_rules! _update_cid {
             ($i:ident, $e:expr) => {
@@ -196,48 +188,48 @@ impl Table_CFF_ {
             let b0 = data[i];
             match b0 {
                 // Operators
-                0 => self.version = get_string(&mut temp),
-                1 => self.notice = get_string(&mut temp),
-                2 => self.full_name = get_string(&mut temp),
-                3 => self.family_name = get_string(&mut temp),
-                4 => self.weight = get_string(&mut temp),
-                5 => self.font_bbox = get_array(&mut temp),
+                0 => self.version = _pop_string!(),
+                1 => self.notice = _pop_string!(),
+                2 => self.full_name = _pop_string!(),
+                3 => self.family_name = _pop_string!(),
+                4 => self.weight = _pop_string!(),
+                5 => self.font_bbox = _pop_array!(),
                 12 => {
                     let b1 = data[i + 1];
                     match b1 {
-                        0 => self.copyright = get_string(&mut temp),
-                        1 => self.is_fixed_pitch = get_bool(&mut temp),
-                        2 => self.italic_angle = get_num(&mut temp),
-                        3 => self.underline_position = get_num(&mut temp),
-                        4 => self.underline_thickness = get_num(&mut temp),
-                        5 => self.paint_type = get_num(&mut temp).integer(),
-                        6 => self.char_string_type = get_num(&mut temp).integer(),
-                        7 => self.font_matrix = get_array(&mut temp),
-                        8 => self.stroke_width = get_num(&mut temp),
-                        20 => self.synthetic_base = Some(get_num(&mut temp).integer()),
-                        21 => self.postscript = Some(get_string(&mut temp)),
-                        22 => self.base_font_name = Some(get_string(&mut temp)),
-                        23 => self.base_font_blend = Some(Delta::new(get_array(&mut temp))),
-                        30 => _update_cid!(ros, get_ros(&mut temp)),
-                        31 => _update_cid!(cid_font_version, get_num(&mut temp)),
-                        32 => _update_cid!(cid_font_revision, get_num(&mut temp)),
-                        33 => _update_cid!(cid_font_type, get_num(&mut temp).integer()),
-                        34 => _update_cid!(cid_count, get_num(&mut temp).integer()),
-                        35 => _update_cid!(uid_base, get_num(&mut temp).integer()),
-                        36 => _update_cid!(fd_array, get_num(&mut temp).integer()),
-                        37 => _update_cid!(fd_select, get_num(&mut temp).integer()),
-                        38 => _update_cid!(font_name, get_string(&mut temp)),
-                        _ => println!("[DEBUG] \"{}:{}\" 12 {}", file!(), line!(), data[i + 1]),
+                        0 => self.copyright = _pop_string!(),
+                        1 => self.is_fixed_pitch = _pop_bool!(),
+                        2 => self.italic_angle = _pop_num!(),
+                        3 => self.underline_position = _pop_num!(),
+                        4 => self.underline_thickness =_pop_num!(),
+                        5 => self.paint_type = _pop_integer!(),
+                        6 => self.char_string_type = _pop_integer!(),
+                        7 => self.font_matrix = _pop_array!(),
+                        8 => self.stroke_width =_pop_num!(),
+                        20 => self.synthetic_base = Some(_pop_integer!()),
+                        21 => self.postscript = Some(_pop_string!()),
+                        22 => self.base_font_name = Some(_pop_string!()),
+                        23 => self.base_font_blend = Some(_pop_delta!()),
+                        30 => _update_cid!(ros, _pop_ros!()),
+                        31 => _update_cid!(cid_font_version,_pop_num!()),
+                        32 => _update_cid!(cid_font_revision,_pop_num!()),
+                        33 => _update_cid!(cid_font_type, _pop_integer!()),
+                        34 => _update_cid!(cid_count, _pop_integer!()),
+                        35 => _update_cid!(uid_base, _pop_integer!()),
+                        36 => _update_cid!(fd_array, _pop_integer!()),
+                        37 => _update_cid!(fd_select, _pop_integer!()),
+                        38 => _update_cid!(font_name, _pop_string!()),
+                        _ => unreachable!(),
                     }
                     i += 1;
                 }
-                13 => self.unique_id = Some(get_num(&mut temp).integer()),
-                14 => self.xuid = Some(get_array(&mut temp)),
-                15 => self._charset_offset = get_num(&mut temp).integer() as usize,
-                16 => self._encoding_offset = get_num(&mut temp).integer() as usize,
-                17 => self._char_strings_offset = get_num(&mut temp).integer() as usize,
+                13 => self.unique_id = Some(_pop_integer!()),
+                14 => self.xuid = Some(_pop_array!()),
+                15 => self._charset_offset = _pop_integer!() as usize,
+                16 => self._encoding_offset = _pop_integer!() as usize,
+                17 => self._char_strings_offset = _pop_integer!() as usize,
                 18 => {
-                    let private = get_private(&mut temp);
+                    let private = _pop_private!();
                     self._private_size = private.0;
                     self._private_offset = private.1;
                 },
@@ -254,50 +246,45 @@ impl Table_CFF_ {
         let mut temp = Vec::new();
         let mut private = Private::default();
 
-        let get_num = |nums: &mut Vec<Number>| {
-            let num = nums.pop().unwrap();
-            nums.clear();
-            num
-        };
-
-        let get_bool = |nums: &mut Vec<Number>| {
-            get_num(nums).integer() != 0
-        };
-
-        let get_array = |nums: &mut Vec<Number>| {
-            let nums_copy = nums.to_vec();
-            nums.clear();
-            nums_copy
-        };
+        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
+        macro_rules! _pop_bool { () => { _pop_num!().integer() != 0 }; }
+        macro_rules! _pop_array {
+            () => ({
+                let nums_copy = temp.to_vec();
+                temp.clear();
+                nums_copy
+            });
+        }
+        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
 
         while i < data.len() {
             let b0 = data[i];
             match b0 {
-                6 => private.blue_values = Delta::new(get_array(&mut temp)),
-                7 => private.other_blues = Delta::new(get_array(&mut temp)),
-                8 => private.family_blues = Delta::new(get_array(&mut temp)),
-                9 => private.family_other_blues = Delta::new(get_array(&mut temp)),
-                10 => private.std_hw = get_num(&mut temp),
-                11 => private.std_vw = get_num(&mut temp),
+                6 => private.blue_values = _pop_delta!(),
+                7 => private.other_blues = _pop_delta!(),
+                8 => private.family_blues = _pop_delta!(),
+                9 => private.family_other_blues = _pop_delta!(),
+                10 => private.std_hw =_pop_num!(),
+                11 => private.std_vw =_pop_num!(),
                 12 => {
                     let b1 = data[i + 1];
                     match b1 {
-                        9 => private.blue_scale = get_num(&mut temp),
-                        10 => private.blue_shift = get_num(&mut temp),
-                        11 => private.blue_fuzz = get_num(&mut temp),
-                        12 => private.stem_snap_h = Delta::new(get_array(&mut temp)),
-                        13 => private.stem_snap_v = Delta::new(get_array(&mut temp)),
-                        14 => private.force_bold = get_bool(&mut temp),
-                        17 => private.language_group = get_num(&mut temp),
-                        18 => private.expansion_factor = get_num(&mut temp),
-                        19 => private.initial_random_seed = get_num(&mut temp),
+                        9 => private.blue_scale =_pop_num!(),
+                        10 => private.blue_shift =_pop_num!(),
+                        11 => private.blue_fuzz =_pop_num!(),
+                        12 => private.stem_snap_h = _pop_delta!(),
+                        13 => private.stem_snap_v = _pop_delta!(),
+                        14 => private.force_bold = _pop_bool!(),
+                        17 => private.language_group =_pop_num!(),
+                        18 => private.expansion_factor =_pop_num!(),
+                        19 => private.initial_random_seed =_pop_num!(),
                         _ => unreachable!(),
                     }
                     i += 1;
                 }
-                19 => private.subrs = Some(get_num(&mut temp)),
-                20 => private.default_width_x = get_num(&mut temp),
-                21 => private.nominal_width_x = get_num(&mut temp),
+                19 => private.subrs = Some(_pop_num!()),
+                20 => private.default_width_x =_pop_num!(),
+                21 => private.nominal_width_x =_pop_num!(),
                 // Operands
                 30 => temp.push(Self::get_real(&data, &mut i)),
                 _ => temp.push(Self::get_integer(&data, &mut i, b0)),
@@ -366,7 +353,7 @@ impl Table_CFF_ {
                 *i += 4;
                 Number::Integer(b1 << 24 | b2 << 16 | b3 << 8 | b4)
             },
-            _ => unreachable!(), //println!("[DEBUG] \"{}:{}\" {}", file!(), line!(), b0),
+            _ => unreachable!(),
         }
     }
 }
