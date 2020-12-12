@@ -55,8 +55,8 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     font_container.parse();
     // TODO: for debug
     for i in &font_container.fonts {
-        println!("{:#?}", i.table_records);
-        println!("\"SVG\": {:#?}", i.SVG_);
+        // println!("{:#?}", i.table_records);
+        println!("\"CFF\": {:#?}", i.CFF_);
     }
     Ok(())
 }
