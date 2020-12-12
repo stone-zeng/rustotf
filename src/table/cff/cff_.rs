@@ -13,6 +13,16 @@ use crate::util::{Buffer, ReadBuffer, u24};
 /// [*Adobe Technical Note #5176: The Compact Font Format Specification*](https://wwwimages2.adobe.com/content/dam/acom/en/devnet/font/pdfs/5176.CFF.pdf)
 /// and [*Adobe Technical Note #5177: Type 2 Charstring Format*](https://wwwimages2.adobe.com/content/dam/acom/en/devnet/font/pdfs/5177.Type2.pdf).
 
+#[allow(non_camel_case_types)]
+#[derive(Debug)]
+pub struct Table_CFF_ {
+    _version: String,
+    _header_size: u8,
+    _offset_size: u8,
+    cff_fonts: Vec<CFFFont>,
+    global_subrs: Vec<Vec<u8>>,
+}
+
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
@@ -21,86 +31,31 @@ impl Font {
         let _header_size = buffer.get();
         let _offset_size = buffer.get();
         buffer.offset = cff_start_offset + _header_size as usize;
-        // We assume that the fontset contains only one element.
-        let name = String::from_utf8(buffer.get::<Index>().data[0].to_vec()).unwrap();
-        let mut cff = Table_CFF_ {
+
+        let names = buffer.get::<Index>().to_string_vec();
+        let top_dicts = buffer.get::<Index>().data;
+        let strings = buffer.get::<Index>().to_string_vec();
+        let global_subrs = buffer.get::<Index>().data;
+
+        self.CFF_ = Some(Table_CFF_ {
             _version,
             _header_size,
             _offset_size,
-            name,
-            ..Default::default()
-        };
-        // Top dict
-        let top_dict_index_data = buffer.get::<Index>().data[0].to_vec();
-        let string_index_data = buffer.get::<Index>().to_string_vec();
-        cff.parse_top_dict(&top_dict_index_data, &string_index_data);
-        // Global subroutines
-        cff.global_subr = buffer.get::<Index>().data;
-        // Encoding
-        cff.encoding = match cff._encoding_offset {
-            0 => Encoding::Standard,
-            1 => Encoding::Expert,
-            _ => {
-                buffer.offset = cff_start_offset + cff._encoding_offset;
-                buffer.get()
-            }
-        };
-        // Char strings
-        buffer.offset = cff_start_offset + cff._char_strings_offset;
-        let char_strings_index = buffer.get::<Index>();
-        let num_glyphs = char_strings_index.count;
-        cff.char_strings = char_strings_index.data;
-        // Charset
-        macro_rules! _get_charsets {
-            ($t:ty) => ({
-                // ".notdef" is omitted in the array.
-                let mut count = 1;
-                let mut result = vec![CFF_STANDARD_STRINGS[0].to_string()];
-                while count < num_glyphs {
-                    let sid = buffer.get::<u16>() as usize;
-                    let num_left = buffer.get::<$t>() as usize;
-                    (0..=num_left).for_each(|i| {
-                        result.push(from_sid(sid + i, &string_index_data))
-                    });
-                    count += num_left as usize + 1;
-                }
-                result
-            });
-        }
-        cff.charset = match cff._charset_offset {
-            0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            2 => CFF_EXPERT_SUBSET_CHARSET.iter().map(|&i| i.to_string()).collect(),
-            offset => {
-                buffer.offset = cff_start_offset + offset as usize;
-                let format: u8 = buffer.get();
-                match format {
-                    0 => (0..num_glyphs)
-                        .map(|_| from_sid(buffer.get::<u16>() as usize, &string_index_data))
-                        .collect(),
-                    1 => _get_charsets!(u8),
-                    2 => _get_charsets!(u16),
-                    _ => unreachable!(),
-                }
-            }
-        };
-        // Private dict
-        if cff._private_size != 0 {
-            buffer.offset = cff_start_offset + cff._private_offset;
-            let private_dict_index_data: Vec<u8> = buffer.get_vec(cff._private_size);
-            cff.parse_private_dict(&private_dict_index_data);
-        }
-        self.CFF_ = Some(cff);
+            cff_fonts: names.into_iter()
+                .zip(top_dicts.iter())
+                .map(|(name, top_dict)| {
+                    let mut cff = CFFFont::new(name);
+                    cff.parse(buffer, cff_start_offset, top_dict, &strings);
+                    cff
+                })
+                .collect(),
+            global_subrs,
+        });
     }
 }
 
-#[allow(non_camel_case_types)]
-#[derive(Debug)]
-pub struct Table_CFF_ {
-    // Header
-    _version: String,
-    _header_size: u8,
-    _offset_size: u8,
+#[derive(Debug, Default)]
+pub struct CFFFont {
     // Name
     name: String,
     // Top dict
@@ -148,12 +103,102 @@ pub struct Table_CFF_ {
     _fd_array_offset: Option<usize>,
     _fd_select_offset: Option<usize>,
     cid_font_name: Option<String>,
-    // Global subroutines
-    global_subr: Vec<Vec<u8>>,
 }
 
-impl Table_CFF_ {
-    fn parse_top_dict(&mut self, data: &Vec<u8>, strings: &Vec<String>) {
+impl CFFFont {
+    fn new(name: String) -> Self {
+        Self {
+            name,
+            is_fixed_pitch: false,
+            italic_angle: Number::Integer(0),
+            underline_position: Number::Integer(-100),
+            underline_thickness: Number::Integer(50),
+            paint_type: 0,
+            char_string_type: 2,
+            font_matrix: vec![
+                Number::Real((0.001).to_string()),
+                Number::Real((0.0).to_string()),
+                Number::Real((0.001).to_string()),
+                Number::Real((0.0).to_string()),
+            ],
+            font_bbox: vec![
+                Number::Integer(0),
+                Number::Integer(0),
+                Number::Integer(0),
+                Number::Integer(0),
+            ],
+            stroke_width: Number::Integer(0),
+            _encoding_offset: 0,
+            _charset_offset: 0,
+            ..Default::default()
+        }
+    }
+
+    fn parse(
+            &mut self,
+            buffer: &mut Buffer,
+            cff_start_offset: usize,
+            top_dict: &Vec<u8>,
+            strings: &Vec<String>
+        ) {
+        self.parse_top_dict(top_dict, strings);
+        // Encoding
+        self.encoding = match self._encoding_offset {
+            0 => Encoding::Standard,
+            1 => Encoding::Expert,
+            _ => {
+                buffer.offset = cff_start_offset + self._encoding_offset;
+                buffer.get()
+            }
+        };
+        // Char strings
+        buffer.offset = cff_start_offset + self._char_strings_offset;
+        let char_strings_index = buffer.get::<Index>();
+        let num_glyphs = char_strings_index.count;
+        self.char_strings = char_strings_index.data;
+        // Charset
+        macro_rules! _get_charsets {
+            ($t:ty) => ({
+                // ".notdef" is omitted in the array.
+                let mut count = 1;
+                let mut result = vec![CFF_STANDARD_STRINGS[0].to_string()];
+                while count < num_glyphs {
+                    let sid = buffer.get::<u16>() as usize;
+                    let num_left = buffer.get::<$t>() as usize;
+                    (0..=num_left).for_each(|i| {
+                        result.push(from_sid(sid + i, &strings))
+                    });
+                    count += num_left as usize + 1;
+                }
+                result
+            });
+        }
+        self.charset = match self._charset_offset {
+            0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
+            1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
+            2 => CFF_EXPERT_SUBSET_CHARSET.iter().map(|&i| i.to_string()).collect(),
+            offset => {
+                buffer.offset = cff_start_offset + offset as usize;
+                let format: u8 = buffer.get();
+                match format {
+                    0 => (0..num_glyphs)
+                        .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
+                        .collect(),
+                    1 => _get_charsets!(u8),
+                    2 => _get_charsets!(u16),
+                    _ => unreachable!(),
+                }
+            }
+        };
+        // Private dict
+        if self._private_size != 0 {
+            buffer.offset = cff_start_offset + self._private_offset;
+            let private_dict = buffer.get_vec(self._private_size);
+            self.parse_private_dict(&private_dict);
+        }
+    }
+
+    fn parse_top_dict(&mut self, top_dict: &Vec<u8>, strings: &Vec<String>) {
         let mut i = 0;
         let mut temp: Vec<Number> = Vec::new();
 
@@ -185,8 +230,8 @@ impl Table_CFF_ {
             });
         }
 
-        while i < data.len() {
-            let b0 = data[i];
+        while i < top_dict.len() {
+            let b0 = top_dict[i];
             match b0 {
                 // Operators
                 0 => self.version = _pop_string!(),
@@ -196,7 +241,7 @@ impl Table_CFF_ {
                 4 => self.weight = _pop_string!(),
                 5 => self.font_bbox = _pop_array!(),
                 12 => {
-                    let b1 = data[i + 1];
+                    let b1 = top_dict[i + 1];
                     match b1 {
                         0 => self.copyright = _pop_string!(),
                         1 => self.is_fixed_pitch = _pop_bool!(),
@@ -235,8 +280,8 @@ impl Table_CFF_ {
                     self._private_offset = private.1;
                 },
                 // Operands
-                30 => temp.push(Self::get_real(&data, &mut i)),
-                _ => temp.push(Self::get_integer(&data, &mut i, b0)),
+                30 => temp.push(Self::get_real(&top_dict, &mut i)),
+                _ => temp.push(Self::get_integer(&top_dict, &mut i, b0)),
             }
             i += 1;
         }
@@ -244,10 +289,10 @@ impl Table_CFF_ {
         self.init_cid();
     }
 
-    fn parse_private_dict(&mut self, data: &Vec<u8>) {
+    fn parse_private_dict(&mut self, private_dict: &Vec<u8>) {
         let mut i = 0;
         let mut temp = Vec::new();
-        let mut private = Private::default();
+        let mut private = Private::new();
 
         macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
         macro_rules! _pop_bool { () => { _pop_num!().integer() != 0 }; }
@@ -260,8 +305,8 @@ impl Table_CFF_ {
         }
         macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
 
-        while i < data.len() {
-            let b0 = data[i];
+        while i < private_dict.len() {
+            let b0 = private_dict[i];
             match b0 {
                 6 => private.blue_values = _pop_delta!(),
                 7 => private.other_blues = _pop_delta!(),
@@ -270,7 +315,7 @@ impl Table_CFF_ {
                 10 => private.std_hw =_pop_num!(),
                 11 => private.std_vw =_pop_num!(),
                 12 => {
-                    let b1 = data[i + 1];
+                    let b1 = private_dict[i + 1];
                     match b1 {
                         9 => private.blue_scale =_pop_num!(),
                         10 => private.blue_shift =_pop_num!(),
@@ -289,8 +334,8 @@ impl Table_CFF_ {
                 20 => private.default_width_x =_pop_num!(),
                 21 => private.nominal_width_x =_pop_num!(),
                 // Operands
-                30 => temp.push(Self::get_real(&data, &mut i)),
-                _ => temp.push(Self::get_integer(&data, &mut i, b0)),
+                30 => temp.push(Self::get_real(&private_dict, &mut i)),
+                _ => temp.push(Self::get_integer(&private_dict, &mut i, b0)),
             }
             i += 1;
         }
@@ -375,67 +420,6 @@ impl Table_CFF_ {
     }
 }
 
-impl Default for Table_CFF_ {
-    fn default() -> Self {
-        Self {
-            _version: Default::default(),
-            _header_size: Default::default(),
-            _offset_size: Default::default(),
-            name: Default::default(),
-            version: Default::default(),
-            notice: Default::default(),
-            copyright: Default::default(),
-            full_name: Default::default(),
-            family_name: Default::default(),
-            weight: Default::default(),
-            is_fixed_pitch: false,
-            italic_angle: Number::Integer(0),
-            underline_position: Number::Integer(-100),
-            underline_thickness: Number::Integer(50),
-            paint_type: 0,
-            char_string_type: 2,
-            font_matrix: vec![
-                Number::Real((0.001).to_string()),
-                Number::Real((0.0).to_string()),
-                Number::Real((0.001).to_string()),
-                Number::Real((0.0).to_string()),
-            ],
-            unique_id: Default::default(),
-            font_bbox: vec![
-                Number::Integer(0),
-                Number::Integer(0),
-                Number::Integer(0),
-                Number::Integer(0),
-            ],
-            stroke_width: Number::Integer(0),
-            xuid: Default::default(),
-            synthetic_base: Default::default(),
-            postscript: Default::default(),
-            base_font_name: Default::default(),
-            base_font_blend: Default::default(),
-            _encoding_offset: 0,
-            encoding: Default::default(),
-            _charset_offset: 0,
-            charset: Default::default(),
-            _char_strings_offset: Default::default(),
-            char_strings: Default::default(),
-            _private_size: Default::default(),
-            _private_offset: Default::default(),
-            private: Default::default(),
-            ros: Default::default(),
-            cid_font_version: Default::default(),
-            cid_font_revision: Default::default(),
-            cid_font_type: Default::default(),
-            cid_count: Default::default(),
-            uid_base: Default::default(),
-            _fd_array_offset: Default::default(),
-            _fd_select_offset: Default::default(),
-            cid_font_name: Default::default(),
-            global_subr: Default::default(),
-        }
-    }
-}
-
 #[derive(Debug)]
 enum Encoding {
     Standard,
@@ -500,7 +484,7 @@ impl ReadBuffer for EncodingRange {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct Private {
     _size: usize,
     _offset: usize,
@@ -524,29 +508,19 @@ struct Private {
     nominal_width_x: Number,
 }
 
-impl Default for Private {
-    fn default() -> Self {
+impl Private {
+    fn new() -> Self {
         Self {
-            _size: Default::default(),
-            _offset: Default::default(),
-            blue_values: Default::default(),
-            other_blues: Default::default(),
-            family_blues: Default::default(),
-            family_other_blues: Default::default(),
             blue_scale: Number::Real((0.039625).to_string()),
             blue_shift: Number::Integer(7),
             blue_fuzz: Number::Integer(1),
-            std_hw: Default::default(),
-            std_vw: Default::default(),
-            stem_snap_h: Default::default(),
-            stem_snap_v: Default::default(),
-            force_bold: Default::default(),
+            force_bold: false,
             language_group: Number::Integer(0),
             expansion_factor: Number::Real((0.06).to_string()),
             initial_random_seed: Number::Integer(0),
-            subrs: Default::default(),
             default_width_x: Number::Integer(0),
             nominal_width_x: Number::Integer(0),
+            ..Default::default()
         }
     }
 }
@@ -598,6 +572,7 @@ impl Default for Number {
     }
 }
 
+#[derive(Default)]
 struct Delta {
     _data: Vec<Number>
 }
@@ -607,7 +582,8 @@ impl Delta {
         Self {
             _data: array.iter()
                 .scan(0, |acc, x| {
-                    *acc = *acc + x.to_owned().integer(); Some(Number::Integer(*acc))
+                    *acc = *acc + x.to_owned().integer();
+                    Some(Number::Integer(*acc))
                 })
                 .collect()
         }
@@ -617,14 +593,6 @@ impl Delta {
 impl fmt::Debug for Delta {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self._data)
-    }
-}
-
-impl Default for Delta {
-    fn default() -> Self {
-        Self {
-            _data: Default::default()
-        }
     }
 }
 
