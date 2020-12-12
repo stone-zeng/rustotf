@@ -97,11 +97,13 @@ impl Font {
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CFF_ {
+    // Header
     _version: String,
     _header_size: u8,
     _offset_size: u8,
+    // Name
     name: String,
-
+    // Top dict
     version: String,
     notice: String,
     copyright: String,
@@ -123,23 +125,31 @@ pub struct Table_CFF_ {
     postscript: Option<String>,
     base_font_name: Option<String>,
     base_font_blend: Option<Delta>,
-
+    // Encodings
     _encoding_offset: usize,
     encoding: Encoding,
-
+    // Charsets
     _charset_offset: usize,
     charset: Vec<String>,
-
+    // Char strings
     _char_strings_offset: usize,
     char_strings: Vec<Vec<u8>>,
-
+    // Private dict
     _private_size: usize,
     _private_offset: usize,
     private: Option<Private>,
-
+    // CID
+    ros: Option<ROS>,
+    cid_font_version: Option<Number>,
+    cid_font_revision: Option<Number>,
+    cid_font_type: Option<i32>,
+    cid_count: Option<i32>,
+    uid_base: Option<i32>,
+    _fd_array_offset: Option<usize>,
+    _fd_select_offset: Option<usize>,
+    cid_font_name: Option<String>,
+    // Global subroutines
     global_subr: Vec<Vec<u8>>,
-
-    cid: Option<CID>,
 }
 
 impl Table_CFF_ {
@@ -169,19 +179,10 @@ impl Table_CFF_ {
         macro_rules! _pop_ros {
             () => ({
                 let supplement = temp.pop().unwrap().integer();
-                let index2 = temp.pop().unwrap().integer() as usize;
-                let index1 = temp.pop().unwrap().integer() as usize;
-                (from_sid(index1, strings), from_sid(index2, strings), supplement)
+                let index_o = temp.pop().unwrap().integer() as usize;
+                let index_r = temp.pop().unwrap().integer() as usize;
+                ROS::new(index_r, index_o, supplement, strings)
             });
-        }
-
-        macro_rules! _update_cid {
-            ($i:ident, $e:expr) => {
-                match &mut self.cid {
-                    Some(cid) => cid.$i = $e,
-                    None => self.cid = Some(CID { $i: $e, ..Default::default() }),
-                };
-            }
         }
 
         while i < data.len() {
@@ -210,15 +211,15 @@ impl Table_CFF_ {
                         21 => self.postscript = Some(_pop_string!()),
                         22 => self.base_font_name = Some(_pop_string!()),
                         23 => self.base_font_blend = Some(_pop_delta!()),
-                        30 => _update_cid!(ros, _pop_ros!()),
-                        31 => _update_cid!(cid_font_version,_pop_num!()),
-                        32 => _update_cid!(cid_font_revision,_pop_num!()),
-                        33 => _update_cid!(cid_font_type, _pop_integer!()),
-                        34 => _update_cid!(cid_count, _pop_integer!()),
-                        35 => _update_cid!(uid_base, _pop_integer!()),
-                        36 => _update_cid!(fd_array, _pop_integer!()),
-                        37 => _update_cid!(fd_select, _pop_integer!()),
-                        38 => _update_cid!(font_name, _pop_string!()),
+                        30 => self.ros = Some(_pop_ros!()),
+                        31 => self.cid_font_version = Some(_pop_num!()),
+                        32 => self.cid_font_revision = Some(_pop_num!()),
+                        33 => self.cid_font_type = Some(_pop_integer!()),
+                        34 => self.cid_count = Some(_pop_integer!()),
+                        35 => self.uid_base = Some(_pop_integer!()),
+                        36 => self._fd_array_offset = Some(_pop_integer!() as usize),
+                        37 => self._fd_select_offset = Some(_pop_integer!() as usize),
+                        38 => self.cid_font_name = Some(_pop_string!()),
                         _ => unreachable!(),
                     }
                     i += 1;
@@ -239,6 +240,8 @@ impl Table_CFF_ {
             }
             i += 1;
         }
+
+        self.init_cid();
     }
 
     fn parse_private_dict(&mut self, data: &Vec<u8>) {
@@ -293,6 +296,20 @@ impl Table_CFF_ {
         }
 
         self.private = Some(private);
+    }
+
+    fn init_cid(&mut self) {
+        if let Some(_) = self.ros {
+            macro_rules! _init_cid {
+                ($i:ident, $e:expr) => {
+                    if self.$i.is_none() { self.$i = Some($e); }
+                };
+            }
+            _init_cid!(cid_font_version, Number::Integer(0));
+            _init_cid!(cid_font_revision, Number::Integer(0));
+            _init_cid!(cid_font_type, 0);
+            _init_cid!(cid_count, 8720);
+        }
     }
 
     fn get_real(data: &Vec<u8>, i: &mut usize) -> Number {
@@ -405,88 +422,16 @@ impl Default for Table_CFF_ {
             _private_size: Default::default(),
             _private_offset: Default::default(),
             private: Default::default(),
-            global_subr: Default::default(),
-            cid: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct CID {
-    ros: (String, String, i32),
-    cid_font_version: Number,
-    cid_font_revision: Number,
-    cid_font_type: i32,
-    cid_count: i32,
-    uid_base: i32,
-    fd_array: i32,
-    fd_select: i32,
-    font_name: String,
-}
-
-impl Default for CID {
-    fn default() -> Self {
-        Self {
             ros: Default::default(),
-            cid_font_version: Number::Integer(0),
-            cid_font_revision: Number::Integer(0),
-            cid_font_type: 0,
-            cid_count: 8720,
+            cid_font_version: Default::default(),
+            cid_font_revision: Default::default(),
+            cid_font_type: Default::default(),
+            cid_count: Default::default(),
             uid_base: Default::default(),
-            fd_array: Default::default(),
-            fd_select: Default::default(),
-            font_name: Default::default(),
-        }
-    }
-}
-
-#[derive(Debug)]
-struct Private {
-    _size: usize,
-    _offset: usize,
-    blue_values: Delta,
-    other_blues: Delta,
-    family_blues: Delta,
-    family_other_blues: Delta,
-    blue_scale: Number,
-    blue_shift: Number,
-    blue_fuzz: Number,
-    std_hw: Number,
-    std_vw: Number,
-    stem_snap_h: Delta,
-    stem_snap_v: Delta,
-    force_bold: bool,
-    language_group: Number,
-    expansion_factor: Number,
-    initial_random_seed: Number,
-    subrs: Option<Number>,
-    default_width_x: Number,
-    nominal_width_x: Number,
-}
-
-impl Default for Private {
-    fn default() -> Self {
-        Self {
-            _size: Default::default(),
-            _offset: Default::default(),
-            blue_values: Default::default(),
-            other_blues: Default::default(),
-            family_blues: Default::default(),
-            family_other_blues: Default::default(),
-            blue_scale: Number::Real((0.039625).to_string()),
-            blue_shift: Number::Integer(7),
-            blue_fuzz: Number::Integer(1),
-            std_hw: Default::default(),
-            std_vw: Default::default(),
-            stem_snap_h: Default::default(),
-            stem_snap_v: Default::default(),
-            force_bold: Default::default(),
-            language_group: Number::Integer(0),
-            expansion_factor: Number::Real((0.06).to_string()),
-            initial_random_seed: Number::Integer(0),
-            subrs: Default::default(),
-            default_width_x: Number::Integer(0),
-            nominal_width_x: Number::Integer(0),
+            _fd_array_offset: Default::default(),
+            _fd_select_offset: Default::default(),
+            cid_font_name: Default::default(),
+            global_subr: Default::default(),
         }
     }
 }
@@ -551,6 +496,74 @@ impl ReadBuffer for EncodingRange {
         Self {
             first: buffer.get(),
             num_left: buffer.get(),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Private {
+    _size: usize,
+    _offset: usize,
+    blue_values: Delta,
+    other_blues: Delta,
+    family_blues: Delta,
+    family_other_blues: Delta,
+    blue_scale: Number,
+    blue_shift: Number,
+    blue_fuzz: Number,
+    std_hw: Number,
+    std_vw: Number,
+    stem_snap_h: Delta,
+    stem_snap_v: Delta,
+    force_bold: bool,
+    language_group: Number,
+    expansion_factor: Number,
+    initial_random_seed: Number,
+    subrs: Option<Number>,
+    default_width_x: Number,
+    nominal_width_x: Number,
+}
+
+impl Default for Private {
+    fn default() -> Self {
+        Self {
+            _size: Default::default(),
+            _offset: Default::default(),
+            blue_values: Default::default(),
+            other_blues: Default::default(),
+            family_blues: Default::default(),
+            family_other_blues: Default::default(),
+            blue_scale: Number::Real((0.039625).to_string()),
+            blue_shift: Number::Integer(7),
+            blue_fuzz: Number::Integer(1),
+            std_hw: Default::default(),
+            std_vw: Default::default(),
+            stem_snap_h: Default::default(),
+            stem_snap_v: Default::default(),
+            force_bold: Default::default(),
+            language_group: Number::Integer(0),
+            expansion_factor: Number::Real((0.06).to_string()),
+            initial_random_seed: Number::Integer(0),
+            subrs: Default::default(),
+            default_width_x: Number::Integer(0),
+            nominal_width_x: Number::Integer(0),
+        }
+    }
+}
+
+#[derive(Debug)]
+struct ROS {
+    registry: String,
+    ordering: String,
+    supplement: i32,
+}
+
+impl ROS {
+    fn new(index_r: usize, index_o: usize, supplement: i32, strings: &Vec<String>) -> Self {
+        Self {
+            registry: from_sid(index_r, strings),
+            ordering: from_sid(index_o, strings),
+            supplement,
         }
     }
 }
