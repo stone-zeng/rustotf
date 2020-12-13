@@ -11,6 +11,7 @@ const TTF_FONTS: &[&str] = &[
 ];
 
 const OTF_FONTS: &[&str] = &[
+    "CJKRadicals-Regular.otf",
     "emojione-svg.otf",
     "SourceHanSansSC-Regular.otf",
     "SourceSans3-Black.otf",

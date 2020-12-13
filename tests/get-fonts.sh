@@ -4,6 +4,7 @@ path=./tests/fonts
 gh_url=https://raw.githubusercontent.com
 
 for url in \
+    $gh_url/adobe-fonts/cjk-radicals/master/CJKRadicals-Regular.otf                                      \
     $gh_url/adobe-fonts/source-han-sans/release/OTC/SourceHanSans-Heavy.ttc                              \
     $gh_url/adobe-fonts/source-han-sans/release/OTF/SimplifiedChinese/SourceHanSansSC-Regular.otf        \
     $gh_url/adobe-fonts/source-han-serif/release/OTC/SourceHanSerif-Regular.ttc                          \

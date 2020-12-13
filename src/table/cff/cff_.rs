@@ -20,7 +20,7 @@ pub struct Table_CFF_ {
     _header_size: u8,
     _offset_size: u8,
     cff_fonts: Vec<CFFFont>,
-    global_subrs: Vec<Vec<u8>>,
+    global_subrs: Vec<Subr>,
 }
 
 impl Font {
@@ -198,9 +198,15 @@ impl CFFFont {
             };
             // Private dict
             if self._private_size != 0 {
-                buffer.offset = cff_start_offset + self._private_offset;
+                let private_start_offset = cff_start_offset + self._private_offset;
+                buffer.offset = private_start_offset;
                 let private_dict = buffer.get_vec(self._private_size);
-                self.private = Some(Private::parse(&private_dict));
+                let mut private = Private::parse(&private_dict);
+                if let Some(subrs_offset) = private._subrs_offset {
+                    buffer.offset = private_start_offset + subrs_offset;
+                    private.subrs = buffer.get::<Index>().data;
+                }
+                self.private = Some(private);
             }
         } else {
             // FD Array
@@ -209,9 +215,14 @@ impl CFFFont {
                 self.init_fd_array(font_dict, strings)
             });
             self.fd_array.iter_mut().for_each(|fd| {
-                buffer.offset = cff_start_offset + fd._private_offset;
+                let private_start_offset = cff_start_offset + fd._private_offset;
+                buffer.offset = private_start_offset;
                 let private_dict = buffer.get_vec(fd._private_size);
-                fd.private = Private::parse(&private_dict);
+                fd.private= Private::parse(&private_dict);
+                if let Some(subrs_offset) = fd.private._subrs_offset {
+                    buffer.offset = private_start_offset + subrs_offset;
+                    fd.private.subrs = buffer.get::<Index>().data;
+                }
             });
             // FD Select
             buffer.offset = cff_start_offset + self._fd_select_offset.unwrap();
@@ -445,22 +456,23 @@ impl ReadBuffer for EncodingRange {
 struct Private {
     _size: usize,
     _offset: usize,
-    blue_values: Delta,
-    other_blues: Delta,
-    family_blues: Delta,
-    family_other_blues: Delta,
+    blue_values: Option<Delta>,
+    other_blues: Option<Delta>,
+    family_blues: Option<Delta>,
+    family_other_blues: Option<Delta>,
     blue_scale: Number,
     blue_shift: Number,
     blue_fuzz: Number,
-    std_hw: Number,
-    std_vw: Number,
-    stem_snap_h: Delta,
-    stem_snap_v: Delta,
+    std_hw: Option<Number>,
+    std_vw: Option<Number>,
+    stem_snap_h: Option<Delta>,
+    stem_snap_v: Option<Delta>,
     force_bold: bool,
     language_group: Number,
     expansion_factor: Number,
     initial_random_seed: Number,
-    subrs: Option<Number>,
+    _subrs_offset: Option<usize>,
+    subrs: Vec<Subr>,
     default_width_x: Number,
     nominal_width_x: Number,
 }
@@ -487,7 +499,8 @@ impl Private {
         let mut private = Self::new();
 
         macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
-        macro_rules! _pop_bool { () => { _pop_num!().integer() != 0 }; }
+        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
+        macro_rules! _pop_bool { () => { _pop_integer!() != 0 }; }
         macro_rules! _pop_array {
             () => ({
                 let nums_copy = temp.to_vec();
@@ -500,20 +513,20 @@ impl Private {
         while i < private_dict.len() {
             let b0 = private_dict[i];
             match b0 {
-                6 => private.blue_values = _pop_delta!(),
-                7 => private.other_blues = _pop_delta!(),
-                8 => private.family_blues = _pop_delta!(),
-                9 => private.family_other_blues = _pop_delta!(),
-                10 => private.std_hw = _pop_num!(),
-                11 => private.std_vw = _pop_num!(),
+                6 => private.blue_values = Some(_pop_delta!()),
+                7 => private.other_blues = Some(_pop_delta!()),
+                8 => private.family_blues = Some(_pop_delta!()),
+                9 => private.family_other_blues = Some(_pop_delta!()),
+                10 => private.std_hw = Some(_pop_num!()),
+                11 => private.std_vw = Some(_pop_num!()),
                 12 => {
                     let b1 = private_dict[i + 1];
                     match b1 {
                         9 => private.blue_scale = _pop_num!(),
                         10 => private.blue_shift = _pop_num!(),
                         11 => private.blue_fuzz = _pop_num!(),
-                        12 => private.stem_snap_h = _pop_delta!(),
-                        13 => private.stem_snap_v = _pop_delta!(),
+                        12 => private.stem_snap_h = Some(_pop_delta!()),
+                        13 => private.stem_snap_v = Some(_pop_delta!()),
                         14 => private.force_bold = _pop_bool!(),
                         17 => private.language_group = _pop_num!(),
                         18 => private.expansion_factor = _pop_num!(),
@@ -526,7 +539,7 @@ impl Private {
                     }
                     i += 1;
                 }
-                19 => private.subrs = Some(_pop_num!()),
+                19 => private._subrs_offset = Some(_pop_integer!() as usize),
                 20 => private.default_width_x = _pop_num!(),
                 21 => private.nominal_width_x = _pop_num!(),
                 // Operands
@@ -611,6 +624,8 @@ impl ReadBuffer for FDSelectRange {
         }
     }
 }
+
+type Subr = Vec<u8>;
 
 #[derive(Clone)]
 enum Number {

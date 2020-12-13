@@ -69,8 +69,6 @@ pub struct Table_OS_2 {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_OS_2(&mut self, buffer: &mut Buffer) {
-        // TODO: make it more elegant.
-        let os_2_length = self.get_table_len(&Tag::from("OS/2"));
         // Version 0
         let mut table = Table_OS_2 {
             _version: buffer.get(),
@@ -101,7 +99,8 @@ impl Font {
             ..Default::default()
         };
         // Version 0 (Microsoft)
-        if os_2_length >= 78 {
+        // Need to check the table length.
+        if self.get_table_len(&Tag::from("OS/2")) >= 78 {
             table.s_typo_ascender = Some(buffer.get());
             table.s_typo_descender = Some(buffer.get());
             table.s_typo_line_gap = Some(buffer.get());
