@@ -57,6 +57,225 @@ impl Font {
     }
 }
 
+macro_rules! _parse_dict {
+    (
+        $data:expr;
+        $strings:expr;
+        [
+            $e00:expr,
+            $e01:expr,
+            $e02:expr,
+            $e03:expr,
+            $e04:expr,
+            $e05:expr,
+            $e06:expr,
+            $e07:expr,
+            $e08:expr,
+            $e09:expr,
+            $e10:expr,
+            $e11:expr,
+            $e13:expr,
+            $e14:expr,
+            $e15:expr,
+            $e16:expr,
+            $e17:expr,
+            $e18:expr,
+            $e19:expr,
+            $e20:expr,
+            $e21:expr,
+            $e12_00:expr,
+            $e12_01:expr,
+            $e12_02:expr,
+            $e12_03:expr,
+            $e12_04:expr,
+            $e12_05:expr,
+            $e12_06:expr,
+            $e12_07:expr,
+            $e12_08:expr,
+            $e12_09:expr,
+            $e12_10:expr,
+            $e12_11:expr,
+            $e12_12:expr,
+            $e12_13:expr,
+            $e12_14:expr,
+            $e12_17:expr,
+            $e12_18:expr,
+            $e12_19:expr,
+            $e12_20:expr,
+            $e12_21:expr,
+            $e12_22:expr,
+            $e12_23:expr,
+            $e12_30:expr,
+            $e12_31:expr,
+            $e12_32:expr,
+            $e12_33:expr,
+            $e12_34:expr,
+            $e12_35:expr,
+            $e12_36:expr,
+            $e12_37:expr,
+            $e12_38:expr,
+        ]
+    ) => ({
+        let mut i = 0;
+        let mut temp: Vec<Number> = Vec::new();
+
+        macro_rules! _num     { () => { temp.pop().unwrap() }; }
+        macro_rules! _integer { () => { _num!().int() }; }
+        macro_rules! _bool    { () => { _integer!() != 0 }; }
+        macro_rules! _string  { () => { from_sid(_integer!() as usize, $strings) }; }
+        macro_rules! _array {
+            () => ({
+                let nums_copy = temp.to_vec();
+                temp.clear();
+                nums_copy
+            });
+        }
+        macro_rules! _delta { () => { Delta::new(_array!()) }; }
+        macro_rules! _private {
+            () => ({
+                let num2 = temp.pop().unwrap().int() as usize;
+                let num1 = temp.pop().unwrap().int() as usize;
+                (num1, num2)
+            });
+        }
+        macro_rules! _ros {
+            () => ({
+                let supplement = temp.pop().unwrap().int();
+                let index_o = temp.pop().unwrap().int() as usize;
+                let index_r = temp.pop().unwrap().int() as usize;
+                ROS::new(index_r, index_o, supplement, $strings)
+            });
+        }
+
+        while i < $data.len() {
+            let b0 = $data[i];
+            match b0 {
+                // Operators: one byte
+                0 => $e00,
+                1 => $e01,
+                2 => $e02,
+                3 => $e03,
+                4 => $e04,
+                5 => $e05,
+                6 => $e06,
+                7 => $e07,
+                8 => $e08,
+                9 => $e09,
+                10 => $e10,
+                11 => $e11,
+                13 => $e13,
+                14 => $e14,
+                15 => $e15,
+                16 => $e16,
+                17 => $e17,
+                18 => $e18,
+                19 => $e19,
+                20 => $e20,
+                21 => $e21,
+                // Operators: two bytes
+                12 => {
+                    let b1 = $data[i + 1];
+                    match b1 {
+                        0 => $e12_00,
+                        1 => $e12_01,
+                        2 => $e12_02,
+                        3 => $e12_03,
+                        4 => $e12_04,
+                        5 => $e12_05,
+                        6 => $e12_06,
+                        7 => $e12_07,
+                        8 => $e12_08,
+                        9 => $e12_09,
+                        10 => $e12_10,
+                        11 => $e12_11,
+                        12 => $e12_12,
+                        13 => $e12_13,
+                        14 => $e12_14,
+                        17 => $e12_17,
+                        18 => $e12_18,
+                        19 => $e12_19,
+                        20 => $e12_20,
+                        21 => $e12_21,
+                        22 => $e12_22,
+                        23 => $e12_23,
+                        30 => $e12_30,
+                        31 => $e12_31,
+                        32 => $e12_32,
+                        33 => $e12_33,
+                        34 => $e12_34,
+                        35 => $e12_35,
+                        36 => $e12_36,
+                        37 => $e12_37,
+                        38 => $e12_38,
+                        _ => unreachable!()
+                    }
+                    i += 1;
+                }
+                // Operands: integers
+                32..=246 => {
+                    let b0 = b0 as i32;
+                    temp.push(Number::Int(b0 - 139));
+                }
+                247..=250 => {
+                    let b0 = b0 as i32;
+                    let b1 = $data[i + 1] as i32;
+                    i += 1;
+                    temp.push(Number::Int((b0 - 247) * 256 + b1 + 108));
+                }
+                251..=254 => {
+                    let b0 = b0 as i32;
+                    let b1 = $data[i + 1] as i32;
+                    i += 1;
+                    temp.push(Number::Int(-(b0 - 251) * 256 - b1 - 108));
+                }
+                28 => {
+                    let b1 = $data[i + 1] as i16;
+                    let b2 = $data[i + 2] as i16;
+                    i += 2;
+                    temp.push(Number::Int((b1 << 8 | b2) as i32));
+                }
+                29 => {
+                    let b1 = $data[i + 1] as i32;
+                    let b2 = $data[i + 2] as i32;
+                    let b3 = $data[i + 3] as i32;
+                    let b4 = $data[i + 4] as i32;
+                    i += 4;
+                    temp.push(Number::Int(b1 << 24 | b2 << 16 | b3 << 8 | b4));
+                }
+                // Operands: reals
+                30 => {
+                    let mut s = String::new();
+                    loop {
+                        macro_rules! _match_nibble {
+                            ($nibble:expr) => {
+                                match $nibble {
+                                    0..=9 => s += &$nibble.to_string(),
+                                    0xA => s += ".",
+                                    0xB => s += "e",
+                                    0xC => s += "e-",
+                                    0xE => s += "-",
+                                    0xF => {
+                                        temp.push(Number::Real(s));
+                                        i += 1;
+                                        break;
+                                    }
+                                    _ => unreachable!(),
+                                }
+                            };
+                        }
+                        let b1 = $data[i + 1];
+                        _match_nibble!(b1 >> 4);
+                        _match_nibble!((b1 << 4) >> 4);
+                        i += 1;
+                    }
+                }
+                _ => unreachable!(),
+            }
+            i += 1;
+        }
+    });
+}
+
 #[derive(Debug, Default)]
 pub struct CFFFont {
     // Name
@@ -115,9 +334,9 @@ impl CFFFont {
         Self {
             name,
             is_fixed_pitch: false,
-            italic_angle: Number::Integer(0),
-            underline_position: Number::Integer(-100),
-            underline_thickness: Number::Integer(50),
+            italic_angle: Number::Int(0),
+            underline_position: Number::Int(-100),
+            underline_thickness: Number::Int(50),
             paint_type: 0,
             char_string_type: 2,
             font_matrix: vec![
@@ -127,12 +346,12 @@ impl CFFFont {
                 Number::Real((0.0).to_string()),
             ],
             font_bbox: vec![
-                Number::Integer(0),
-                Number::Integer(0),
-                Number::Integer(0),
-                Number::Integer(0),
+                Number::Int(0),
+                Number::Int(0),
+                Number::Int(0),
+                Number::Int(0),
             ],
-            stroke_width: Number::Integer(0),
+            stroke_width: Number::Int(0),
             _encoding_offset: 0,
             _charset_offset: 0,
             ..Default::default()
@@ -231,136 +450,69 @@ impl CFFFont {
     }
 
     fn parse_top_dict(&mut self, top_dict: &Vec<u8>, strings: &Vec<String>) {
-        let mut i = 0;
-        let mut temp: Vec<Number> = Vec::new();
-
-        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
-        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
-        macro_rules! _pop_bool { () => { _pop_integer!() != 0 }; }
-        macro_rules! _pop_string { () => { from_sid(_pop_integer!() as usize, strings) }; }
-        macro_rules! _pop_array {
-            () => ({
-                let nums_copy = temp.to_vec();
-                temp.clear();
-                nums_copy
-            });
-        }
-        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
-        macro_rules! _pop_private {
-            () => ({
-                let num2 = temp.pop().unwrap().integer() as usize;
-                let num1 = temp.pop().unwrap().integer() as usize;
-                (num1, num2)
-            });
-        }
-        macro_rules! _pop_ros {
-            () => ({
-                let supplement = temp.pop().unwrap().integer();
-                let index_o = temp.pop().unwrap().integer() as usize;
-                let index_r = temp.pop().unwrap().integer() as usize;
-                ROS::new(index_r, index_o, supplement, strings)
-            });
-        }
-
-        while i < top_dict.len() {
-            let b0 = top_dict[i];
-            match b0 {
-                // Operators
-                0 => self.version = _pop_string!(),
-                1 => self.notice = _pop_string!(),
-                2 => self.full_name = _pop_string!(),
-                3 => self.family_name = _pop_string!(),
-                4 => self.weight = _pop_string!(),
-                5 => self.font_bbox = _pop_array!(),
-                12 => {
-                    let b1 = top_dict[i + 1];
-                    match b1 {
-                        0 => self.copyright = _pop_string!(),
-                        1 => self.is_fixed_pitch = _pop_bool!(),
-                        2 => self.italic_angle = _pop_num!(),
-                        3 => self.underline_position = _pop_num!(),
-                        4 => self.underline_thickness = _pop_num!(),
-                        5 => self.paint_type = _pop_integer!(),
-                        6 => self.char_string_type = _pop_integer!(),
-                        7 => self.font_matrix = _pop_array!(),
-                        8 => self.stroke_width = _pop_num!(),
-                        20 => self.synthetic_base = Some(_pop_integer!()),
-                        21 => self.postscript = Some(_pop_string!()),
-                        22 => self.base_font_name = Some(_pop_string!()),
-                        23 => self.base_font_blend = Some(_pop_delta!()),
-                        30 => self.ros = Some(_pop_ros!()),
-                        31 => self.cid_font_version = Some(_pop_num!()),
-                        32 => self.cid_font_revision = Some(_pop_num!()),
-                        33 => self.cid_font_type = Some(_pop_integer!()),
-                        34 => self.cid_count = Some(_pop_integer!()),
-                        35 => self.uid_base = Some(_pop_integer!()),
-                        36 => self._fd_array_offset = Some(_pop_integer!() as usize),
-                        37 => self._fd_select_offset = Some(_pop_integer!() as usize),
-                        38 => self.cid_font_name = Some(_pop_string!()),
-                        _ => unreachable!(),
-                    }
-                    i += 1;
-                }
-                13 => self.unique_id = Some(_pop_integer!()),
-                14 => self.xuid = Some(_pop_array!()),
-                15 => self._charset_offset = _pop_integer!() as usize,
-                16 => self._encoding_offset = _pop_integer!() as usize,
-                17 => self._char_strings_offset = _pop_integer!() as usize,
-                18 => {
-                    let private = _pop_private!();
-                    self._private_size = private.0;
-                    self._private_offset = private.1;
-                },
-                // Operands
-                30 => temp.push(Number::get_real(&top_dict, &mut i)),
-                _ => temp.push(Number::get_integer(&top_dict, &mut i, b0)),
-            }
-            i += 1;
-        }
-
+        _parse_dict!(top_dict; strings; [
+            /*    00 */ self.version = _string!(),
+            /*    01 */ self.notice = _string!(),
+            /*    02 */ self.full_name = _string!(),
+            /*    03 */ self.family_name = _string!(),
+            /*    04 */ self.weight = _string!(),
+            /*    05 */ self.font_bbox = _array!(),
+                        {}, {}, {}, {}, {}, {},
+            /* 12 00 */ self.copyright = _string!(),
+            /* 12 01 */ self.is_fixed_pitch = _bool!(),
+            /* 12 02 */ self.italic_angle = _num!(),
+            /* 12 03 */ self.underline_position = _num!(),
+            /* 12 04 */ self.underline_thickness = _num!(),
+            /* 12 05 */ self.paint_type = _integer!(),
+            /* 12 06 */ self.char_string_type = _integer!(),
+            /* 12 07 */ self.font_matrix = _array!(),
+            /* 12 08 */ self.stroke_width = _num!(),
+                        {}, {}, {}, {}, {}, {}, {}, {}, {},
+            /* 12 20 */ self.synthetic_base = Some(_integer!()),
+            /* 12 21 */ self.postscript = Some(_string!()),
+            /* 12 22 */ self.base_font_name = Some(_string!()),
+            /* 12 23 */ self.base_font_blend = Some(_delta!()),
+            /* 12 30 */ self.ros = Some(_ros!()),
+            /* 12 31 */ self.cid_font_version = Some(_num!()),
+            /* 12 32 */ self.cid_font_revision = Some(_num!()),
+            /* 12 33 */ self.cid_font_type = Some(_integer!()),
+            /* 12 34 */ self.cid_count = Some(_integer!()),
+            /* 12 35 */ self.uid_base = Some(_integer!()),
+            /* 12 36 */ self._fd_array_offset = Some(_integer!() as usize),
+            /* 12 37 */ self._fd_select_offset = Some(_integer!() as usize),
+            /* 12 38 */ self.cid_font_name = Some(_string!()),
+            /*    13 */ self.unique_id = Some(_integer!()),
+            /*    14 */ self.xuid = Some(_array!()),
+            /*    15 */ self._charset_offset = _integer!() as usize,
+            /*    16 */ self._encoding_offset = _integer!() as usize,
+            /*    17 */ self._char_strings_offset = _integer!() as usize,
+            /*    18 */ {
+                           let private = _private!();
+                           self._private_size = private.0;
+                           self._private_offset = private.1;
+                        },
+                        {}, {}, {},
+        ]);
         self.init_cid();
     }
 
     fn init_fd_array(&mut self, font_dict: &Vec<u8>, strings: &Vec<String>) {
-        let mut i = 0;
-        let mut temp: Vec<Number> = Vec::new();
         let mut font_name = Default::default();
         let mut _private_size = 0;
         let mut _private_offset = 0;
-
-        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
-        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
-        macro_rules! _pop_string { () => { from_sid(_pop_integer!() as usize, strings) }; }
-        macro_rules! _pop_private {
-            () => ({
-                let num2 = temp.pop().unwrap().integer() as usize;
-                let num1 = temp.pop().unwrap().integer() as usize;
-                (num1, num2)
-            });
-        }
-
-        while i < font_dict.len() {
-            let b0 = font_dict[i];
-            match b0 {
-                12 => {
-                    match font_dict[i + 1] {
-                        38 => font_name = _pop_string!(),
-                        _ => unreachable!()
-                    }
-                    i += 1;
-                }
-                // 18 => _private_offset = _pop_integer!() as usize,
-                18 => {
-                    let private = _pop_private!();
-                    _private_size = private.0;
-                    _private_offset = private.1;
-                },
-                // Operands
-                30 => temp.push(Number::get_real(&font_dict, &mut i)),
-                _ => temp.push(Number::get_integer(&font_dict, &mut i, b0)),
-            }
-            i += 1;
-        }
+        _parse_dict!(font_dict; strings; [
+                        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+                        {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+            /* 12 38 */ font_name = _string!(),
+                        {}, {}, {}, {}, {},
+            /*    18 */ {
+                           let private = _private!();
+                           _private_size = private.0;
+                           _private_offset = private.1;
+                        },
+                        {}, {}, {},
+        ]);
         self.fd_array.push(FDArray {
             font_name,
             _private_size,
@@ -376,8 +528,8 @@ impl CFFFont {
                     if self.$i.is_none() { self.$i = Some($e); }
                 };
             }
-            _init_cid!(cid_font_version, Number::Integer(0));
-            _init_cid!(cid_font_revision, Number::Integer(0));
+            _init_cid!(cid_font_version, Number::Int(0));
+            _init_cid!(cid_font_revision, Number::Int(0));
             _init_cid!(cid_font_type, 0);
             _init_cid!(cid_count, 8720);
         }
@@ -481,73 +633,44 @@ impl Private {
     fn new() -> Self {
         Self {
             blue_scale: Number::Real((0.039625).to_string()),
-            blue_shift: Number::Integer(7),
-            blue_fuzz: Number::Integer(1),
+            blue_shift: Number::Int(7),
+            blue_fuzz: Number::Int(1),
             force_bold: false,
-            language_group: Number::Integer(0),
+            language_group: Number::Int(0),
             expansion_factor: Number::Real((0.06).to_string()),
-            initial_random_seed: Number::Integer(0),
-            default_width_x: Number::Integer(0),
-            nominal_width_x: Number::Integer(0),
+            initial_random_seed: Number::Int(0),
+            default_width_x: Number::Int(0),
+            nominal_width_x: Number::Int(0),
             ..Default::default()
         }
     }
 
     fn parse(private_dict: &Vec<u8>) -> Self {
-        let mut i = 0;
-        let mut temp = Vec::new();
         let mut private = Self::new();
-
-        macro_rules! _pop_num { () => { temp.pop().unwrap() }; }
-        macro_rules! _pop_integer { () => { _pop_num!().integer() }; }
-        macro_rules! _pop_bool { () => { _pop_integer!() != 0 }; }
-        macro_rules! _pop_array {
-            () => ({
-                let nums_copy = temp.to_vec();
-                temp.clear();
-                nums_copy
-            });
-        }
-        macro_rules! _pop_delta { () => { Delta::new(_pop_array!()) }; }
-
-        while i < private_dict.len() {
-            let b0 = private_dict[i];
-            match b0 {
-                6 => private.blue_values = Some(_pop_delta!()),
-                7 => private.other_blues = Some(_pop_delta!()),
-                8 => private.family_blues = Some(_pop_delta!()),
-                9 => private.family_other_blues = Some(_pop_delta!()),
-                10 => private.std_hw = Some(_pop_num!()),
-                11 => private.std_vw = Some(_pop_num!()),
-                12 => {
-                    let b1 = private_dict[i + 1];
-                    match b1 {
-                        9 => private.blue_scale = _pop_num!(),
-                        10 => private.blue_shift = _pop_num!(),
-                        11 => private.blue_fuzz = _pop_num!(),
-                        12 => private.stem_snap_h = Some(_pop_delta!()),
-                        13 => private.stem_snap_v = Some(_pop_delta!()),
-                        14 => private.force_bold = _pop_bool!(),
-                        17 => private.language_group = _pop_num!(),
-                        18 => private.expansion_factor = _pop_num!(),
-                        19 => private.initial_random_seed = _pop_num!(),
-                        _ => {
-                            let x = _pop_num!();
-                            eprintln!("[DEBUG] {:?}", x);
-                            // unreachable!()
-                        }
-                    }
-                    i += 1;
-                }
-                19 => private._subrs_offset = Some(_pop_integer!() as usize),
-                20 => private.default_width_x = _pop_num!(),
-                21 => private.nominal_width_x = _pop_num!(),
-                // Operands
-                30 => temp.push(Number::get_real(&private_dict, &mut i)),
-                _ => temp.push(Number::get_integer(&private_dict, &mut i, b0)),
-            }
-            i += 1;
-        }
+        let _strings: Vec<String> = Vec::new();  // A placeholder to make the macro work
+        _parse_dict!(private_dict; &_strings; [
+                        {}, {}, {}, {}, {}, {},
+            /*    06 */ private.blue_values = Some(_delta!()),
+            /*    07 */ private.other_blues = Some(_delta!()),
+            /*    08 */ private.family_blues = Some(_delta!()),
+            /*    09 */ private.family_other_blues = Some(_delta!()),
+            /*    10 */ private.std_hw = Some(_num!()),
+            /*    11 */ private.std_vw = Some(_num!()),
+                        {}, {}, {}, {}, {}, {}, {}, {}, {},
+            /* 12 09 */ private.blue_scale = _num!(),
+            /* 12 10 */ private.blue_shift = _num!(),
+            /* 12 11 */ private.blue_fuzz = _num!(),
+            /* 12 12 */ private.stem_snap_h = Some(_delta!()),
+            /* 12 13 */ private.stem_snap_v = Some(_delta!()),
+            /* 12 14 */ private.force_bold = _bool!(),
+            /* 12 17 */ private.language_group = _num!(),
+            /* 12 18 */ private.expansion_factor = _num!(),
+            /* 12 19 */ private.initial_random_seed = _num!(),
+                        {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
+            /*    19 */ private._subrs_offset = Some(_integer!() as usize),
+            /*    20 */ private.default_width_x = _num!(),
+            /*    21 */ private.nominal_width_x = _num!(),
+        ]);
         private
     }
 }
@@ -629,88 +752,20 @@ type Subr = Vec<u8>;
 
 #[derive(Clone)]
 enum Number {
-    Integer(i32),
+    Int(i32),
     Real(String),
 }
 
 impl Number {
-    fn integer(self) -> i32 {
-        match self {
-            Self::Integer(n) => n,
-            Self::Real(_) => panic!(),
-        }
-    }
-
-    fn get_real(data: &Vec<u8>, i: &mut usize) -> Self {
-        let mut s = String::new();
-        loop {
-            macro_rules! _match_nibble {
-                ($nibble:expr) => {
-                    match $nibble {
-                        0..=9 => s += &$nibble.to_string(),
-                        0xA => s += ".",
-                        0xB => s += "e",
-                        0xC => s += "e-",
-                        0xE => s += "-",
-                        0xF => {
-                            *i += 1;
-                            return Number::Real(s);
-                        }
-                        _ => unreachable!(),
-                    }
-                };
-            }
-            let b1 = data[*i + 1];
-            _match_nibble!(b1 >> 4);
-            _match_nibble!((b1 << 4) >> 4);
-            *i += 1;
-        }
-    }
-
-    fn get_integer(data: &Vec<u8>, i: &mut usize, b0: u8) -> Self {
-        match b0 {
-            32..=246 => {
-                let b0 = b0 as i32;
-                Number::Integer(b0 - 139)
-            },
-            247..=250 => {
-                let b0 = b0 as i32;
-                let b1 = data[*i + 1] as i32;
-                *i += 1;
-                Number::Integer((b0 - 247) * 256 + b1 + 108)
-            },
-            251..=254 => {
-                let b0 = b0 as i32;
-                let b1 = data[*i + 1] as i32;
-                *i += 1;
-                Number::Integer(-(b0 - 251) * 256 - b1 - 108)
-            },
-            28 => {
-                let b1 = data[*i + 1] as i16;
-                let b2 = data[*i + 2] as i16;
-                *i += 2;
-                Number::Integer((b1 << 8 | b2) as i32)
-            },
-            29 => {
-                let b1 = data[*i + 1] as i32;
-                let b2 = data[*i + 2] as i32;
-                let b3 = data[*i + 3] as i32;
-                let b4 = data[*i + 4] as i32;
-                *i += 4;
-                Number::Integer(b1 << 24 | b2 << 16 | b3 << 8 | b4)
-            },
-            _ => {
-                eprintln!("[DEBUG] get_integer() => {}", b0);
-                unreachable!()
-            }
-        }
+    fn int(self) -> i32 {
+        if let Self::Int(n) = self { n } else { panic!() }
     }
 }
 
 impl fmt::Debug for Number {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Self::Integer(n) => write!(f, "{}", n),
+            Self::Int(n) => write!(f, "{}", n),
             Self::Real(n) => write!(f, "{}", n),
         }
     }
@@ -718,7 +773,7 @@ impl fmt::Debug for Number {
 
 impl Default for Number {
     fn default() -> Self {
-        Number::Integer(0)
+        Number::Int(0)
     }
 }
 
@@ -732,8 +787,8 @@ impl Delta {
         Self {
             _data: array.iter()
                 .scan(0, |acc, x| {
-                    *acc = *acc + x.to_owned().integer();
-                    Some(Number::Integer(*acc))
+                    *acc = *acc + x.to_owned().int();
+                    Some(Number::Int(*acc))
                 })
                 .collect()
         }
@@ -775,15 +830,17 @@ impl ReadBuffer for Index {
         } else {
             let offset_size = buffer.get();
             macro_rules! _get_offset {
+                (u24) => {
+                    buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect()
+                };
                 ($t:ty) => {
                     buffer.get_vec::<$t>(count + 1).iter().map(|&i| i as usize).collect()
-                }
+                };
             }
             let offset: Vec<usize> = match offset_size {
                 1 => _get_offset!(u8),
                 2 => _get_offset!(u16),
-                // u24 is not primitive type.
-                3 => buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect(),
+                3 => _get_offset!(u24),
                 4 => _get_offset!(u32),
                 _ => unreachable!(),
             };
