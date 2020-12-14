@@ -74,15 +74,6 @@ macro_rules! _parse_dict {
             $e09:expr,
             $e10:expr,
             $e11:expr,
-            $e13:expr,
-            $e14:expr,
-            $e15:expr,
-            $e16:expr,
-            $e17:expr,
-            $e18:expr,
-            $e19:expr,
-            $e20:expr,
-            $e21:expr,
             $e12_00:expr,
             $e12_01:expr,
             $e12_02:expr,
@@ -114,6 +105,15 @@ macro_rules! _parse_dict {
             $e12_36:expr,
             $e12_37:expr,
             $e12_38:expr,
+            $e13:expr,
+            $e14:expr,
+            $e15:expr,
+            $e16:expr,
+            $e17:expr,
+            $e18:expr,
+            $e19:expr,
+            $e20:expr,
+            $e21:expr,
         ]
     ) => ({
         let mut i = 0;
@@ -822,36 +822,34 @@ impl Index {
 impl ReadBuffer for Index {
     fn read(buffer: &mut Buffer) -> Self {
         let count = buffer.get::<u16>() as usize;
-        if count == 0 {
-            Self {
-                count,
-                ..Default::default()
-            }
-        } else {
-            let offset_size = buffer.get();
-            macro_rules! _get_offset {
-                (u24) => {
-                    buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect()
+        match count {
+            0 => Default::default(),
+            _ => {
+                macro_rules! _get_offset {
+                    (u24) => {
+                        buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect()
+                    };
+                    ($t:ty) => {
+                        buffer.get_vec::<$t>(count + 1).iter().map(|&i| i as usize).collect()
+                    };
+                }
+                let offset_size = buffer.get();
+                let offset: Vec<usize> = match offset_size {
+                    1 => _get_offset!(u8),
+                    2 => _get_offset!(u16),
+                    3 => _get_offset!(u24),
+                    4 => _get_offset!(u32),
+                    _ => unreachable!()
                 };
-                ($t:ty) => {
-                    buffer.get_vec::<$t>(count + 1).iter().map(|&i| i as usize).collect()
-                };
-            }
-            let offset: Vec<usize> = match offset_size {
-                1 => _get_offset!(u8),
-                2 => _get_offset!(u16),
-                3 => _get_offset!(u24),
-                4 => _get_offset!(u32),
-                _ => unreachable!(),
-            };
-            let data = (0..count)
-                .map(|i| buffer.get_vec(offset[i + 1] - offset[i]))
-                .collect();
-            Self {
-                count,
-                offset_size,
-                offset,
-                data,
+                let data = (0..count)
+                    .map(|i| buffer.get_vec(offset[i + 1] - offset[i]))
+                    .collect();
+                Self {
+                    count,
+                    offset_size,
+                    offset,
+                    data,
+                }
             }
         }
     }
