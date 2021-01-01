@@ -3,6 +3,7 @@ use std::fmt;
 use crate::font::Font;
 use crate::table::cff::cff_data::*;
 use crate::util::{Buffer, ReadBuffer, u24};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `CFF` &mdash; Compact Font Format table
 ///
@@ -451,12 +452,12 @@ impl CFFFont {
 
     fn parse_top_dict(&mut self, top_dict: &Vec<u8>, strings: &Vec<String>) {
         _parse_dict!(top_dict; strings; [
-            /*    00 */ self.version = _string!(),
-            /*    01 */ self.notice = _string!(),
-            /*    02 */ self.full_name = _string!(),
-            /*    03 */ self.family_name = _string!(),
-            /*    04 */ self.weight = _string!(),
-            /*    05 */ self.font_bbox = _array!(),
+            /* 00    */ self.version = _string!(),
+            /* 01    */ self.notice = _string!(),
+            /* 02    */ self.full_name = _string!(),
+            /* 03    */ self.family_name = _string!(),
+            /* 04    */ self.weight = _string!(),
+            /* 05    */ self.font_bbox = _array!(),
                         {}, {}, {}, {}, {}, {},
             /* 12 00 */ self.copyright = _string!(),
             /* 12 01 */ self.is_fixed_pitch = _bool!(),
@@ -481,12 +482,12 @@ impl CFFFont {
             /* 12 36 */ self._fd_array_offset = Some(_integer!() as usize),
             /* 12 37 */ self._fd_select_offset = Some(_integer!() as usize),
             /* 12 38 */ self.cid_font_name = Some(_string!()),
-            /*    13 */ self.unique_id = Some(_integer!()),
-            /*    14 */ self.xuid = Some(_array!()),
-            /*    15 */ self._charset_offset = _integer!() as usize,
-            /*    16 */ self._encoding_offset = _integer!() as usize,
-            /*    17 */ self._char_strings_offset = _integer!() as usize,
-            /*    18 */ {
+            /* 13    */ self.unique_id = Some(_integer!()),
+            /* 14    */ self.xuid = Some(_array!()),
+            /* 15    */ self._charset_offset = _integer!() as usize,
+            /* 16    */ self._encoding_offset = _integer!() as usize,
+            /* 17    */ self._char_strings_offset = _integer!() as usize,
+            /* 18    */ {
                            let private = _private!();
                            self._private_size = private.0;
                            self._private_offset = private.1;
@@ -506,7 +507,7 @@ impl CFFFont {
                         {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
             /* 12 38 */ font_name = _string!(),
                         {}, {}, {}, {}, {},
-            /*    18 */ {
+            /* 18    */ {
                            let private = _private!();
                            _private_size = private.0;
                            _private_offset = private.1;
@@ -589,19 +590,10 @@ impl ReadBuffer for Encoding {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct EncodingRange {
     first: u8,
     num_left: u8,
-}
-
-impl ReadBuffer for EncodingRange {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            first: buffer.get(),
-            num_left: buffer.get(),
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -650,12 +642,12 @@ impl Private {
         let _strings: Vec<String> = Vec::new();  // A placeholder to make the macro work
         _parse_dict!(private_dict; &_strings; [
                         {}, {}, {}, {}, {}, {},
-            /*    06 */ private.blue_values = Some(_delta!()),
-            /*    07 */ private.other_blues = Some(_delta!()),
-            /*    08 */ private.family_blues = Some(_delta!()),
-            /*    09 */ private.family_other_blues = Some(_delta!()),
-            /*    10 */ private.std_hw = Some(_num!()),
-            /*    11 */ private.std_vw = Some(_num!()),
+            /* 06    */ private.blue_values = Some(_delta!()),
+            /* 07    */ private.other_blues = Some(_delta!()),
+            /* 08    */ private.family_blues = Some(_delta!()),
+            /* 09    */ private.family_other_blues = Some(_delta!()),
+            /* 10    */ private.std_hw = Some(_num!()),
+            /* 11    */ private.std_vw = Some(_num!()),
                         {}, {}, {}, {}, {}, {}, {}, {}, {},
             /* 12 09 */ private.blue_scale = _num!(),
             /* 12 10 */ private.blue_shift = _num!(),
@@ -667,9 +659,9 @@ impl Private {
             /* 12 18 */ private.expansion_factor = _num!(),
             /* 12 19 */ private.initial_random_seed = _num!(),
                         {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {},
-            /*    19 */ private._subrs_offset = Some(_integer!() as usize),
-            /*    20 */ private.default_width_x = _num!(),
-            /*    21 */ private.nominal_width_x = _num!(),
+            /* 19    */ private._subrs_offset = Some(_integer!() as usize),
+            /* 20    */ private.default_width_x = _num!(),
+            /* 21    */ private.nominal_width_x = _num!(),
         ]);
         private
     }
@@ -733,19 +725,10 @@ impl FDSelect {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, ReadBuffer)]
 struct FDSelectRange {
     first: u16,
     fd: u8,
-}
-
-impl ReadBuffer for FDSelectRange {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            first: buffer.get(),
-            fd: buffer.get(),
-        }
-    }
 }
 
 type Subr = Vec<u8>;

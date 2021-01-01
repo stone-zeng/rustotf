@@ -5,6 +5,7 @@ use std::{fmt, io::Read, mem, str};
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
 use flate2::read::{GzDecoder, ZlibDecoder};
+use read_buffer_derive::ReadBuffer;
 
 pub struct Buffer {
     raw_buffer: Vec<u8>,
@@ -157,7 +158,7 @@ _generate_read!(i32, BigEndian::read_i32);
 _generate_read!(i64, BigEndian::read_i64);
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, ReadBuffer)]
 pub struct u24 {
     _1: u16,
     _0: u8,
@@ -169,15 +170,6 @@ impl fmt::Debug for u24 {
     }
 }
 
-impl ReadBuffer for u24 {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _1: buffer.get(),
-            _0: buffer.get(),
-        }
-    }
-}
-
 impl From<u24> for usize {
     fn from(num: u24) -> Self {
         ((num._1 as usize) << 8) + (num._0 as usize)
@@ -185,7 +177,7 @@ impl From<u24> for usize {
 }
 
 /// 32-bit signed fixed-point number (16.16).
-#[derive(Default)]
+#[derive(Default, ReadBuffer)]
 pub struct Fixed {
     _num: i32,
 }
@@ -202,14 +194,8 @@ impl PartialEq<i32> for Fixed {
     }
 }
 
-impl ReadBuffer for Fixed {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get() }
-    }
-}
-
 /// 16-bit signed fixed number with the low 14 bits of fraction (2.14).
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, ReadBuffer)]
 pub struct F2Dot14 {
     _num: i16,
 }
@@ -226,14 +212,9 @@ impl PartialEq<i16> for F2Dot14 {
     }
 }
 
-impl ReadBuffer for F2Dot14 {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get() }
-    }
-}
-
 /// Date represented in number of seconds since 12:00 midnight, January 1, 1904.
 /// The value is represented as a signed 64-bit integer.
+#[derive(ReadBuffer)]
 pub struct LongDateTime {
     _num: i64,
 }
@@ -247,12 +228,6 @@ impl fmt::Debug for LongDateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let timestamp = self._num - Self::DATE_TIME_OFFSET;
         write!(f, "{}", NaiveDateTime::from_timestamp(timestamp, 0))
-    }
-}
-
-impl ReadBuffer for LongDateTime {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self { _num: buffer.get() }
     }
 }
 

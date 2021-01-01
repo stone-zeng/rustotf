@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `hmtx` &mdash; Horizontal Metrics Table
 ///
@@ -29,17 +30,8 @@ impl Font {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct LongHorMetric {
     advance_width: u16,
     left_side_bearing: i16,
-}
-
-impl ReadBuffer for LongHorMetric {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            advance_width: buffer.get(),
-            left_side_bearing: buffer.get(),
-        }
-    }
 }

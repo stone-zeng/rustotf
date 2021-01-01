@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `gasp` &mdash; Grid-fitting and Scan-conversion Procedure Table
 ///
@@ -31,17 +32,8 @@ impl Font {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct GaspRange {
     range_max_ppem: u16,
     range_gasp_behavior: u16,
-}
-
-impl ReadBuffer for GaspRange {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            range_max_ppem: buffer.get(),
-            range_gasp_behavior: buffer.get(),
-        }
-    }
 }

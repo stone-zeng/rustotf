@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, Tag, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `MVAR` &mdash; Metrics Variations Table
 ///
@@ -44,19 +45,9 @@ impl Font {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct Value {
     pub value_tag: Tag,
     pub delta_set_outer_index: u16,
     pub delta_set_inner_index: u16,
-}
-
-impl ReadBuffer for Value {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            value_tag: buffer.get(),
-            delta_set_outer_index: buffer.get(),
-            delta_set_inner_index: buffer.get(),
-        }
-    }
 }

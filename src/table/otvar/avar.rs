@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, F2Dot14, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `avar` &mdash; Axis Variations Table
 ///
@@ -55,17 +56,8 @@ impl ReadBuffer for SegmentMaps {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct AxisValueMap {
     pub from_coordinate: F2Dot14,
     pub to_coordinate: F2Dot14,
-}
-
-impl ReadBuffer for AxisValueMap {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            from_coordinate: buffer.get(),
-            to_coordinate: buffer.get(),
-        }
-    }
 }

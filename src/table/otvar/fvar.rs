@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, Fixed, Tag, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `fvar` &mdash; Font Variations Table
 ///
@@ -53,7 +54,7 @@ impl Font {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct VariationAxis {
     pub axis_tag: Tag,
     pub min_value: Fixed,
@@ -61,19 +62,6 @@ struct VariationAxis {
     pub max_value: Fixed,
     pub flags: u16,
     pub axis_name_id: u16,
-}
-
-impl ReadBuffer for VariationAxis {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            axis_tag: buffer.get(),
-            min_value: buffer.get(),
-            default_value: buffer.get(),
-            max_value: buffer.get(),
-            flags: buffer.get(),
-            axis_name_id: buffer.get(),
-        }
-    }
 }
 
 #[derive(Debug)]

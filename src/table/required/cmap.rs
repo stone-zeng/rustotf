@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{u24, Buffer, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 use std::collections::HashMap;
 
@@ -48,21 +49,11 @@ impl Font {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq, ReadBuffer)]
 pub struct Encoding {
-    _offset: u32,
     pub platform_id: u16,
     pub encoding_id: u16,
-}
-
-impl ReadBuffer for Encoding {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            platform_id: buffer.get(),
-            encoding_id: buffer.get(),
-            _offset: buffer.get(),
-        }
-    }
+    _offset: u32,
 }
 
 #[derive(Debug, Default)]
@@ -423,55 +414,25 @@ struct SubHeader {
     gid_array: Vec<u16>, // As fonttools
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct SequentialMapGroup {
     start_char_code: u32,
     end_char_code: u32,
     start_glyph_id: u32,
 }
 
-impl ReadBuffer for SequentialMapGroup {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            start_char_code: buffer.get(),
-            end_char_code: buffer.get(),
-            start_glyph_id: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct ConstantMapGroup {
     start_char_code: u32,
     end_char_code: u32,
     glyph_id: u32,
 }
 
-impl ReadBuffer for ConstantMapGroup {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            start_char_code: buffer.get(),
-            end_char_code: buffer.get(),
-            glyph_id: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct VariationSelector {
     var_selector: u24,
     default_uvs_offset: u32,
     non_default_uvs_offset: u32,
-}
-
-impl ReadBuffer for VariationSelector {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            var_selector: buffer.get(),
-            default_uvs_offset: buffer.get(),
-            non_default_uvs_offset: buffer.get(),
-        }
-    }
 }
 
 type Map = HashMap<u32, u32>;

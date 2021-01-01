@@ -1,5 +1,6 @@
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer};
+use read_buffer_derive::ReadBuffer;
 
 /// ## `EBLC` &mdash; Embedded Bitmap Location Table
 ///
@@ -61,7 +62,7 @@ impl Strike {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct BitmapSize {
     _index_sub_table_offset: u32,
     _index_sub_tables_size: u32,
@@ -77,26 +78,7 @@ pub struct BitmapSize {
     pub flags: i8,
 }
 
-impl ReadBuffer for BitmapSize {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _index_sub_table_offset: buffer.get(),
-            _index_sub_tables_size: buffer.get(),
-            _num_index_sub_tables: buffer.get(),
-            color_ref: buffer.get(),
-            hori: buffer.get(),
-            vert: buffer.get(),
-            start_glyph_index: buffer.get(),
-            end_glyph_index: buffer.get(),
-            ppem_x: buffer.get(),
-            ppem_y: buffer.get(),
-            bit_depth: buffer.get(),
-            flags: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct SbitLineMetrics {
     pub ascender: i8,
     pub descender: i8,
@@ -110,25 +92,6 @@ pub struct SbitLineMetrics {
     pub min_after_bl: i8,
     pub pad1: i8,
     pub pad2: i8,
-}
-
-impl ReadBuffer for SbitLineMetrics {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            ascender: buffer.get(),
-            descender: buffer.get(),
-            width_max: buffer.get(),
-            caret_slope_numerator: buffer.get(),
-            caret_slope_denominator: buffer.get(),
-            caret_offset: buffer.get(),
-            min_origin_sb: buffer.get(),
-            min_advance_sb: buffer.get(),
-            max_before_bl: buffer.get(),
-            min_after_bl: buffer.get(),
-            pad1: buffer.get(),
-            pad2: buffer.get(),
-        }
-    }
 }
 
 #[derive(Debug)]
@@ -204,24 +167,14 @@ impl IndexSubTable {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 struct IndexSubTableArray {
     first_glyph_index: u16,
     last_glyph_index: u16,
     additional_offset: u32,
 }
 
-impl ReadBuffer for IndexSubTableArray {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            first_glyph_index: buffer.get(),
-            last_glyph_index: buffer.get(),
-            additional_offset: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct BigGlyphMetrics {
     height: u8,
     width: u8,
@@ -233,22 +186,7 @@ pub struct BigGlyphMetrics {
     vert_advance: u8,
 }
 
-impl ReadBuffer for BigGlyphMetrics {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            height: buffer.get(),
-            width: buffer.get(),
-            hori_bearing_x: buffer.get(),
-            hori_bearing_y: buffer.get(),
-            hori_advance: buffer.get(),
-            vert_bearing_x: buffer.get(),
-            vert_bearing_y: buffer.get(),
-            vert_advance: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct SmallGlyphMetrics {
     height: u8,
     width: u8,
@@ -257,29 +195,8 @@ pub struct SmallGlyphMetrics {
     advance: u8,
 }
 
-impl ReadBuffer for SmallGlyphMetrics {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            height: buffer.get(),
-            width: buffer.get(),
-            bearing_x: buffer.get(),
-            bearing_y: buffer.get(),
-            advance: buffer.get(),
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, ReadBuffer)]
 pub struct GlyphIdOffsetPair {
     pub glyph_id: u16,
     pub sbit_offset: u16,
-}
-
-impl ReadBuffer for GlyphIdOffsetPair {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            glyph_id: buffer.get(),
-            sbit_offset: buffer.get(),
-        }
-    }
 }
