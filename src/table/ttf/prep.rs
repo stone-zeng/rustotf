@@ -1,4 +1,5 @@
 use std::mem::size_of;
+
 use crate::font::Font;
 use crate::util::{Buffer, Tag};
 
@@ -22,6 +23,8 @@ pub struct Table_prep {
 impl Font {
     pub fn parse_prep(&mut self, buffer: &mut Buffer) {
         let num = self.get_table_len(&Tag::from("prep")) / size_of::<u8>();
-        self.prep = Some(Table_prep { values: buffer.get_vec(num) });
+        self.prep = Some(Table_prep {
+            values: buffer.get_vec(num),
+        });
     }
 }

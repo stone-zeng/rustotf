@@ -1,3 +1,4 @@
+#[rustfmt::skip]
 use crate::table::{
     required::{
         head::Table_head,
@@ -56,7 +57,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
-        println!("\"CFF\": {:#?}", i.CFF_);
+        println!("\"CFF \": {:#?}", i.CFF_);
     }
     Ok(())
 }
@@ -146,6 +147,7 @@ impl FontContainer {
 
 #[allow(non_snake_case)]
 #[derive(Debug, Default)]
+#[rustfmt::skip]
 pub struct Font {
     format: Format,
     flavor: Flavor,
@@ -203,7 +205,7 @@ pub struct Font {
     /// Embedded bitmap scaling data
     pub EBSC: Option<Table_EBSC>,
 
-/*
+    /*
     // Advanced Typographic Tables
 
     /// Baseline data
@@ -218,7 +220,7 @@ pub struct Font {
     pub JSTF: Option<Table_JSTF>,
     /// Math layout data
     pub MATH: Option<Table_MATH>,
-*/
+    */
 
     // Tables used for OpenType font variations
 
@@ -254,7 +256,7 @@ pub struct Font {
     /// The SVG (Scalable Vector Graphics) table
     pub SVG_: Option<Table_SVG_>,
 
-/*
+    /*
     // Other OpenType Tables
 
     /// Digital signature
@@ -277,7 +279,7 @@ pub struct Font {
     pub vhea: Option<Table_vhea>,
     /// Vertical Metrics
     pub vmtx: Option<Table_vmtx>,
-*/
+    */
 }
 
 impl Font {
@@ -291,12 +293,17 @@ impl Font {
             format: Format::SFNT,
             flavor: Self::get_flavor(signature),
             table_records: (0..num_tables)
-                .map(|_| (buffer.get::<Tag>(), TableRecord {
-                    checksum: buffer.get(),
-                    offset: buffer.get(),
-                    length: buffer.get(),
-                    ..Default::default()
-                }))
+                .map(|_| {
+                    (
+                        buffer.get::<Tag>(),
+                        TableRecord {
+                            checksum: buffer.get(),
+                            offset: buffer.get(),
+                            length: buffer.get(),
+                            ..Default::default()
+                        },
+                    )
+                })
                 .collect(),
             ..Default::default()
         }
@@ -322,13 +329,18 @@ impl Font {
             format: Format::WOFF,
             flavor: Self::get_flavor(flavor),
             table_records: (0..num_tables)
-                .map(|_| (buffer.get::<Tag>(), TableRecord {
-                    // The order is different from SFNT format
-                    offset: buffer.get(),
-                    woff_comp_length: buffer.get(),
-                    length: buffer.get(),
-                    checksum: buffer.get(),
-                }))
+                .map(|_| {
+                    (
+                        buffer.get::<Tag>(),
+                        TableRecord {
+                            // The order is different from SFNT format
+                            offset: buffer.get(),
+                            woff_comp_length: buffer.get(),
+                            length: buffer.get(),
+                            checksum: buffer.get(),
+                        },
+                    )
+                })
                 .collect(),
             ..Default::default()
         }
@@ -369,8 +381,8 @@ impl Font {
     }
 }
 
-
 impl Font {
+    #[rustfmt::skip]
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
         for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
             let tag = &Tag::from(tag_str);
@@ -396,13 +408,14 @@ impl Font {
     }
 
     fn woff_parse(&mut self, buffer: &mut Buffer) {
-        for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
+        for tag_str in &[
+            "head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post",
+        ] {
             let tag = &Tag::from(tag_str);
             self.woff_parse_table(tag, buffer);
         }
         for tag_str in &[
-            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
-            "CFF ", "CFF2",
+            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp", "CFF ", "CFF2",
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -437,22 +450,18 @@ impl Font {
             "name" => self.parse_name(buffer),
             "OS/2" => self.parse_OS_2(buffer),
             "post" => self.parse_post(buffer),
-
             "loca" => self.parse_loca(buffer),
             "glyf" => self.parse_glyf(buffer),
             "cvt " => self.parse_cvt_(buffer),
             "fpgm" => self.parse_fpgm(buffer),
             "prep" => self.parse_prep(buffer),
             "gasp" => self.parse_gasp(buffer),
-
             "CFF " => self.parse_CFF_(buffer),
             // "CFF2" => self.parse_CFF2(buffer),
             // "VORG" => self.parse_VORG(buffer),
-
             "EBDT" => self.parse_EBDT(buffer),
             "EBLC" => self.parse_EBLC(buffer),
             "EBSC" => self.parse_EBSC(buffer),
-
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),
@@ -461,14 +470,12 @@ impl Font {
             "MVAR" => self.parse_MVAR(buffer),
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),
-
             // "COLR" => self.parse_COLR(buffer),
             // "CPAL" => self.parse_CPAL(buffer),
             // "CBDT" => self.parse_CBDT(buffer),
             // "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
             "SVG " => self.parse_SVG_(buffer),
-
             _ => eprintln!("Table `{}` is not supported", tag),
         };
     }
@@ -500,7 +507,9 @@ enum Format {
 }
 
 impl Default for Format {
-    fn default() -> Self { Self::SFNT }
+    fn default() -> Self {
+        Self::SFNT
+    }
 }
 
 #[derive(Debug)]
@@ -510,7 +519,9 @@ enum Flavor {
 }
 
 impl Default for Flavor {
-    fn default() -> Self { Self::TTF }
+    fn default() -> Self {
+        Self::TTF
+    }
 }
 
 #[derive(Debug, Default)]

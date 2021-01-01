@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::util::{Buffer, Fixed, Tag, ReadBuffer};
+use crate::util::{Buffer, Fixed, ReadBuffer, Tag};
 use read_buffer_derive::ReadBuffer;
 
 /// ## `fvar` &mdash; Font Variations Table

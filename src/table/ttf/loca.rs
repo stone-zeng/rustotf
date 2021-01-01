@@ -21,18 +21,23 @@ impl Font {
     pub fn parse_loca(&mut self, buffer: &mut Buffer) {
         let index_to_loc_format = self.head.as_ref().unwrap().index_to_loc_format;
         let loca_len = self.get_table_len(&Tag::from("loca"));
-        let num_glyphs = loca_len / match index_to_loc_format {
+        let offset_size = match index_to_loc_format {
             0 => size_of::<u16>(),
             1 => size_of::<u32>(),
             _ => unreachable!(),
-        } - 1;
+        };
+        let num_glyphs = loca_len / offset_size - 1;
         let maxp_num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         if maxp_num_glyphs != num_glyphs {
             eprintln!("Table 'loca' corrupted.");
         }
         let offsets = match index_to_loc_format {
-            0 => (0..num_glyphs).map(|_| buffer.get::<u16>() as usize * 2).collect(),
-            1 => (0..num_glyphs).map(|_| buffer.get::<u32>() as usize).collect(),
+            0 => (0..num_glyphs)
+                .map(|_| buffer.get::<u16>() as usize * 2)
+                .collect(),
+            1 => (0..num_glyphs)
+                .map(|_| buffer.get::<u32>() as usize)
+                .collect(),
             _ => unreachable!(),
         };
         self.loca = Some(Table_loca { offsets });

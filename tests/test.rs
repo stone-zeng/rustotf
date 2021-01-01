@@ -63,7 +63,7 @@ fn check_font(font_file_path: &str, flag: &str) {
                 assert!(font.CFF_.is_some());
             }
         }
-        _ => ()
+        _ => (),
     }
 }
 

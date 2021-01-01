@@ -1,5 +1,6 @@
 mod font;
 mod util;
+#[rustfmt::skip]
 mod table {
     pub mod required {
         pub mod head;
@@ -46,12 +47,9 @@ mod table {
     }
 }
 
-pub use font::{
-    read_font,
-    Font,
-    FontContainer,
-};
+pub use font::{read_font, Font, FontContainer};
 
+#[rustfmt::skip]
 pub use table::{
     required::{
         head::Table_head,

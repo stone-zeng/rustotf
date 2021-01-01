@@ -23,9 +23,9 @@ impl Font {
         let start_offset = svg_start_offset + buffer.get::<u32>() as usize;
         buffer.offset = start_offset;
         let num_entries = buffer.get();
-        let doc_records = (0..num_entries).map(|_| {
-            SvgDocumentRecord::read(buffer, start_offset)
-        }).collect();
+        let doc_records = (0..num_entries)
+            .map(|_| SvgDocumentRecord::read(buffer, start_offset))
+            .collect();
         self.SVG_ = Some(Table_SVG_ {
             _version,
             num_entries,
@@ -50,7 +50,7 @@ impl SvgDocumentRecord {
         let svg_doc_length: u32 = buffer.get();
         buffer.offset = start_offset + svg_doc_offset as usize;
         let svg_doc = Self::get_svg_doc(buffer, svg_doc_length as usize);
-        buffer.offset = offset + 12;  // u16 + u16 + u32 + u32
+        buffer.offset = offset + 12; // u16 + u16 + u32 + u32
         Self {
             start_glyph_id,
             end_glyph_id,
@@ -70,7 +70,7 @@ impl SvgDocumentRecord {
 
     fn check_gzip_header(buffer: &mut Buffer) -> bool {
         let header: Vec<u8> = buffer.get_vec(3);
-        buffer.offset -= 3;  // 3 * u8
+        buffer.offset -= 3; // 3 * u8
         header == vec![0x1F, 0x8B, 0x08]
     }
 }

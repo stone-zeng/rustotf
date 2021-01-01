@@ -44,15 +44,18 @@ impl Strike {
         let bitmap_size_vec: Vec<BitmapSize> = buffer.get_vec(num);
         let mut strikes = Vec::new();
         for bitmap_size in bitmap_size_vec {
-            let index_sub_table_start_offset
-                = eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
+            let index_sub_table_start_offset =
+                eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
             buffer.offset = index_sub_table_start_offset;
-            let index_sub_table_arrays: Vec<IndexSubTableArray>
-                = buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
-            let index_sub_tables = index_sub_table_arrays.iter().map(|i| {
-                buffer.offset = index_sub_table_start_offset + i.additional_offset as usize;
-                IndexSubTable::read(buffer, i)
-            }).collect();
+            let index_sub_table_arrays: Vec<IndexSubTableArray> =
+                buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
+            let index_sub_tables = index_sub_table_arrays
+                .iter()
+                .map(|i| {
+                    buffer.offset = index_sub_table_start_offset + i.additional_offset as usize;
+                    IndexSubTable::read(buffer, i)
+                })
+                .collect();
             strikes.push(Self {
                 bitmap_size,
                 index_sub_tables,
@@ -136,7 +139,9 @@ impl IndexSubTable {
             }
             3 => {
                 sbit_offsets = Some(
-                    (0..sbit_offsets_size).map(|_| buffer.get::<u16>() as u32).collect()
+                    (0..sbit_offsets_size)
+                        .map(|_| buffer.get::<u16>() as u32)
+                        .collect(),
                 );
             }
             4 => {

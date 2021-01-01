@@ -15,11 +15,9 @@ use crate::util::Buffer;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
-pub struct Table_EBSC {
-}
+pub struct Table_EBSC {}
 
 impl Font {
     #[allow(non_snake_case)]
-    pub fn parse_EBSC(&mut self, _buffer: &mut Buffer) {
-    }
+    pub fn parse_EBSC(&mut self, _buffer: &mut Buffer) {}
 }

@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::font::Font;
 use crate::table::cff::cff_data::*;
-use crate::util::{Buffer, ReadBuffer, u24};
+use crate::util::{u24, Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
 
 /// ## `CFF` &mdash; Compact Font Format table
@@ -42,7 +42,8 @@ impl Font {
             _version,
             _header_size,
             _offset_size,
-            cff_fonts: names.into_iter()
+            cff_fonts: names
+                .into_iter()
                 .zip(top_dicts.iter())
                 .map(|(name, top_dict)| {
                     let mut cff = CFFFont::new(name);
@@ -116,36 +117,56 @@ macro_rules! _parse_dict {
             $e20:expr,
             $e21:expr,
         ]
-    ) => ({
+    ) => {{
         let mut i = 0;
         let mut temp: Vec<Number> = Vec::new();
 
-        macro_rules! _num     { () => { temp.pop().unwrap() }; }
-        macro_rules! _integer { () => { _num!().int() }; }
-        macro_rules! _bool    { () => { _integer!() != 0 }; }
-        macro_rules! _string  { () => { from_sid(_integer!() as usize, $strings) }; }
+        macro_rules! _num {
+            () => {
+                temp.pop().unwrap()
+            };
+        }
+        macro_rules! _integer {
+            () => {
+                _num!().int()
+            };
+        }
+        macro_rules! _bool {
+            () => {
+                _integer!() != 0
+            };
+        }
+        macro_rules! _string {
+            () => {
+                from_sid(_integer!() as usize, $strings)
+            };
+        }
         macro_rules! _array {
-            () => ({
+            () => {{
                 let nums_copy = temp.to_vec();
                 temp.clear();
                 nums_copy
-            });
+            }};
         }
-        macro_rules! _delta { () => { Delta::new(_array!()) }; }
+        macro_rules! _delta {
+            () => {
+                Delta::new(_array!())
+            };
+        }
         macro_rules! _private {
-            () => ({
+            () => {{
                 let num2 = temp.pop().unwrap().int() as usize;
                 let num1 = temp.pop().unwrap().int() as usize;
                 (num1, num2)
-            });
+            }};
         }
         macro_rules! _ros {
-            () => ({
+            () => {{
                 let supplement = temp.pop().unwrap().int();
                 let index_o = temp.pop().unwrap().int() as usize;
                 let index_r = temp.pop().unwrap().int() as usize;
                 ROS::new(index_r, index_o, supplement, $strings)
-            });
+            }};
         }
 
         while i < $data.len() {
@@ -208,7 +229,7 @@ macro_rules! _parse_dict {
                         36 => $e12_36,
                         37 => $e12_37,
                         38 => $e12_38,
-                        _ => unreachable!()
+                        _ => unreachable!(),
                     }
                     i += 1;
                 }
@@ -274,7 +295,7 @@ macro_rules! _parse_dict {
             }
             i += 1;
         }
-    });
+    }};
 }
 
 #[derive(Debug, Default)]
@@ -360,12 +381,12 @@ impl CFFFont {
     }
 
     fn parse(
-            &mut self,
-            buffer: &mut Buffer,
-            cff_start_offset: usize,
-            top_dict: &Vec<u8>,
-            strings: &Vec<String>
-        ) {
+        &mut self,
+        buffer: &mut Buffer,
+        cff_start_offset: usize,
+        top_dict: &Vec<u8>,
+        strings: &Vec<String>,
+    ) {
         self.parse_top_dict(top_dict, strings);
         // Encoding
         self.encoding = match self._encoding_offset {
@@ -383,26 +404,30 @@ impl CFFFont {
         self.char_strings = char_strings_index.data;
         // Charset
         macro_rules! _get_charsets {
-            ($t:ty) => ({
+            ($t:ty) => {{
                 // ".notdef" is omitted in the array.
                 let mut count = 1;
                 let mut result = vec![CFF_STANDARD_STRINGS[0].to_string()];
                 while count < num_glyphs {
                     let sid = buffer.get::<u16>() as usize;
                     let num_left = buffer.get::<$t>() as usize;
-                    (0..=num_left).for_each(|i| {
-                        result.push(from_sid(sid + i, &strings))
-                    });
+                    (0..=num_left).for_each(|i| result.push(from_sid(sid + i, &strings)));
                     count += num_left as usize + 1;
                 }
                 result
-            });
+            }};
         }
         if !self.is_cid_font() {
             self.charset = match self._charset_offset {
-                0 => CFF_ISO_ADOBE_CHARSET.iter().map(|&i| i.to_string()).collect(),
+                0 => CFF_ISO_ADOBE_CHARSET
+                    .iter()
+                    .map(|&i| i.to_string())
+                    .collect(),
                 1 => CFF_EXPERT_CHARSET.iter().map(|&i| i.to_string()).collect(),
-                2 => CFF_EXPERT_SUBSET_CHARSET.iter().map(|&i| i.to_string()).collect(),
+                2 => CFF_EXPERT_SUBSET_CHARSET
+                    .iter()
+                    .map(|&i| i.to_string())
+                    .collect(),
                 offset => {
                     buffer.offset = cff_start_offset + offset as usize;
                     let format: u8 = buffer.get();
@@ -431,14 +456,16 @@ impl CFFFont {
         } else {
             // FD Array
             buffer.offset = cff_start_offset + self._fd_array_offset.unwrap();
-            buffer.get::<Index>().data.iter().for_each(|font_dict| {
-                self.init_fd_array(font_dict, strings)
-            });
+            buffer
+                .get::<Index>()
+                .data
+                .iter()
+                .for_each(|font_dict| self.init_fd_array(font_dict, strings));
             self.fd_array.iter_mut().for_each(|fd| {
                 let private_start_offset = cff_start_offset + fd._private_offset;
                 buffer.offset = private_start_offset;
                 let private_dict = buffer.get_vec(fd._private_size);
-                fd.private= Private::parse(&private_dict);
+                fd.private = Private::parse(&private_dict);
                 if let Some(subrs_offset) = fd.private._subrs_offset {
                     buffer.offset = private_start_offset + subrs_offset;
                     fd.private.subrs = buffer.get::<Index>().data;
@@ -526,7 +553,9 @@ impl CFFFont {
         if self.is_cid_font() {
             macro_rules! _init_cid {
                 ($i:ident, $e:expr) => {
-                    if self.$i.is_none() { self.$i = Some($e); }
+                    if self.$i.is_none() {
+                        self.$i = Some($e);
+                    }
                 };
             }
             _init_cid!(cid_font_version, Number::Int(0));
@@ -553,7 +582,7 @@ enum Encoding {
         // Format 1
         num_ranges: Option<u8>,
         range: Option<Vec<EncodingRange>>,
-    }
+    },
 }
 
 impl Default for Encoding {
@@ -639,7 +668,7 @@ impl Private {
 
     fn parse(private_dict: &Vec<u8>) -> Self {
         let mut private = Self::new();
-        let _strings: Vec<String> = Vec::new();  // A placeholder to make the macro work
+        let _strings: Vec<String> = Vec::new(); // A placeholder to make the macro work
         _parse_dict!(private_dict; &_strings; [
                         {}, {}, {}, {}, {}, {},
             /* 06    */ private.blue_values = Some(_delta!()),
@@ -741,7 +770,11 @@ enum Number {
 
 impl Number {
     fn int(self) -> i32 {
-        if let Self::Int(n) = self { n } else { panic!() }
+        if let Self::Int(n) = self {
+            n
+        } else {
+            panic!()
+        }
     }
 }
 
@@ -762,18 +795,19 @@ impl Default for Number {
 
 #[derive(Default)]
 struct Delta {
-    _data: Vec<Number>
+    _data: Vec<Number>,
 }
 
 impl Delta {
     fn new(array: Vec<Number>) -> Self {
         Self {
-            _data: array.iter()
+            _data: array
+                .iter()
                 .scan(0, |acc, x| {
                     *acc = *acc + x.to_owned().int();
                     Some(Number::Int(*acc))
                 })
-                .collect()
+                .collect(),
         }
     }
 }
@@ -787,9 +821,9 @@ impl fmt::Debug for Delta {
 /// An array of variable-sized objects.
 #[derive(Debug, Default)]
 struct Index {
-    count: usize,  // Actual type is `u16`
+    count: usize, // Actual type is `u16`
     offset_size: u8,
-    offset: Vec<usize>,  // Actual type is `Offset[]`
+    offset: Vec<usize>, // Actual type is `Offset[]`
     data: Vec<Vec<u8>>,
 }
 
@@ -810,10 +844,18 @@ impl ReadBuffer for Index {
             _ => {
                 macro_rules! _get_offset {
                     (u24) => {
-                        buffer.get_vec::<u24>(count + 1).iter().map(|&i| usize::from(i)).collect()
+                        buffer
+                            .get_vec::<u24>(count + 1)
+                            .iter()
+                            .map(|&i| usize::from(i))
+                            .collect()
                     };
                     ($t:ty) => {
-                        buffer.get_vec::<$t>(count + 1).iter().map(|&i| i as usize).collect()
+                        buffer
+                            .get_vec::<$t>(count + 1)
+                            .iter()
+                            .map(|&i| i as usize)
+                            .collect()
                     };
                 }
                 let offset_size = buffer.get();
@@ -822,7 +864,7 @@ impl ReadBuffer for Index {
                     2 => _get_offset!(u16),
                     3 => _get_offset!(u24),
                     4 => _get_offset!(u32),
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
                 let data = (0..count)
                     .map(|i| buffer.get_vec(offset[i + 1] - offset[i]))

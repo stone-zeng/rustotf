@@ -1,5 +1,3 @@
-// extern crate byteorder;
-
 use std::{fmt, io::Read, mem, str};
 
 use byteorder::{BigEndian, ByteOrder};
@@ -250,7 +248,7 @@ impl Tag {
                 bytes.next().unwrap(),
                 bytes.next().unwrap(),
                 bytes.next().unwrap(),
-            ]
+            ],
         }
     }
 
@@ -262,12 +260,7 @@ impl Tag {
 impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
         Self {
-            _internal: [
-                buffer.get(),
-                buffer.get(),
-                buffer.get(),
-                buffer.get(),
-            ]
+            _internal: [buffer.get(), buffer.get(), buffer.get(), buffer.get()],
         }
     }
 }

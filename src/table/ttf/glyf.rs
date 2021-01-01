@@ -19,12 +19,15 @@ pub struct Table_glyf {
 impl Font {
     pub fn parse_glyf(&mut self, buffer: &mut Buffer) {
         let start_offset = buffer.offset;
+        let loca_offsets = &self.loca.as_ref().unwrap().offsets;
         self.glyf = Some(Table_glyf {
-            glyphs: self.loca.as_ref().unwrap().offsets.iter().map(|i| {
-                buffer.offset = start_offset + i;
-                buffer.get()
-            })
-            .collect()
+            glyphs: loca_offsets
+                .iter()
+                .map(|i| {
+                    buffer.offset = start_offset + i;
+                    buffer.get()
+                })
+                .collect(),
         });
     }
 }
@@ -101,7 +104,8 @@ impl Glyph {
         let ys = buffer.get_coordinates(&flags, Self::Y_SAME_POSITIVE, Self::Y_SHORT);
 
         // TODO: https://docs.rs/itertools/0.9.0/itertools/macro.izip.html
-        let mut points = xs.iter()
+        let mut points = xs
+            .iter()
             .zip(ys.iter())
             .zip(flags.iter())
             .map(|((&x, &y), &flag)| Point {
@@ -225,14 +229,19 @@ impl Buffer {
 
     fn get_coordinates(&mut self, flags: &Vec<u8>, flag1: u8, flag2: u8) -> Vec<i16> {
         let flag3 = flag1 | flag2;
-        flags.iter().map(|flag| match flag & flag3 {
+        flags
+            .iter()
+            .map(|flag| match flag & flag3 {
                 0 => self.get::<i16>(),
                 n if n == flag1 => 0,
                 n if n == flag2 => -(self.get::<u8>() as i16),
                 n if n == flag3 => self.get::<u8>() as i16,
                 _ => unreachable!(),
             })
-            .scan(0, |acc, x| { *acc = *acc + x; Some(*acc) })  // Accumulate
+            .scan(0, |acc, x| {
+                *acc = *acc + x;
+                Some(*acc)
+            }) // Accumulate
             .collect()
     }
 }

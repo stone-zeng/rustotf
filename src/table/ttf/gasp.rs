@@ -16,7 +16,7 @@ use read_buffer_derive::ReadBuffer;
 pub struct Table_gasp {
     version: u16,
     num_ranges: u16,
-    gasp_ranges: Vec<GaspRange>
+    gasp_ranges: Vec<GaspRange>,
 }
 
 impl Font {
