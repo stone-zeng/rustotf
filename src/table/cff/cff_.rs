@@ -21,7 +21,7 @@ pub struct Table_CFF_ {
     _header_size: u8,
     _offset_size: u8,
     cff_fonts: Vec<CFFFont>,
-    global_subrs: Vec<Subr>,
+    global_subrs: Vec<CharString>,
 }
 
 impl Font {
@@ -36,7 +36,12 @@ impl Font {
         let names = buffer.get::<Index>().to_string_vec();
         let top_dicts = buffer.get::<Index>().data;
         let strings = buffer.get::<Index>().to_string_vec();
-        let global_subrs = buffer.get::<Index>().data;
+        let global_subrs = buffer
+            .get::<Index>()
+            .data
+            .iter()
+            .map(|data| CharString::new(data))
+            .collect();
 
         self.CFF_ = Some(Table_CFF_ {
             _version,
@@ -332,7 +337,7 @@ pub struct CFFFont {
     charset: Vec<String>,
     // Char strings
     _char_strings_offset: usize,
-    char_strings: Vec<Vec<u8>>,
+    char_strings: Vec<CharString>,
     // Private dict
     _private_size: usize,
     _private_offset: usize,
@@ -401,7 +406,11 @@ impl CFFFont {
         buffer.offset = cff_start_offset + self._char_strings_offset;
         let char_strings_index = buffer.get::<Index>();
         let num_glyphs = char_strings_index.count;
-        self.char_strings = char_strings_index.data;
+        self.char_strings = char_strings_index
+            .data
+            .iter()
+            .map(|data| CharString::new(data))
+            .collect();
         // Charset
         macro_rules! _get_charsets {
             ($t:ty) => {{
@@ -449,7 +458,12 @@ impl CFFFont {
                 let mut private = Private::parse(&private_dict);
                 if let Some(subrs_offset) = private._subrs_offset {
                     buffer.offset = private_start_offset + subrs_offset;
-                    private.subrs = buffer.get::<Index>().data;
+                    private.subrs = buffer
+                        .get::<Index>()
+                        .data
+                        .iter()
+                        .map(|data| CharString::new(data))
+                        .collect();
                 }
                 self.private = Some(private);
             }
@@ -468,7 +482,12 @@ impl CFFFont {
                 fd.private = Private::parse(&private_dict);
                 if let Some(subrs_offset) = fd.private._subrs_offset {
                     buffer.offset = private_start_offset + subrs_offset;
-                    fd.private.subrs = buffer.get::<Index>().data;
+                    fd.private.subrs = buffer
+                        .get::<Index>()
+                        .data
+                        .iter()
+                        .map(|data| CharString::new(data))
+                        .collect();
                 }
             });
             // FD Select
@@ -625,6 +644,127 @@ struct EncodingRange {
     num_left: u8,
 }
 
+#[derive(Debug)]
+struct CharString {
+    seq: Vec<CharStringValue>,
+}
+
+impl CharString {
+    fn new(data: &Vec<u8>) -> Self {
+        let mut seq = Vec::new();
+        let mut i = 0;
+
+        macro_rules! _push_str {
+            ($s:literal) => {
+                seq.push(CharStringValue::Operator($s.to_string()))
+            };
+        }
+
+        // TODO: width and hintmask bytes are not considered
+        while i < data.len() {
+            let b0 = data[i];
+            match b0 {
+                // Numbers
+                28 => {
+                    let b1 = data[i + 1] as i16;
+                    let b2 = data[i + 2] as i16;
+                    i += 2;
+                    seq.push(CharStringValue::Int((b1 << 8 | b2) as i32));
+                }
+                32..=246 => {
+                    let b0 = b0 as i32;
+                    seq.push(CharStringValue::Int(b0 - 139));
+                }
+                247..=250 => {
+                    let b0 = b0 as i32;
+                    let b1 = data[i + 1] as i32;
+                    i += 1;
+                    seq.push(CharStringValue::Int((b0 - 247) * 256 + b1 + 108));
+                }
+                251..=254 => {
+                    let b0 = b0 as i32;
+                    let b1 = data[i + 1] as i32;
+                    i += 1;
+                    seq.push(CharStringValue::Int(-(b0 - 251) * 256 - b1 - 108));
+                }
+                // Operators
+                1 => _push_str!("hstem"),
+                3 => _push_str!("vstem"),
+                4 => _push_str!("vmoveto"),
+                5 => _push_str!("rlineto"),
+                6 => _push_str!("hlineto"),
+                7 => _push_str!("vlineto"),
+                8 => _push_str!("rrcurveto"),
+                10 => _push_str!("callsubr"),
+                11 => _push_str!("return"),
+                14 => _push_str!("endchar"),
+                18 => _push_str!("hstemhm"),
+                19 => _push_str!("hintmask"),
+                20 => _push_str!("cntrmask"),
+                21 => _push_str!("rmoveto"),
+                22 => _push_str!("hmoveto"),
+                23 => _push_str!("vstemhm"),
+                24 => _push_str!("rcurveline"),
+                25 => _push_str!("rlinecurve"),
+                26 => _push_str!("vvcurveto"),
+                27 => _push_str!("hhcurveto"),
+                29 => _push_str!("callgsubr"),
+                30 => _push_str!("vhcurveto"),
+                31 => _push_str!("hvcurveto"),
+                12 => {
+                    let b1 = data[i + 1];
+                    let op_str = match b1 {
+                        3 => "and",
+                        4 => "or",
+                        5 => "not",
+                        9 => "abs",
+                        10 => "add",
+                        11 => "sub",
+                        12 => "div",
+                        14 => "neg",
+                        15 => "eq",
+                        18 => "drop",
+                        20 => "put",
+                        21 => "get",
+                        22 => "ifelse",
+                        23 => "random",
+                        24 => "mul",
+                        26 => "sqrt",
+                        27 => "dup",
+                        28 => "exch",
+                        29 => "index",
+                        30 => "roll",
+                        34 => "hflex",
+                        35 => "flex",
+                        36 => "hflex1",
+                        37 => "flex1",
+                        _ => "[TODO] hint_mask_bytes",
+                    };
+                    i += 1;
+                    seq.push(CharStringValue::Operator(op_str.to_string()));
+                }
+                _ => _push_str!("[TODO] hint_mask_bytes"),
+            }
+            i += 1;
+        }
+        Self { seq }
+    }
+}
+
+enum CharStringValue {
+    Int(i32),
+    Operator(String),
+}
+
+impl fmt::Debug for CharStringValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Int(n) => write!(f, "{}", n),
+            Self::Operator(s) => write!(f, "\"{}\"", s),
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 struct Private {
     _size: usize,
@@ -645,7 +785,7 @@ struct Private {
     expansion_factor: Number,
     initial_random_seed: Number,
     _subrs_offset: Option<usize>,
-    subrs: Vec<Subr>,
+    subrs: Vec<CharString>,
     default_width_x: Number,
     nominal_width_x: Number,
 }
@@ -759,8 +899,6 @@ struct FDSelectRange {
     first: u16,
     fd: u8,
 }
-
-type Subr = Vec<u8>;
 
 #[derive(Clone)]
 enum Number {
