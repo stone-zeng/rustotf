@@ -452,20 +452,8 @@ impl CFFFont {
             };
             // Private dict
             if self._private_size != 0 {
-                let private_start_offset = cff_start_offset + self._private_offset;
-                buffer.offset = private_start_offset;
-                let private_dict = buffer.get_vec(self._private_size);
-                let mut private = Private::parse(&private_dict);
-                if let Some(subrs_offset) = private._subrs_offset {
-                    buffer.offset = private_start_offset + subrs_offset;
-                    private.subrs = buffer
-                        .get::<Index>()
-                        .data
-                        .iter()
-                        .map(|data| CharString::new(data))
-                        .collect();
-                }
-                self.private = Some(private);
+                buffer.offset = cff_start_offset + self._private_offset;
+                self.private = Some(Private::read(buffer, self._private_size));
             }
         } else {
             // FD Array
@@ -476,19 +464,8 @@ impl CFFFont {
                 .iter()
                 .for_each(|font_dict| self.init_fd_array(font_dict, strings));
             self.fd_array.iter_mut().for_each(|fd| {
-                let private_start_offset = cff_start_offset + fd._private_offset;
-                buffer.offset = private_start_offset;
-                let private_dict = buffer.get_vec(fd._private_size);
-                fd.private = Private::parse(&private_dict);
-                if let Some(subrs_offset) = fd.private._subrs_offset {
-                    buffer.offset = private_start_offset + subrs_offset;
-                    fd.private.subrs = buffer
-                        .get::<Index>()
-                        .data
-                        .iter()
-                        .map(|data| CharString::new(data))
-                        .collect();
-                }
+                buffer.offset = cff_start_offset + fd._private_offset;
+                fd.private = Private::read(buffer, fd._private_size);
             });
             // FD Select
             buffer.offset = cff_start_offset + self._fd_select_offset.unwrap();
@@ -806,10 +783,12 @@ impl Private {
         }
     }
 
-    fn parse(private_dict: &Vec<u8>) -> Self {
+    fn read(buffer: &mut Buffer, private_size: usize) -> Self {
+        let start_offset = buffer.offset;
+        let private_dict = buffer.get_vec::<u8>(private_size);
         let mut private = Self::new();
-        let _strings: Vec<String> = Vec::new(); // A placeholder to make the macro work
-        _parse_dict!(private_dict; &_strings; [
+        // We use an empty vector as a placeholder of strings to make the macro work.
+        _parse_dict!(private_dict; Vec::new(); [
                         {}, {}, {}, {}, {}, {},
             /* 06    */ private.blue_values = Some(_delta!()),
             /* 07    */ private.other_blues = Some(_delta!()),
@@ -832,6 +811,15 @@ impl Private {
             /* 20    */ private.default_width_x = _num!(),
             /* 21    */ private.nominal_width_x = _num!(),
         ]);
+        if let Some(subrs_offset) = private._subrs_offset {
+            buffer.offset = start_offset + subrs_offset;
+            private.subrs = buffer
+                .get::<Index>()
+                .data
+                .iter()
+                .map(|data| CharString::new(data))
+                .collect();
+        }
         private
     }
 }
