@@ -24,6 +24,7 @@ mod table {
         pub mod cff_;
         // pub mod cff2;
         // pub mod vorg;
+        mod cff_char_string;
         mod cff_data;
     }
     pub mod bitmap {
