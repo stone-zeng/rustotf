@@ -17,7 +17,7 @@ use crate::util::Buffer;
 #[derive(Debug)]
 pub struct Table_EBDT {
     _version: String,
-    bitmap_data: Vec<Vec<BitmapData>>,
+    pub bitmap_data: Vec<Vec<BitmapData>>,
 }
 
 impl Font {
@@ -77,7 +77,7 @@ impl Font {
 }
 
 #[derive(Debug, Default)]
-struct BitmapData {
+pub struct BitmapData {
     small_metrics: Option<SmallGlyphMetrics>,
     big_metrics: Option<BigGlyphMetrics>,
     image_data: Option<Vec<u8>>,
@@ -87,7 +87,7 @@ struct BitmapData {
 }
 
 #[derive(Debug)]
-struct EbdtComponent {
+pub struct EbdtComponent {
     glyph_id: u16,
     x_offset: i8,
     y_offset: i8,

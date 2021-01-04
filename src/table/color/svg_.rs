@@ -11,8 +11,8 @@ use crate::util::Buffer;
 #[derive(Debug)]
 pub struct Table_SVG_ {
     _version: u16,
-    num_entries: u16,
-    doc_records: Vec<SvgDocumentRecord>,
+    pub num_entries: u16,
+    pub doc_records: Vec<SvgDocumentRecord>,
 }
 
 impl Font {
@@ -35,10 +35,10 @@ impl Font {
 }
 
 #[derive(Debug)]
-struct SvgDocumentRecord {
-    start_glyph_id: u16,
-    end_glyph_id: u16,
-    svg_doc: String,
+pub struct SvgDocumentRecord {
+    pub start_glyph_id: u16,
+    pub end_glyph_id: u16,
+    pub svg_doc: String,
 }
 
 impl SvgDocumentRecord {

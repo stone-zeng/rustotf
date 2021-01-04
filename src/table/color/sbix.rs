@@ -11,7 +11,7 @@ use crate::util::{Buffer, Tag};
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_sbix {
-    strikes: Vec<Strikes>,
+    pub strikes: Vec<Strikes>,
 }
 
 impl Font {
@@ -34,10 +34,10 @@ impl Font {
 }
 
 #[derive(Debug)]
-struct Strikes {
-    ppem: u16,
-    ppi: u16,
-    glyph_data: Vec<GlyphData>,
+pub struct Strikes {
+    pub ppem: u16,
+    pub ppi: u16,
+    pub glyph_data: Vec<GlyphData>,
 }
 
 impl Strikes {
@@ -62,11 +62,11 @@ impl Strikes {
 }
 
 #[derive(Debug)]
-struct GlyphData {
-    origin_offset_x: i16,
-    origin_offset_y: i16,
-    graphic_type: Tag,
-    data: Vec<u8>,
+pub struct GlyphData {
+    pub origin_offset_x: i16,
+    pub origin_offset_y: i16,
+    pub graphic_type: Tag,
+    pub data: Vec<u8>,
 }
 
 impl GlyphData {
