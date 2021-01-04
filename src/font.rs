@@ -21,7 +21,7 @@ use crate::table::{
     cff::{
         cff_::Table_CFF_,
         // cff2::Table_CFF2,
-        // vorg::Table_VORG,
+        vorg::Table_VORG,
     },
     bitmap::{
         ebdt::Table_EBDT,
@@ -57,7 +57,8 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
-        println!("\"CFF \": {:#?}", i.CFF_);
+        // println!("\"CFF \": {:#?}", i.CFF_);
+        println!("\"VORG\": {:#?}", i.VORG);
     }
     Ok(())
 }
@@ -193,8 +194,8 @@ pub struct Font {
     pub CFF_: Option<Table_CFF_>,
     /// Compact Font Format 2.0
     // pub CFF2: Option<Table_CFF2>,
-    // /// Vertical Origin (optional table)
-    // pub VORG: Option<Table_VORG>,
+    /// Vertical Origin (optional table)
+    pub VORG: Option<Table_VORG>,
 
     // Tables Related to Bitmap Glyphs
 
@@ -390,7 +391,7 @@ impl Font {
         }
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
-            "CFF ",
+            "CFF ", "VORG",
             "EBLC", "EBDT", "EBSC",
             "sbix",
             "SVG ",
@@ -458,7 +459,7 @@ impl Font {
             "gasp" => self.parse_gasp(buffer),
             "CFF " => self.parse_CFF_(buffer),
             // "CFF2" => self.parse_CFF2(buffer),
-            // "VORG" => self.parse_VORG(buffer),
+            "VORG" => self.parse_VORG(buffer),
             "EBDT" => self.parse_EBDT(buffer),
             "EBLC" => self.parse_EBLC(buffer),
             "EBSC" => self.parse_EBSC(buffer),

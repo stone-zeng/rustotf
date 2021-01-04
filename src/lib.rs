@@ -23,7 +23,7 @@ mod table {
     pub mod cff {
         pub mod cff_;
         // pub mod cff2;
-        // pub mod vorg;
+        pub mod vorg;
         mod cff_char_string;
         mod cff_data;
     }
@@ -73,7 +73,7 @@ pub use table::{
     cff::{
         cff_::Table_CFF_,
         // cff2::Table_CFF2,
-        // vorg::Table_VORG,
+        vorg::Table_VORG,
     },
     bitmap::{
         ebdt::Table_EBDT,
