@@ -5,6 +5,7 @@ const FONTS_PATH: &str = "./tests/fonts/";
 
 const TTF_FONTS: &[&str] = &[
     "cozette_bitmap.ttf",
+    "NotoColorEmoji.ttf",
     "NotoSans-SemiCondensed.ttf",
     "SourceSerifPro-LightIt.ttf",
     "WorkSans-Regular.ttf",

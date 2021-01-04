@@ -25,10 +25,11 @@ impl Font {
         let eblc_start_offset = buffer.offset;
         let _version = buffer.get_version::<u16>();
         let _num_strikes = buffer.get();
+        let strikes = Strike::read_vec(buffer, _num_strikes as usize, eblc_start_offset);
         self.EBLC = Some(Table_EBLC {
             _version,
             _num_strikes,
-            strikes: Strike::read_vec(buffer, _num_strikes as usize, eblc_start_offset),
+            strikes,
         })
     }
 }
@@ -40,12 +41,12 @@ pub struct Strike {
 }
 
 impl Strike {
-    fn read_vec(buffer: &mut Buffer, num: usize, eblc_start_offset: usize) -> Vec<Self> {
+    pub fn read_vec(buffer: &mut Buffer, num: usize, start_offset: usize) -> Vec<Self> {
         let bitmap_size_vec: Vec<BitmapSize> = buffer.get_vec(num);
         let mut strikes = Vec::new();
         for bitmap_size in bitmap_size_vec {
             let index_sub_table_start_offset =
-                eblc_start_offset + bitmap_size._index_sub_table_offset as usize;
+                start_offset + bitmap_size._index_sub_table_offset as usize;
             buffer.offset = index_sub_table_start_offset;
             let index_sub_table_arrays: Vec<IndexSubTableArray> =
                 buffer.get_vec(bitmap_size._num_index_sub_tables as usize);

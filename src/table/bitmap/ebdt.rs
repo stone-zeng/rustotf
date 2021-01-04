@@ -59,10 +59,7 @@ impl Font {
                                 });
                             })
                         }
-                        6 => {}
-                        7 => {}
-                        8 => {}
-                        9 => {}
+                        6 | 7 | 8 | 9 => unimplemented!(),
                         _ => unreachable!(),
                     }
                 }
@@ -78,12 +75,12 @@ impl Font {
 
 #[derive(Debug, Default)]
 pub struct BitmapData {
-    small_metrics: Option<SmallGlyphMetrics>,
-    big_metrics: Option<BigGlyphMetrics>,
-    image_data: Option<Vec<u8>>,
-    pad: Option<u8>,
-    num_components: Option<u16>,
-    components: Option<Vec<EbdtComponent>>,
+    pub small_metrics: Option<SmallGlyphMetrics>,
+    pub big_metrics: Option<BigGlyphMetrics>,
+    pub image_data: Option<Vec<u8>>,
+    pub pad: Option<u8>,
+    pub num_components: Option<u16>,
+    pub components: Option<Vec<EbdtComponent>>,
 }
 
 #[derive(Debug)]

@@ -37,8 +37,8 @@ use crate::table::{
     color::{
         // COLR::Table_COLR,
         // CPAL::Table_CPAL,
-        // CBDT::Table_CBDT,
-        // CBLC::Table_CBLC,
+        cbdt::Table_CBDT,
+        cblc::Table_CBLC,
         sbix::Table_sbix,
         svg_::Table_SVG_,
     },
@@ -58,7 +58,8 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
         // println!("\"CFF \": {:#?}", i.CFF_);
-        println!("\"VORG\": {:#?}", i.VORG);
+        println!("\"CBLC\": {:?}", i.CBLC);
+        println!("\"CBDT\": {:?}", i.CBDT);
     }
     Ok(())
 }
@@ -249,9 +250,9 @@ pub struct Font {
     /// Color palette table
     // pub CPAL: Option<Table_CPAL>,
     /// Color bitmap data
-    // pub CBDT: Option<Table_CBDT>,
+    pub CBDT: Option<Table_CBDT>,
     /// Color bitmap location data
-    // pub CBLC: Option<Table_CBLC>,
+    pub CBLC: Option<Table_CBLC>,
     /// Standard bitmap graphics
     pub sbix: Option<Table_sbix>,
     /// The SVG (Scalable Vector Graphics) table
@@ -393,6 +394,7 @@ impl Font {
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ", "VORG",
             "EBLC", "EBDT", "EBSC",
+            "CBLC", "CBDT",
             "sbix",
             "SVG ",
         ] {
@@ -473,8 +475,8 @@ impl Font {
             // "VVAR" => self.parse_VVAR(buffer),
             // "COLR" => self.parse_COLR(buffer),
             // "CPAL" => self.parse_CPAL(buffer),
-            // "CBDT" => self.parse_CBDT(buffer),
-            // "CBLC" => self.parse_CBLC(buffer),
+            "CBDT" => self.parse_CBDT(buffer),
+            "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
             "SVG " => self.parse_SVG_(buffer),
             _ => eprintln!("Table `{}` is not supported", tag),

@@ -41,8 +41,8 @@ mod table {
     pub mod color {
         // pub mod COLR;
         // pub mod CPAL;
-        // pub mod CBDT;
-        // pub mod CBLC;
+        pub mod cbdt;
+        pub mod cblc;
         pub mod sbix;
         pub mod svg_;
     }
@@ -87,10 +87,10 @@ pub use table::{
         mvar::Table_MVAR,
     },
     color::{
-        // COLR::Table_COLR,
-        // CPAL::Table_CPAL,
-        // CBDT::Table_CBDT,
-        // CBLC::Table_CBLC,
+        // cOLR::Table_COLR,
+        // cPAL::Table_CPAL,
+        cbdt::Table_CBDT,
+        cblc::Table_CBLC,
         sbix::Table_sbix,
         svg_::Table_SVG_,
     },
