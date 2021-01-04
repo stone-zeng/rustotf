@@ -500,6 +500,10 @@ impl Font {
     pub fn get_table_comp_len(&self, tag: &Tag) -> usize {
         self._get_table_record(tag).woff_comp_length as usize
     }
+
+    pub fn has_table(&self, tag_str: &str) -> bool {
+        self.table_records.contains_key(&Tag::from(tag_str))
+    }
 }
 
 #[derive(Debug)]

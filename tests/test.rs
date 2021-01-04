@@ -41,28 +41,40 @@ fn check_font(font_file_path: &str, flag: &str) {
 
     font_container.parse();
 
-    for font in &font_container.fonts {
-        assert!(font.head.is_some());
-        assert!(font.hhea.is_some());
-        assert!(font.maxp.is_some());
-        assert!(font.hmtx.is_some());
-        assert!(font.cmap.is_some());
-        assert!(font.name.is_some());
-        assert!(font.OS_2.is_some());
-        assert!(font.post.is_some());
+    macro_rules! _assert {
+        ($font:ident, $t:ident, $s:expr) => {
+            if $font.has_table($s) {
+                println!("{}", $s);
+                assert!($font.$t.is_some())
+            }
+        };
+        ($font:ident, $t:ident) => {
+            _assert!($font, $t, stringify!($t))
+        };
     }
+
+    font_container.fonts.iter().for_each(|font| {
+        _assert!(font, head);
+        _assert!(font, hhea);
+        _assert!(font, maxp);
+        _assert!(font, hmtx);
+        _assert!(font, cmap);
+        _assert!(font, name);
+        _assert!(font, OS_2, "OS/2");
+        _assert!(font, post);
+    });
 
     match flag {
         "ttf" => {
-            for font in &font_container.fonts {
-                assert!(font.loca.is_some());
-                assert!(font.glyf.is_some());
-            }
+            font_container.fonts.iter().for_each(|font| {
+                _assert!(font, loca);
+                _assert!(font, glyf);
+            });
         }
         "otf" => {
-            for font in &font_container.fonts {
-                assert!(font.CFF_.is_some());
-            }
+            font_container.fonts.iter().for_each(|font| {
+                _assert!(font, CFF_, "CFF ");
+            });
         }
         _ => (),
     }
