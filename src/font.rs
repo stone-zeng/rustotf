@@ -28,6 +28,9 @@ use crate::table::{
         eblc::Table_EBLC,
         ebsc::Table_EBSC,
     },
+    layout::{
+        gsub::Table_GSUB,
+    },
     otvar::{
         avar::Table_avar,
         fvar::Table_fvar,
@@ -58,8 +61,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
         // println!("\"CFF \": {:#?}", i.CFF_);
-        println!("\"CBLC\": {:?}", i.CBLC);
-        println!("\"CBDT\": {:?}", i.CBDT);
+        println!("\"GSUB\": {:#?}", i.GSUB);
     }
     Ok(())
 }
@@ -207,22 +209,20 @@ pub struct Font {
     /// Embedded bitmap scaling data
     pub EBSC: Option<Table_EBSC>,
 
-    /*
     // Advanced Typographic Tables
 
     /// Baseline data
-    pub BASE: Option<Table_BASE>,
+    // pub BASE: Option<Table_BASE>,
     /// Glyph definition data
-    pub GDEF: Option<Table_GDEF>,
+    // pub GDEF: Option<Table_GDEF>,
     /// Glyph positioning data
-    pub GPOS: Option<Table_GPOS>,
+    // pub GPOS: Option<Table_GPOS>,
     /// Glyph substitution data
     pub GSUB: Option<Table_GSUB>,
     /// Justification data
-    pub JSTF: Option<Table_JSTF>,
+    // pub JSTF: Option<Table_JSTF>,
     /// Math layout data
-    pub MATH: Option<Table_MATH>,
-    */
+    // pub MATH: Option<Table_MATH>,
 
     // Tables used for OpenType font variations
 
@@ -393,6 +393,7 @@ impl Font {
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ", "VORG",
+            "GSUB",
             "EBLC", "EBDT", "EBSC",
             "CBLC", "CBDT",
             "sbix",
@@ -465,6 +466,7 @@ impl Font {
             "EBDT" => self.parse_EBDT(buffer),
             "EBLC" => self.parse_EBLC(buffer),
             "EBSC" => self.parse_EBSC(buffer),
+            "GSUB" => self.parse_GSUB(buffer),
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),

@@ -32,6 +32,9 @@ mod table {
         pub mod eblc;
         pub mod ebsc;
     }
+    pub mod layout {
+        pub mod gsub;
+    }
     pub mod otvar {
         pub mod avar;
         pub mod fvar;
@@ -79,6 +82,9 @@ pub use table::{
         ebdt::Table_EBDT,
         eblc::Table_EBLC,
         ebsc::Table_EBSC,
+    },
+    layout::{
+        gsub::Table_GSUB,
     },
     otvar::{
         avar::Table_avar,
