@@ -31,6 +31,7 @@ use crate::table::{
     layout::{
         base::Table_BASE,
         gsub::Table_GSUB,
+        jstf::Table_JSTF,
     },
     otvar::{
         avar::Table_avar,
@@ -62,7 +63,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
         // println!("\"CFF \": {:#?}", i.CFF_);
-        println!("\"BASE\": {:#?}", i.BASE);
+        println!("\"JSTF\": {:#?}", i.JSTF);
     }
     Ok(())
 }
@@ -221,7 +222,7 @@ pub struct Font {
     /// Glyph substitution data
     pub GSUB: Option<Table_GSUB>,
     /// Justification data
-    // pub JSTF: Option<Table_JSTF>,
+    pub JSTF: Option<Table_JSTF>,
     /// Math layout data
     // pub MATH: Option<Table_MATH>,
 
@@ -394,7 +395,7 @@ impl Font {
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ", "VORG",
-            "BASE", "GSUB",
+            "BASE", "GSUB", "JSTF",
             "EBLC", "EBDT", "EBSC",
             "CBLC", "CBDT",
             "sbix",
@@ -469,6 +470,7 @@ impl Font {
             "EBSC" => self.parse_EBSC(buffer),
             "BASE" => self.parse_BASE(buffer),
             "GSUB" => self.parse_GSUB(buffer),
+            "JSTF" => self.parse_JSTF(buffer),
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),

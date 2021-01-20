@@ -35,6 +35,7 @@ mod table {
     pub mod layout {
         pub mod base;
         pub mod gsub;
+        pub mod jstf;
     }
     pub mod otvar {
         pub mod avar;
@@ -87,6 +88,7 @@ pub use table::{
     layout::{
         base::Table_BASE,
         gsub::Table_GSUB,
+        jstf::Table_JSTF,
     },
     otvar::{
         avar::Table_avar,
