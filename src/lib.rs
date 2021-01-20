@@ -33,6 +33,7 @@ mod table {
         pub mod ebsc;
     }
     pub mod layout {
+        pub mod base;
         pub mod gsub;
     }
     pub mod otvar {
@@ -84,6 +85,7 @@ pub use table::{
         ebsc::Table_EBSC,
     },
     layout::{
+        base::Table_BASE,
         gsub::Table_GSUB,
     },
     otvar::{

@@ -29,6 +29,7 @@ use crate::table::{
         ebsc::Table_EBSC,
     },
     layout::{
+        base::Table_BASE,
         gsub::Table_GSUB,
     },
     otvar::{
@@ -61,7 +62,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
         // println!("\"CFF \": {:#?}", i.CFF_);
-        println!("\"GSUB\": {:#?}", i.GSUB);
+        println!("\"BASE\": {:#?}", i.BASE);
     }
     Ok(())
 }
@@ -212,7 +213,7 @@ pub struct Font {
     // Advanced Typographic Tables
 
     /// Baseline data
-    // pub BASE: Option<Table_BASE>,
+    pub BASE: Option<Table_BASE>,
     /// Glyph definition data
     // pub GDEF: Option<Table_GDEF>,
     /// Glyph positioning data
@@ -393,7 +394,7 @@ impl Font {
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ", "VORG",
-            "GSUB",
+            "BASE", "GSUB",
             "EBLC", "EBDT", "EBSC",
             "CBLC", "CBDT",
             "sbix",
@@ -466,6 +467,7 @@ impl Font {
             "EBDT" => self.parse_EBDT(buffer),
             "EBLC" => self.parse_EBLC(buffer),
             "EBSC" => self.parse_EBSC(buffer),
+            "BASE" => self.parse_BASE(buffer),
             "GSUB" => self.parse_GSUB(buffer),
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),

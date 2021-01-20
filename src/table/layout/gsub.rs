@@ -1,5 +1,3 @@
-use std::usize;
-
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer, Tag};
 use read_buffer_derive::ReadBuffer;
