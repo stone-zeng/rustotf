@@ -47,6 +47,9 @@ use crate::table::{
         sbix::Table_sbix,
         svg_::Table_SVG_,
     },
+    other::{
+        ltsh::Table_LTSH,
+    },
 };
 use crate::util::{Buffer, Tag};
 
@@ -62,7 +65,6 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
-        // println!("\"CFF \": {:#?}", i.CFF_);
         println!("\"JSTF\": {:#?}", i.JSTF);
     }
     Ok(())
@@ -197,7 +199,7 @@ pub struct Font {
 
     /// Compact Font Format 1.0
     pub CFF_: Option<Table_CFF_>,
-    /// Compact Font Format 2.0
+    // /// Compact Font Format 2.0
     // pub CFF2: Option<Table_CFF2>,
     /// Vertical Origin (optional table)
     pub VORG: Option<Table_VORG>,
@@ -215,15 +217,15 @@ pub struct Font {
 
     /// Baseline data
     pub BASE: Option<Table_BASE>,
-    /// Glyph definition data
+    // /// Glyph definition data
     // pub GDEF: Option<Table_GDEF>,
-    /// Glyph positioning data
+    // /// Glyph positioning data
     // pub GPOS: Option<Table_GPOS>,
     /// Glyph substitution data
     pub GSUB: Option<Table_GSUB>,
     /// Justification data
     pub JSTF: Option<Table_JSTF>,
-    /// Math layout data
+    // /// Math layout data
     // pub MATH: Option<Table_MATH>,
 
     // Tables used for OpenType font variations
@@ -247,9 +249,9 @@ pub struct Font {
 
     // Tables Related to Color Fonts
 
-    /// Color table
+    // /// Color table
     // pub COLR: Option<Table_COLR>,
-    /// Color palette table
+    // /// Color palette table
     // pub CPAL: Option<Table_CPAL>,
     /// Color bitmap data
     pub CBDT: Option<Table_CBDT>,
@@ -260,30 +262,28 @@ pub struct Font {
     /// The SVG (Scalable Vector Graphics) table
     pub SVG_: Option<Table_SVG_>,
 
-    /*
     // Other OpenType Tables
 
-    /// Digital signature
-    pub DSIG: Option<Table_DSIG>,
-    /// Horizontal device metrics
-    pub hdmx: Option<Table_hdmx>,
-    /// Kerning
-    pub kern: Option<Table_kern>,
+    // /// Digital signature
+    // pub DSIG: Option<Table_DSIG>,
+    // /// Horizontal device metrics
+    // pub hdmx: Option<Table_hdmx>,
+    // /// Kerning
+    // pub kern: Option<Table_kern>,
     /// Linear threshold data
     pub LTSH: Option<Table_LTSH>,
-    /// Merge
-    pub MERG: Option<Table_MERG>,
-    /// Metadata
-    pub meta: Option<Table_meta>,
-    /// PCL 5 data
-    pub PCLT: Option<Table_PCLT>,
-    /// Vertical device metrics
-    pub VDMX: Option<Table_VDMX>,
-    /// Vertical Metrics header
-    pub vhea: Option<Table_vhea>,
-    /// Vertical Metrics
-    pub vmtx: Option<Table_vmtx>,
-    */
+    // /// Merge
+    // pub MERG: Option<Table_MERG>,
+    // /// Metadata
+    // pub meta: Option<Table_meta>,
+    // /// PCL 5 data
+    // pub PCLT: Option<Table_PCLT>,
+    // /// Vertical device metrics
+    // pub VDMX: Option<Table_VDMX>,
+    // /// Vertical Metrics header
+    // pub vhea: Option<Table_vhea>,
+    // /// Vertical Metrics
+    // pub vmtx: Option<Table_vmtx>,
 }
 
 impl Font {
@@ -400,6 +400,7 @@ impl Font {
             "CBLC", "CBDT",
             "sbix",
             "SVG ",
+            "LTSH"
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -485,6 +486,7 @@ impl Font {
             "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
             "SVG " => self.parse_SVG_(buffer),
+            "LTSH" => self.parse_LTSH(buffer),
             _ => eprintln!("Table `{}` is not supported", tag),
         };
     }

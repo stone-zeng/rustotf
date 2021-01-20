@@ -51,6 +51,9 @@ mod table {
         pub mod sbix;
         pub mod svg_;
     }
+    pub mod other {
+        pub mod ltsh;
+    }
 }
 
 pub use font::{read_font, Font, FontContainer};
@@ -103,6 +106,9 @@ pub use table::{
         cblc::Table_CBLC,
         sbix::Table_sbix,
         svg_::Table_SVG_,
+    },
+    other::{
+        ltsh::Table_LTSH,
     },
 };
 
