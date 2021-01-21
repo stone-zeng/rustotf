@@ -52,6 +52,7 @@ mod table {
         pub mod svg_;
     }
     pub mod other {
+        pub mod dsig;
         pub mod ltsh;
     }
 }
@@ -108,6 +109,7 @@ pub use table::{
         svg_::Table_SVG_,
     },
     other::{
+        dsig::Table_DSIG,
         ltsh::Table_LTSH,
     },
 };

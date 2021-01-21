@@ -48,6 +48,7 @@ use crate::table::{
         svg_::Table_SVG_,
     },
     other::{
+        dsig::Table_DSIG,
         ltsh::Table_LTSH,
     },
 };
@@ -264,8 +265,8 @@ pub struct Font {
 
     // Other OpenType Tables
 
-    // /// Digital signature
-    // pub DSIG: Option<Table_DSIG>,
+    /// Digital signature
+    pub DSIG: Option<Table_DSIG>,
     // /// Horizontal device metrics
     // pub hdmx: Option<Table_hdmx>,
     // /// Kerning
@@ -400,7 +401,7 @@ impl Font {
             "CBLC", "CBDT",
             "sbix",
             "SVG ",
-            "LTSH"
+            "DSIG", "LTSH"
         ] {
             let tag = &Tag::from(tag_str);
             if self.table_records.contains_key(tag) {
@@ -486,6 +487,7 @@ impl Font {
             "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
             "SVG " => self.parse_SVG_(buffer),
+            "DSIG" => self.parse_DSIG(buffer),
             "LTSH" => self.parse_LTSH(buffer),
             _ => eprintln!("Table `{}` is not supported", tag),
         };
