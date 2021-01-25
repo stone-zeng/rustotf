@@ -8,6 +8,7 @@ const TTF_FONTS: &[&str] = &[
     "NotoColorEmoji.ttf",
     "NotoSans-SemiCondensed.ttf",
     "SourceSerifPro-LightIt.ttf",
+    "TwemojiMozilla.ttf",
     "WorkSans-Regular.ttf",
 ];
 
