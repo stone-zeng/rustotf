@@ -40,8 +40,8 @@ use crate::table::{
         mvar::Table_MVAR,
     },
     color::{
-        // COLR::Table_COLR,
-        // CPAL::Table_CPAL,
+        // colr::Table_COLR,
+        cpal::Table_CPAL,
         cbdt::Table_CBDT,
         cblc::Table_CBLC,
         sbix::Table_sbix,
@@ -66,7 +66,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
-        println!("\"JSTF\": {:#?}", i.JSTF);
+        println!("\"CPAL\": {:#?}", i.CPAL);
     }
     Ok(())
 }
@@ -252,8 +252,8 @@ pub struct Font {
 
     // /// Color table
     // pub COLR: Option<Table_COLR>,
-    // /// Color palette table
-    // pub CPAL: Option<Table_CPAL>,
+    /// Color palette table
+    pub CPAL: Option<Table_CPAL>,
     /// Color bitmap data
     pub CBDT: Option<Table_CBDT>,
     /// Color bitmap location data
@@ -399,6 +399,7 @@ impl Font {
             "BASE", "GSUB", "JSTF",
             "EBLC", "EBDT", "EBSC",
             "CBLC", "CBDT",
+            "CPAL",
             "sbix",
             "SVG ",
             "DSIG", "LTSH"
@@ -482,7 +483,7 @@ impl Font {
             // "STAT" => self.parse_STAT(buffer),
             // "VVAR" => self.parse_VVAR(buffer),
             // "COLR" => self.parse_COLR(buffer),
-            // "CPAL" => self.parse_CPAL(buffer),
+            "CPAL" => self.parse_CPAL(buffer),
             "CBDT" => self.parse_CBDT(buffer),
             "CBLC" => self.parse_CBLC(buffer),
             "sbix" => self.parse_sbix(buffer),
