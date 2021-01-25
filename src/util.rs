@@ -29,7 +29,7 @@ impl Buffer {
         ReadBuffer::read(self)
     }
 
-    /// Get a vector of type `T` values frome the buffer.
+    /// Get a vector of type `T` values from the buffer.
     pub fn get_vec<T: ReadBuffer>(&mut self, n: usize) -> Vec<T> {
         (0..n).map(|_| ReadBuffer::read(self)).collect()
     }
