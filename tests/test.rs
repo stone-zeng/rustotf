@@ -7,7 +7,7 @@ const TTF_FONTS: &[&str] = &[
     "cozette_bitmap.ttf",
     "NotoColorEmoji.ttf",
     "NotoSans-SemiCondensed.ttf",
-    "SourceSerifPro-LightIt.ttf",
+    "SourceSerif4-LightIt.ttf",
     "TwemojiMozilla.ttf",
     "WorkSans-Regular.ttf",
 ];
@@ -29,8 +29,8 @@ const TTC_FONTS: &[&str] = &[
 const WOFF_FONTS: &[&str] = &[
     "SourceSans3-ExtraLight.ttf.woff",
     "SourceSans3VF-Roman.ttf.woff",
-    "SourceSerifPro-Bold.otf.woff",
-    "SourceSerifVariable-Italic.otf.woff",
+    "SourceSerif4Display-Bold.otf.woff",
+    "SourceSerif4Variable-Italic.otf.woff",
 ];
 
 fn check_font(font_file_path: &str, flag: &str) {
