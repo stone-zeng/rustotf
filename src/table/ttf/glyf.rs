@@ -104,7 +104,7 @@ impl Glyph {
         let ys = buffer.get_coordinates(&flags, Self::Y_SAME_POSITIVE, Self::Y_SHORT);
 
         // TODO: https://docs.rs/itertools/0.9.0/itertools/macro.izip.html
-        let mut points = xs
+        let mut points: Vec<Point> = xs
             .iter()
             .zip(ys.iter())
             .zip(flags.iter())
@@ -114,7 +114,7 @@ impl Glyph {
                 on_curve: flag & Self::ON_CURVE != 0,
                 overlap_simple: flag & Self::OVERLAP_SIMPLE != 0,
             })
-            .collect::<Vec<Point>>();
+            .collect();
 
         let mut left_len = 0;
         for i in end_points_of_contours {
@@ -213,13 +213,13 @@ impl Buffer {
         let mut flags_vec = Vec::new();
         let mut i = 0;
         while i < num_points {
-            let flags = self.get::<u8>();
+            let flags = self.get();
             flags_vec.push(flags);
             // Check repeat flag
             if flags & Glyph::REPEAT == 0 {
                 i += 1;
             } else {
-                let repeated = self.get::<u8>();
+                let repeated: u8 = self.get();
                 (0..repeated).for_each(|_| flags_vec.push(flags));
                 i += repeated as u16 + 1;
             }

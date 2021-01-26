@@ -403,7 +403,7 @@ impl CffFont {
         };
         // Char strings
         buffer.offset = cff_start_offset + self._char_strings_offset;
-        let char_strings_index = buffer.get::<Index>();
+        let char_strings_index: Index = buffer.get();
         let num_glyphs = char_strings_index.count;
         self.char_strings = char_strings_index
             .data

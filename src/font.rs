@@ -290,18 +290,18 @@ pub struct Font {
 
 impl Font {
     fn load_sfnt(buffer: &mut Buffer) -> Self {
-        let signature = buffer.get::<u32>();
-        let num_tables = buffer.get::<u16>();
-        let _search_range = buffer.get::<u16>();
-        let _entry_selector = buffer.get::<u16>();
-        let _range_shift = buffer.get::<u16>();
+        let signature: u32 = buffer.get();
+        let num_tables: u16 = buffer.get();
+        let _search_range: u16 = buffer.get();
+        let _entry_selector: u16 = buffer.get();
+        let _range_shift: u16 = buffer.get();
         Self {
             format: Format::SFNT,
             flavor: Self::get_flavor(signature),
             table_records: (0..num_tables)
                 .map(|_| {
                     (
-                        buffer.get::<Tag>(),
+                        buffer.get(),
                         TableRecord {
                             checksum: buffer.get(),
                             offset: buffer.get(),
@@ -316,28 +316,28 @@ impl Font {
     }
 
     fn load_woff(buffer: &mut Buffer) -> Self {
-        let _signature = buffer.get::<u32>();
-        let flavor = buffer.get::<u32>();
-        let _length = buffer.get::<u32>();
-        let num_tables = buffer.get::<u16>();
-        let _total_sfnt_size = {
+        let _signature: u32 = buffer.get();
+        let flavor: u32 = buffer.get();
+        let _length: u32 = buffer.get();
+        let num_tables: u16 = buffer.get();
+        let _total_sfnt_size: u32 = {
             buffer.skip::<u16>(1);
-            buffer.get::<u32>()
+            buffer.get()
         };
-        let _major_version = buffer.get::<u16>();
-        let _minor_version = buffer.get::<u16>();
-        let _meta_offset = buffer.get::<u32>();
-        let _meta_length = buffer.get::<u32>();
-        let _meta_orig_length = buffer.get::<u32>();
-        let _priv_offset = buffer.get::<u32>();
-        let _priv_length = buffer.get::<u32>();
+        let _major_version: u16 = buffer.get();
+        let _minor_version: u16 = buffer.get();
+        let _meta_offset: u32 = buffer.get();
+        let _meta_length: u32 = buffer.get();
+        let _meta_orig_length: u32 = buffer.get();
+        let _priv_offset: u32 = buffer.get();
+        let _priv_length: u32 = buffer.get();
         Self {
             format: Format::WOFF,
             flavor: Self::get_flavor(flavor),
             table_records: (0..num_tables)
                 .map(|_| {
                     (
-                        buffer.get::<Tag>(),
+                        buffer.get(),
                         TableRecord {
                             // The order is different from SFNT format
                             offset: buffer.get(),
@@ -354,22 +354,22 @@ impl Font {
 
     // TODO: WOFF2
     fn load_woff2(buffer: &mut Buffer) -> Self {
-        let _signature = buffer.get::<u32>();
-        let flavor = buffer.get::<u32>();
-        let _length = buffer.get::<u32>();
-        let _num_tables = buffer.get::<u16>();
-        let _total_sfnt_size = {
+        let _signature: u32 = buffer.get();
+        let flavor: u32 = buffer.get();
+        let _length: u32 = buffer.get();
+        let _num_tables: u16 = buffer.get();
+        let _total_sfnt_size: u32 = {
             buffer.skip::<u16>(1);
-            buffer.get::<u32>()
+            buffer.get()
         };
-        let _total_compressed_size = buffer.get::<u32>();
-        let _major_version = buffer.get::<u16>();
-        let _minor_version = buffer.get::<u16>();
-        let _meta_offset = buffer.get::<u32>();
-        let _meta_length = buffer.get::<u32>();
-        let _meta_orig_length = buffer.get::<u32>();
-        let _priv_offset = buffer.get::<u32>();
-        let _priv_length = buffer.get::<u32>();
+        let _total_compressed_size: u32 = buffer.get();
+        let _major_version: u16 = buffer.get();
+        let _minor_version: u16 = buffer.get();
+        let _meta_offset: u32 = buffer.get();
+        let _meta_length: u32 = buffer.get();
+        let _meta_orig_length: u32 = buffer.get();
+        let _priv_offset: u32 = buffer.get();
+        let _priv_length: u32 = buffer.get();
         Self {
             format: Format::WOFF2,
             flavor: Self::get_flavor(flavor),
@@ -379,7 +379,6 @@ impl Font {
 
     fn get_flavor(flavor: u32) -> Flavor {
         match flavor {
-            // Signature::OTF => Flavor::CFF,
             SIGNATURE_OTF => Flavor::CFF,
             SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => Flavor::TTF,
             _ => unreachable!(),
