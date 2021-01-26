@@ -29,7 +29,7 @@ impl Font {
         let start_offset = buffer.offset;
         let _version = buffer.get();
         let _num_tables = buffer.get();
-        let _encodings = buffer.get_vec::<Encoding>(_num_tables as usize);
+        let _encodings: Vec<Encoding> = buffer.get_vec(_num_tables);
         let _subtables = _encodings
             .iter()
             .map(|i| {
@@ -145,7 +145,7 @@ impl ReadBuffer for CmapFormat2 {
             let offset = buffer.offset;
             buffer.offset += id_range_offset as usize - 2;
             let gid_array = buffer
-                .get_vec(entry_count as usize)
+                .get_vec(entry_count)
                 .iter()
                 .map(|x| x + id_delta as u16)
                 .collect();
@@ -263,7 +263,7 @@ impl ReadBuffer for CmapFormat6 {
         let language = buffer.get();
         let start_char_code = buffer.get();
         let entry_count = buffer.get();
-        let gid_array = buffer.get_vec(entry_count as usize);
+        let gid_array = buffer.get_vec(entry_count);
         Self {
             length,
             language,
@@ -292,7 +292,7 @@ impl ReadBuffer for CmapFormat8 {
         let language = buffer.get();
         let is_32 = buffer.get_vec(8192);
         let num_groups = buffer.get();
-        let groups = buffer.get_vec(num_groups as usize);
+        let groups = buffer.get_vec(num_groups);
         Self {
             length,
             language,
@@ -321,7 +321,7 @@ impl ReadBuffer for CmapFormat10 {
         let language = buffer.get();
         let start_char_code = buffer.get();
         let entry_count = buffer.get();
-        let gid_array = buffer.get_vec(entry_count as usize);
+        let gid_array = buffer.get_vec(entry_count);
         Self {
             length,
             language,
@@ -348,7 +348,7 @@ impl ReadBuffer for CmapFormat12 {
         let length = buffer.get();
         let language = buffer.get();
         let num_groups = buffer.get();
-        let groups = buffer.get_vec(num_groups as usize);
+        let groups = buffer.get_vec(num_groups);
         Self {
             length,
             language,
@@ -374,7 +374,7 @@ impl ReadBuffer for CmapFormat13 {
         let length = buffer.get();
         let language = buffer.get();
         let num_groups = buffer.get();
-        let groups = buffer.get_vec(num_groups as usize);
+        let groups = buffer.get_vec(num_groups);
         Self {
             length,
             language,
@@ -397,7 +397,7 @@ impl ReadBuffer for CmapFormat14 {
     fn read(buffer: &mut Buffer) -> Self {
         let length = buffer.get();
         let num_var_selectors = buffer.get();
-        let var_selectors = buffer.get_vec(num_var_selectors as usize);
+        let var_selectors = buffer.get_vec(num_var_selectors);
         Self {
             length,
             num_var_selectors,

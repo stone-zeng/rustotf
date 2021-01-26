@@ -33,8 +33,8 @@ impl Font {
         };
         self.BASE = Some(Table_BASE {
             _version,
-            horiz_axis: buffer.get_or_none(base_start_offset, horiz_axis_offset as usize),
-            vert_axis: buffer.get_or_none(base_start_offset, vert_axis_offset as usize),
+            horiz_axis: buffer.get_or_none(base_start_offset, horiz_axis_offset),
+            vert_axis: buffer.get_or_none(base_start_offset, vert_axis_offset),
         });
     }
 }
@@ -53,13 +53,12 @@ impl ReadBuffer for Axis {
 
         buffer.offset = axis_start_offset + base_tag_list_offset as usize;
         let base_tag_count: u16 = buffer.get();
-        let base_tag_list = buffer.get_vec(base_tag_count as usize);
+        let base_tag_list = buffer.get_vec(base_tag_count);
 
         let base_script_list_start_offset = axis_start_offset + base_script_list_offset as usize;
         buffer.offset = base_script_list_start_offset;
         let base_script_count: u16 = buffer.get();
-        let mut base_script_list: Vec<BaseScriptRecord> =
-            buffer.get_vec(base_script_count as usize);
+        let mut base_script_list: Vec<BaseScriptRecord> = buffer.get_vec(base_script_count);
         base_script_list.iter_mut().for_each(|rec| {
             buffer.offset = base_script_list_start_offset + rec.base_script_offset as usize;
             rec.base_script = buffer.get();
@@ -102,15 +101,14 @@ impl ReadBuffer for BaseScript {
         let base_values_offset: u16 = buffer.get();
         let default_min_max_offset: u16 = buffer.get();
         let base_lang_sys_count: u16 = buffer.get();
-        let mut base_lang_sys_records: Vec<BaseLangSysRecord> =
-            buffer.get_vec(base_lang_sys_count as usize);
+        let mut base_lang_sys_records: Vec<BaseLangSysRecord> = buffer.get_vec(base_lang_sys_count);
         base_lang_sys_records.iter_mut().for_each(|rec| {
             buffer.offset = start_offset + rec.min_max_offset as usize;
             rec.min_max = Some(buffer.get());
         });
         Self {
-            base_values: buffer.get_or_none(start_offset, base_values_offset as usize),
-            default_min_max: buffer.get_or_none(start_offset, default_min_max_offset as usize),
+            base_values: buffer.get_or_none(start_offset, base_values_offset),
+            default_min_max: buffer.get_or_none(start_offset, default_min_max_offset),
             base_lang_sys_records,
         }
     }
@@ -144,7 +142,7 @@ impl ReadBuffer for BaseValues {
         let start_offset = buffer.offset;
         let default_baseline_index = buffer.get();
         let base_coord_count: u16 = buffer.get();
-        let base_coord_offsets: Vec<u16> = buffer.get_vec(base_coord_count as usize);
+        let base_coord_offsets: Vec<u16> = buffer.get_vec(base_coord_count);
         let base_coords = base_coord_offsets
             .iter()
             .map(|&offset| {
@@ -172,10 +170,10 @@ impl ReadBuffer for MinMax {
         let min_coord_offset: u16 = buffer.get();
         let max_coord_offset: u16 = buffer.get();
         let feat_min_max_count: u16 = buffer.get();
-        let feat_min_max_records = buffer.get_vec(feat_min_max_count as usize);
+        let feat_min_max_records = buffer.get_vec(feat_min_max_count);
         Self {
-            min_coord: buffer.get_or_none(start_offset, min_coord_offset as usize),
-            max_coord: buffer.get_or_none(start_offset, max_coord_offset as usize),
+            min_coord: buffer.get_or_none(start_offset, min_coord_offset),
+            max_coord: buffer.get_or_none(start_offset, max_coord_offset),
             feat_min_max_records,
         }
     }
@@ -196,8 +194,8 @@ impl ReadBuffer for FeatureMinMaxRecord {
         let max_coord_offset: u16 = buffer.get();
         Self {
             feature_table_tag,
-            min_coord: buffer.get_or_none(start_offset, min_coord_offset as usize),
-            max_coord: buffer.get_or_none(start_offset, max_coord_offset as usize),
+            min_coord: buffer.get_or_none(start_offset, min_coord_offset),
+            max_coord: buffer.get_or_none(start_offset, max_coord_offset),
         }
     }
 }

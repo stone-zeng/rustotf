@@ -106,16 +106,16 @@ impl FontContainer {
 
     #[allow(unused_variables)]
     fn ttc_init(&mut self) {
-        let ttc_tag = self.buffer.get::<u32>();
-        let major_version = self.buffer.get::<u16>();
-        let minor_version = self.buffer.get::<u16>();
-        let num_fonts = self.buffer.get::<u32>() as usize;
-        let offset_table = self.buffer.get_vec::<u32>(num_fonts);
+        let ttc_tag: u32 = self.buffer.get();
+        let major_version: u16 = self.buffer.get();
+        let minor_version: u16 = self.buffer.get();
+        let num_fonts: u32 = self.buffer.get();
+        let offset_table: Vec<u32> = self.buffer.get_vec(num_fonts);
 
         if major_version == 2 {
-            let dsig_tag = self.buffer.get::<u32>();
-            let dsig_length = self.buffer.get::<u32>();
-            let dsig_offset = self.buffer.get::<u32>();
+            let dsig_tag: u32 = self.buffer.get();
+            let dsig_length: u32 = self.buffer.get();
+            let dsig_offset: u32 = self.buffer.get();
         }
 
         for offset in offset_table {

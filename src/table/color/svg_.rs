@@ -20,11 +20,12 @@ impl Font {
     pub fn parse_SVG_(&mut self, buffer: &mut Buffer) {
         let svg_start_offset = buffer.offset;
         let _version = buffer.get();
-        let start_offset = svg_start_offset + buffer.get::<u32>() as usize;
-        buffer.offset = start_offset;
+        let svg_doc_list_offset: u32 = buffer.get();
+        buffer.offset = svg_start_offset + svg_doc_list_offset as usize;
+        let svg_doc_start_offset = buffer.offset;
         let num_entries = buffer.get();
         let doc_records = (0..num_entries)
-            .map(|_| SvgDocumentRecord::read(buffer, start_offset))
+            .map(|_| SvgDocumentRecord::read(buffer, svg_doc_start_offset))
             .collect();
         self.SVG_ = Some(Table_SVG_ {
             _version,

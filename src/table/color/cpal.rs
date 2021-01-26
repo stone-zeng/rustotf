@@ -32,7 +32,7 @@ impl Font {
         let num_color_records = buffer.get();
         let color_records_array_offset: u32 = buffer.get();
         let color_record_indices: Vec<u16> = {
-            let mut v = buffer.get_vec(num_palettes as usize);
+            let mut v = buffer.get_vec(num_palettes);
             v.push(num_color_records);
             v
         };
@@ -47,7 +47,7 @@ impl Font {
         }
 
         buffer.offset = cpal_start_offset + color_records_array_offset as usize;
-        let color_records_array: Vec<ColorRecord> = buffer.get_vec(num_color_records as usize);
+        let color_records_array: Vec<ColorRecord> = buffer.get_vec(num_color_records);
         let mut palettes: Vec<Palette> = (0..num_palettes)
             .map(|i| {
                 let i = i as usize;
@@ -63,11 +63,11 @@ impl Font {
 
         if _version == 1 {
             buffer.offset = cpal_start_offset + palette_types_array_offset as usize;
-            let palette_types = buffer.get_vec(num_palettes as usize);
+            let palette_types = buffer.get_vec(num_palettes);
             buffer.offset = cpal_start_offset + palette_labels_array_offset as usize;
-            let palette_labels = buffer.get_vec(num_palettes as usize);
+            let palette_labels = buffer.get_vec(num_palettes);
             buffer.offset = cpal_start_offset + palette_entry_labels_array_offset as usize;
-            let palette_entry_labels = buffer.get_vec(num_palettes as usize);
+            let palette_entry_labels = buffer.get_vec(num_palettes);
 
             (0..num_palettes).for_each(|i| {
                 let i = i as usize;

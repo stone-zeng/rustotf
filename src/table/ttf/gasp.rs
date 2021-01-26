@@ -23,7 +23,7 @@ impl Font {
     pub fn parse_gasp(&mut self, buffer: &mut Buffer) {
         let version = buffer.get();
         let num_ranges = buffer.get();
-        let gasp_ranges = buffer.get_vec(num_ranges as usize);
+        let gasp_ranges = buffer.get_vec(num_ranges);
         self.gasp = Some(Table_gasp {
             version,
             num_ranges,

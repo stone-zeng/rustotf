@@ -25,7 +25,7 @@ impl Font {
         let _version = buffer.get_version::<u16>();
         let default_vert_origin_y = buffer.get();
         let num_vert_origin_y_metrics = buffer.get();
-        let vert_origin_y_metrics = buffer.get_vec(num_vert_origin_y_metrics as usize);
+        let vert_origin_y_metrics = buffer.get_vec(num_vert_origin_y_metrics);
         self.VORG = Some(Table_VORG {
             _version,
             default_vert_origin_y,

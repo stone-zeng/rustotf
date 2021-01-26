@@ -40,7 +40,7 @@ impl Font {
         let _format = buffer.get();
         let _count = buffer.get();
         let _string_offset = buffer.get();
-        let mut _names = buffer.get_vec(_count as usize);
+        let mut _names = buffer.get_vec(_count);
         let mut table = Table_name {
             _format,
             _count,
@@ -50,7 +50,7 @@ impl Font {
         };
         if _format == 1 {
             let _lang_tag_count = buffer.get();
-            let _lang_tags = buffer.get_vec(_lang_tag_count as usize);
+            let _lang_tags = buffer.get_vec(_lang_tag_count);
             table._lang_tag_count = Some(_lang_tag_count);
             table._lang_tags = Some(_lang_tags);
         };

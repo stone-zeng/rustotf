@@ -54,7 +54,7 @@ impl Font {
                                 + 1;
                             (0..len).for_each(|_| {
                                 strike_bitmap_data.push(BitmapData {
-                                    image_data: Some(buffer.get_vec(image_size as usize)),
+                                    image_data: Some(buffer.get_vec(image_size)),
                                     ..Default::default()
                                 });
                             })

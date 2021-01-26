@@ -29,7 +29,7 @@ impl Font {
             buffer.skip::<u16>(1);
             buffer.get()
         };
-        let _axis_segment_maps = buffer.get_vec(_axis_count as usize);
+        let _axis_segment_maps = buffer.get_vec(_axis_count);
 
         self.avar = Some(Table_avar {
             _version,
@@ -48,7 +48,7 @@ struct SegmentMaps {
 impl ReadBuffer for SegmentMaps {
     fn read(buffer: &mut Buffer) -> Self {
         let _position_map_count = buffer.get();
-        let _axis_value_maps = buffer.get_vec(_position_map_count as usize);
+        let _axis_value_maps = buffer.get_vec(_position_map_count);
         Self {
             _position_map_count,
             _axis_value_maps,

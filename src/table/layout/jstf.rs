@@ -22,9 +22,8 @@ impl Font {
     pub fn parse_JSTF(&mut self, buffer: &mut Buffer) {
         let jstf_start_offset = buffer.offset;
         let _version = buffer.get_version::<u16>();
-        let jstfScriptCount: u16 = buffer.get();
-        let mut jstf_script_records: Vec<JstfScriptRecord> =
-            buffer.get_vec(jstfScriptCount as usize);
+        let jstf_script_count: u16 = buffer.get();
+        let mut jstf_script_records: Vec<JstfScriptRecord> = buffer.get_vec(jstf_script_count);
         jstf_script_records.iter_mut().for_each(|rec| {
             buffer.offset = jstf_start_offset + rec.jstf_script_offset as usize;
             rec.jstf_script = Some(buffer.get());
@@ -66,13 +65,12 @@ impl ReadBuffer for JstfScript {
         let extender_glyphs_offset: u16 = buffer.get();
         let default_jstf_lang_sys_offset: u16 = buffer.get();
         let jstf_lang_sys_count: u16 = buffer.get();
-        let mut jstf_lang_sys_records: Vec<JstfLangSysRecord> =
-            buffer.get_vec(jstf_lang_sys_count as usize);
+        let mut jstf_lang_sys_records: Vec<JstfLangSysRecord> = buffer.get_vec(jstf_lang_sys_count);
 
         let extender_glyphs = if extender_glyphs_offset != 0 {
             buffer.offset = start_offset + extender_glyphs_offset as usize;
             let extender_glyph_count: u16 = buffer.get();
-            buffer.get_vec(extender_glyph_count as usize)
+            buffer.get_vec(extender_glyph_count)
         } else {
             Vec::new()
         };
@@ -126,7 +124,7 @@ impl ReadBuffer for JstfLangSys {
     fn read(buffer: &mut Buffer) -> Self {
         let start_offset = buffer.offset;
         let jstf_priority_count: u16 = buffer.get();
-        let jstf_priority_offsets: Vec<u16> = buffer.get_vec(jstf_priority_count as usize);
+        let jstf_priority_offsets: Vec<u16> = buffer.get_vec(jstf_priority_count);
         let jstf_priorities: Vec<JstfPriority> = jstf_priority_offsets
             .iter()
             .map(|&offset| {
@@ -165,22 +163,17 @@ impl ReadBuffer for JstfPriority {
         let gpos_extension_enable_offset: u16 = buffer.get();
         let gpos_extension_disable_offset: u16 = buffer.get();
         let extension_jstf_max_offset: u16 = buffer.get();
-        macro_rules! _get {
-            ($offset:expr) => {
-                buffer.get_or_none(start_offset, $offset as usize)
-            };
-        }
         Self {
-            gsub_shrinkage_enable: _get!(gsub_shrinkage_enable_offset),
-            gsub_shrinkage_disable: _get!(gsub_shrinkage_disable_offset),
-            gpos_shrinkage_enable: _get!(gpos_shrinkage_enable_offset),
-            gpos_shrinkage_disable: _get!(gpos_shrinkage_disable_offset),
-            shrinkage_jstf_max: _get!(shrinkage_jstf_max_offset),
-            gsub_extension_enable: _get!(gsub_extension_enable_offset),
-            gsub_extension_disable: _get!(gsub_extension_disable_offset),
-            gpos_extension_enable: _get!(gpos_extension_enable_offset),
-            gpos_extension_disable: _get!(gpos_extension_disable_offset),
-            extension_jstf_max: _get!(extension_jstf_max_offset),
+            gsub_shrinkage_enable: buffer.get_or_none(start_offset, gsub_shrinkage_enable_offset),
+            gsub_shrinkage_disable: buffer.get_or_none(start_offset, gsub_shrinkage_disable_offset),
+            gpos_shrinkage_enable: buffer.get_or_none(start_offset, gpos_shrinkage_enable_offset),
+            gpos_shrinkage_disable: buffer.get_or_none(start_offset, gpos_shrinkage_disable_offset),
+            shrinkage_jstf_max: buffer.get_or_none(start_offset, shrinkage_jstf_max_offset),
+            gsub_extension_enable: buffer.get_or_none(start_offset, gsub_extension_enable_offset),
+            gsub_extension_disable: buffer.get_or_none(start_offset, gsub_extension_disable_offset),
+            gpos_extension_enable: buffer.get_or_none(start_offset, gpos_extension_enable_offset),
+            gpos_extension_disable: buffer.get_or_none(start_offset, gpos_extension_disable_offset),
+            extension_jstf_max: buffer.get_or_none(start_offset, extension_jstf_max_offset),
         }
     }
 }
@@ -194,7 +187,7 @@ impl ReadBuffer for JstfGsubModList {
     fn read(buffer: &mut Buffer) -> Self {
         let lookup_count: u16 = buffer.get();
         Self {
-            gsub_lookup_indices: buffer.get_vec(lookup_count as usize),
+            gsub_lookup_indices: buffer.get_vec(lookup_count),
         }
     }
 }
@@ -208,7 +201,7 @@ impl ReadBuffer for JstfGposModList {
     fn read(buffer: &mut Buffer) -> Self {
         let lookup_count: u16 = buffer.get();
         Self {
-            gpos_lookup_indices: buffer.get_vec(lookup_count as usize),
+            gpos_lookup_indices: buffer.get_vec(lookup_count),
         }
     }
 }
@@ -224,7 +217,7 @@ impl ReadBuffer for JstfMax {
     fn read(buffer: &mut Buffer) -> Self {
         let lookup_count: u16 = buffer.get();
         Self {
-            lookup_offsets: buffer.get_vec(lookup_count as usize),
+            lookup_offsets: buffer.get_vec(lookup_count),
         }
     }
 }

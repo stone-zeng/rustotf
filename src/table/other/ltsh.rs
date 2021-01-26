@@ -28,7 +28,7 @@ impl Font {
     pub fn parse_LTSH(&mut self, buffer: &mut Buffer) {
         let version = buffer.get();
         let num_glyphs = buffer.get();
-        let y_pels = buffer.get_vec(num_glyphs as usize);
+        let y_pels = buffer.get_vec(num_glyphs);
         self.LTSH = Some(Table_LTSH {
             version,
             num_glyphs,

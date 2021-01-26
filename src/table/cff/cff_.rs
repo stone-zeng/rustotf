@@ -606,11 +606,11 @@ impl ReadBuffer for Encoding {
         match format {
             0 => {
                 num_codes = Some(buffer.get());
-                code = Some(buffer.get_vec(num_codes.unwrap() as usize));
+                code = Some(buffer.get_vec(num_codes.unwrap()));
             }
             1 => {
                 num_ranges = Some(buffer.get());
-                range = Some(buffer.get_vec(num_ranges.unwrap() as usize));
+                range = Some(buffer.get_vec(num_ranges.unwrap()));
             }
             _ => unreachable!(),
         }
@@ -673,7 +673,7 @@ impl Private {
 
     fn read(buffer: &mut Buffer, private_size: usize) -> Self {
         let start_offset = buffer.offset;
-        let private_dict = buffer.get_vec::<u8>(private_size);
+        let private_dict: Vec<u8> = buffer.get_vec(private_size);
         let mut private = Self::new();
         // We use an empty vector as a placeholder of strings to make the macro work.
         _parse_dict!(private_dict; Vec::new(); [
@@ -761,7 +761,7 @@ impl FDSelect {
             }
             3 => {
                 fd_select.num_ranges = Some(buffer.get());
-                fd_select.range = buffer.get_vec(fd_select.num_ranges.unwrap() as usize);
+                fd_select.range = buffer.get_vec(fd_select.num_ranges.unwrap());
                 fd_select.sentinel = Some(buffer.get());
             }
             _ => unreachable!(),
@@ -859,14 +859,14 @@ impl ReadBuffer for Index {
                 macro_rules! _get_offset {
                     (u24) => {
                         buffer
-                            .get_vec::<u24>(count + 1)
+                            .get_vec::<u24, _>(count + 1)
                             .iter()
                             .map(|&i| usize::from(i))
                             .collect()
                     };
                     ($t:ty) => {
                         buffer
-                            .get_vec::<$t>(count + 1)
+                            .get_vec::<$t, _>(count + 1)
                             .iter()
                             .map(|&i| i as usize)
                             .collect()

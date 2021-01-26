@@ -49,7 +49,7 @@ impl Strike {
                 start_offset + bitmap_size._index_sub_table_offset as usize;
             buffer.offset = index_sub_table_start_offset;
             let index_sub_table_arrays: Vec<IndexSubTableArray> =
-                buffer.get_vec(bitmap_size._num_index_sub_tables as usize);
+                buffer.get_vec(bitmap_size._num_index_sub_tables);
             let index_sub_tables = index_sub_table_arrays
                 .iter()
                 .map(|i| {
@@ -129,7 +129,7 @@ impl IndexSubTable {
         let mut num_glyphs = None;
         let mut glyph_array = None;
         let mut glyph_id_array = None;
-        let sbit_offsets_size = (array.last_glyph_index - array.first_glyph_index + 2) as usize;
+        let sbit_offsets_size = array.last_glyph_index - array.first_glyph_index + 2;
         match index_format {
             1 => {
                 sbit_offsets = Some(buffer.get_vec(sbit_offsets_size));
@@ -147,13 +147,13 @@ impl IndexSubTable {
             }
             4 => {
                 num_glyphs = Some(buffer.get());
-                glyph_array = Some(buffer.get_vec(num_glyphs.unwrap() as usize + 1));
+                glyph_array = Some(buffer.get_vec(num_glyphs.unwrap() + 1));
             }
             5 => {
                 image_size = Some(buffer.get());
                 big_metrics = Some(buffer.get());
                 num_glyphs = Some(buffer.get());
-                glyph_id_array = Some(buffer.get_vec(num_glyphs.unwrap() as usize));
+                glyph_id_array = Some(buffer.get_vec(num_glyphs.unwrap()));
             }
             _ => unreachable!(),
         }

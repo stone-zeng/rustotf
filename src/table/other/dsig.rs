@@ -26,7 +26,7 @@ impl Font {
         let version = buffer.get();
         let num_signatures = buffer.get();
         let flags = buffer.get();
-        let mut signature_records: Vec<SignatureRecord> = buffer.get_vec(num_signatures as usize);
+        let mut signature_records: Vec<SignatureRecord> = buffer.get_vec(num_signatures);
         signature_records
             .iter_mut()
             .for_each(|rec| match rec.format {
@@ -34,7 +34,7 @@ impl Font {
                     buffer.offset = dsig_start_offset + rec.signature_block_offset as usize;
                     buffer.skip::<u16>(2);
                     let signature_length: u32 = buffer.get();
-                    rec.signature = buffer.get_vec(signature_length as usize);
+                    rec.signature = buffer.get_vec(signature_length);
                 }
                 _ => unreachable!(),
             });

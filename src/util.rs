@@ -1,4 +1,4 @@
-use std::{fmt, io::Read, mem, str};
+use std::{convert::TryInto, fmt, io::Read, mem, str};
 
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
@@ -30,18 +30,32 @@ impl Buffer {
     }
 
     /// Get a vector of type `T` values from the buffer.
-    pub fn get_vec<T: ReadBuffer>(&mut self, n: usize) -> Vec<T> {
-        (0..n).map(|_| ReadBuffer::read(self)).collect()
+    pub fn get_vec<T, N>(&mut self, n: N) -> Vec<T>
+    where
+        T: ReadBuffer,
+        N: TryInto<usize>,
+    {
+        match n.try_into() {
+            Ok(n) => (0..n).map(|_| ReadBuffer::read(self)).collect(),
+            Err(_) => unreachable!(),
+        }
     }
 
     /// Get an option of type `T` values from the buffer.
     /// If `offset` is 0 (i.e. NULL), then it will return a `None`.
-    pub fn get_or_none<T: ReadBuffer>(&mut self, start_offset: usize, offset: usize) -> Option<T> {
-        if offset != 0 {
-            self.offset = start_offset + offset;
-            Some(self.get::<T>())
-        } else {
-            None
+    pub fn get_or_none<T, N>(&mut self, start_offset: usize, offset: N) -> Option<T>
+    where
+        T: ReadBuffer,
+        N: TryInto<usize>,
+    {
+        match offset.try_into() {
+            Ok(0) => None,
+            Ok(offset) => {
+                // offset != 0
+                self.offset = start_offset + offset;
+                Some(self.get::<T>())
+            }
+            Err(_) => unreachable!(),
         }
     }
 
@@ -59,12 +73,13 @@ impl Buffer {
         &self.raw_buffer[(self.offset + start)..(self.offset + end)]
     }
 
-    pub fn duplicate(self, offset: usize) -> Self {
-        Self {
-            raw_buffer: self.raw_buffer,
-            offset,
-        }
-    }
+    // TODO: to be removed
+    // pub fn duplicate(self, offset: usize) -> Self {
+    //     Self {
+    //         raw_buffer: self.raw_buffer,
+    //         offset,
+    //     }
+    // }
 
     pub fn zlib_decompress(&self, comp_length: usize) -> Self {
         let comp_buffer = self.slice(0, comp_length);

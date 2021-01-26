@@ -18,10 +18,10 @@ impl Font {
     pub fn parse_sbix(&mut self, buffer: &mut Buffer) {
         let sbix_start_offset = buffer.offset;
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
-        let _version = buffer.get::<u16>();
-        let _flags = buffer.get::<u16>();
-        let num_strikes = buffer.get::<u32>();
-        let strike_offsets = buffer.get_vec::<u32>(num_strikes as usize);
+        let _version: u16 = buffer.get();
+        let _flags: u16 = buffer.get();
+        let num_strikes: u32 = buffer.get();
+        let strike_offsets: Vec<u32> = buffer.get_vec(num_strikes);
         let strikes = strike_offsets
             .iter()
             .map(|&strike_offset| {
@@ -45,7 +45,7 @@ impl Strikes {
         let start_offset = buffer.offset;
         let ppem = buffer.get();
         let ppi = buffer.get();
-        let glyph_data_offsets = buffer.get_vec::<u32>(num_glyphs + 1);
+        let glyph_data_offsets: Vec<u32> = buffer.get_vec(num_glyphs + 1);
         let glyph_data = (0..num_glyphs)
             .map(|i| {
                 buffer.offset = start_offset + glyph_data_offsets[i] as usize;
@@ -77,7 +77,7 @@ impl GlyphData {
             graphic_type: buffer.get(),
             data: match data_len {
                 0 => vec![],
-                _ => buffer.get_vec((data_len - 8) as usize),
+                _ => buffer.get_vec(data_len - 8),
             },
         }
     }

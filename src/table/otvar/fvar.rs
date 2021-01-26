@@ -36,7 +36,7 @@ impl Font {
         let _axis_size = buffer.get();
         let _instance_count = buffer.get();
         let _instance_size = buffer.get();
-        let _axes = buffer.get_vec(_axis_count as usize);
+        let _axes = buffer.get_vec(_axis_count);
         let _instances = (0.._instance_count)
             .map(|_| Instance::read(buffer, _axis_count as usize))
             .collect();

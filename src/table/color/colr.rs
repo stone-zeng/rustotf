@@ -28,10 +28,10 @@ impl Font {
 
         buffer.offset = colr_start_offset + base_glyph_records_offset as usize;
         let base_glyph_records: Vec<BaseGlyphRecord> =
-            buffer.get_vec(num_base_glyph_records as usize);
+            buffer.get_vec(num_base_glyph_records);
 
         buffer.offset = colr_start_offset + layer_records_offset as usize;
-        let layer_records: Vec<Layer> = buffer.get_vec(num_layer_records as usize);
+        let layer_records: Vec<Layer> = buffer.get_vec(num_layer_records);
 
         let color_glyphs = base_glyph_records
             .iter()

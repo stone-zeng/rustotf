@@ -36,7 +36,7 @@ impl Font {
                             (0..len).for_each(|_| {
                                 let small_metrics = Some(buffer.get());
                                 let data_len: u32 = buffer.get();
-                                let image_data = Some(buffer.get_vec(data_len as usize));
+                                let image_data = Some(buffer.get_vec(data_len));
                                 strike_bitmap_data.push(BitmapData {
                                     small_metrics,
                                     image_data,

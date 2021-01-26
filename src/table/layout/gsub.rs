@@ -37,7 +37,7 @@ impl Font {
         let script_list_start_offset = gsub_start_offset + script_list_offset as usize;
         buffer.offset = script_list_start_offset;
         let num_scripts: u16 = buffer.get();
-        let mut script_list: Vec<ScriptRecord> = buffer.get_vec(num_scripts as usize);
+        let mut script_list: Vec<ScriptRecord> = buffer.get_vec(num_scripts);
         script_list.iter_mut().for_each(|rec| {
             buffer.offset = script_list_start_offset + rec.script_offset as usize;
             rec.script = buffer.get();
@@ -46,7 +46,7 @@ impl Font {
         let feature_list_start_offset = gsub_start_offset + feature_list_offset as usize;
         buffer.offset = feature_list_start_offset;
         let num_features: u16 = buffer.get();
-        let mut feature_list: Vec<FeatureRecord> = buffer.get_vec(num_features as usize);
+        let mut feature_list: Vec<FeatureRecord> = buffer.get_vec(num_features);
         feature_list.iter_mut().for_each(|rec| {
             buffer.offset = feature_list_start_offset + rec.feature_offset as usize;
             rec.feature = buffer.get();
@@ -55,7 +55,7 @@ impl Font {
         let lookup_list_start_offset = gsub_start_offset + lookup_list_offset as usize;
         buffer.offset = lookup_list_start_offset;
         let num_lookups: u16 = buffer.get();
-        let lookup_offsets: Vec<u16> = buffer.get_vec(num_lookups as usize);
+        let lookup_offsets: Vec<u16> = buffer.get_vec(num_lookups);
         let lookup_list = lookup_offsets
             .iter()
             .map(|&offset| {
@@ -101,9 +101,8 @@ impl ReadBuffer for Script {
         let script_start_offset = buffer.offset;
         let default_lang_sys_offset: u16 = buffer.get();
         let lang_sys_count: u16 = buffer.get();
-        let lang_sys_records: Vec<LangSysRecord> = buffer.get_vec(lang_sys_count as usize);
-        let default_lang_sys =
-            buffer.get_or_none(script_start_offset, default_lang_sys_offset as usize);
+        let lang_sys_records: Vec<LangSysRecord> = buffer.get_vec(lang_sys_count);
+        let default_lang_sys = buffer.get_or_none(script_start_offset, default_lang_sys_offset);
         let lang_sys = lang_sys_records
             .iter()
             .map(|rec| {
@@ -137,7 +136,7 @@ impl ReadBuffer for LangSys {
         buffer.skip::<u16>(1); // lookupOrderOffset = NULL
         let required_feature_index = buffer.get();
         let feature_index_count: u16 = buffer.get();
-        let feature_indices = buffer.get_vec(feature_index_count as usize);
+        let feature_indices = buffer.get_vec(feature_index_count);
         Self {
             required_feature_index,
             feature_indices,
@@ -172,7 +171,7 @@ impl ReadBuffer for Feature {
     fn read(buffer: &mut Buffer) -> Self {
         let feature_params_offset = buffer.get();
         let lookup_index_count: u16 = buffer.get();
-        let lookup_list_indices = buffer.get_vec(lookup_index_count as usize);
+        let lookup_list_indices = buffer.get_vec(lookup_index_count);
         Self {
             feature_params_offset,
             lookup_list_indices,
@@ -194,7 +193,7 @@ impl ReadBuffer for Lookup {
         let lookup_type = buffer.get();
         let lookup_flag = buffer.get();
         let subtable_count = buffer.get();
-        let subtable_offsets = buffer.get_vec(subtable_count as usize);
+        let subtable_offsets = buffer.get_vec(subtable_count);
         let mark_filtering_set = buffer.get();
         Self {
             lookup_type,

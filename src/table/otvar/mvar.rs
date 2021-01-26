@@ -33,7 +33,7 @@ impl Font {
         };
         let _value_record_count = buffer.get();
         let _item_variation_store_offset = buffer.get();
-        let _value_records = buffer.get_vec(_value_record_count as usize);
+        let _value_records = buffer.get_vec(_value_record_count);
 
         self.MVAR = Some(Table_MVAR {
             _version,

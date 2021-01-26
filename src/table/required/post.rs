@@ -47,13 +47,13 @@ impl Font {
         if table._version == 0x0002_0000 {
             let num_glyphs = buffer.get();
             table.num_glyphs = Some(num_glyphs);
-            table.glyph_name_index = Some(buffer.get_vec(num_glyphs as usize));
-            table.names = Some(buffer.get_vec(num_glyphs as usize));
+            table.glyph_name_index = Some(buffer.get_vec(num_glyphs));
+            table.names = Some(buffer.get_vec(num_glyphs));
         }
         if table._version == 0x0002_5000 {
             let num_glyphs = buffer.get();
             table.num_glyphs = Some(num_glyphs);
-            table.offset = Some(buffer.get_vec(num_glyphs as usize));
+            table.offset = Some(buffer.get_vec(num_glyphs));
         }
         self.post = Some(table);
     }

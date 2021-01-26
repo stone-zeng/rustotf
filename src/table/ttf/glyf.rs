@@ -90,9 +90,9 @@ impl Glyph {
     // const UNSCALED_COMPONENT_OFFSET: u16 = 0x1000;
 
     fn parse_simple_glyph(&mut self, buffer: &mut Buffer, number_of_contours: i16) {
-        let end_points_of_contours = buffer.get_vec(number_of_contours as usize);
+        let end_points_of_contours = buffer.get_vec(number_of_contours);
         self.instruction_length = buffer.get();
-        self.instructions = buffer.get_vec(self.instruction_length as usize);
+        self.instructions = buffer.get_vec(self.instruction_length);
         self.parse_contours(buffer, end_points_of_contours);
     }
 
@@ -184,7 +184,7 @@ impl Glyph {
     fn parse_instructions(&mut self, buffer: &mut Buffer, flags: u16) {
         if flags & Self::WE_HAVE_INSTRUCTIONS != 0 {
             self.instruction_length = buffer.get();
-            self.instructions = buffer.get_vec(self.instruction_length as usize);
+            self.instructions = buffer.get_vec(self.instruction_length);
         }
     }
 }

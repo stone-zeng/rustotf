@@ -21,8 +21,8 @@ pub struct Table_hmtx {
 
 impl Font {
     pub fn parse_hmtx(&mut self, buffer: &mut Buffer) {
-        let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics as usize;
-        let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
+        let num_hor_metrics = self.hhea.as_ref().unwrap().num_hor_metrics;
+        let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs;
         self.hmtx = Some(Table_hmtx {
             hor_metrics: buffer.get_vec(num_hor_metrics),
             left_side_bearings: buffer.get_vec(num_glyphs - num_hor_metrics),
