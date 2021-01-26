@@ -34,6 +34,17 @@ impl Buffer {
         (0..n).map(|_| ReadBuffer::read(self)).collect()
     }
 
+    /// Get an option of type `T` values from the buffer.
+    /// If `offset` is 0 (i.e. NULL), then it will return a `None`.
+    pub fn get_or_none<T: ReadBuffer>(&mut self, start_offset: usize, offset: usize) -> Option<T> {
+        if offset != 0 {
+            self.offset = start_offset + offset;
+            Some(self.get::<T>())
+        } else {
+            None
+        }
+    }
+
     /// Get a version string (`major.minor`) from the buffer.
     pub fn get_version<T: ReadBuffer + fmt::Display>(&mut self) -> String {
         format!("{}.{}", self.get::<T>(), self.get::<T>())

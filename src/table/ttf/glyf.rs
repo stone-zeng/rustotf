@@ -97,7 +97,7 @@ impl Glyph {
     }
 
     fn parse_contours(&mut self, buffer: &mut Buffer, end_points_of_contours: Vec<u16>) {
-        let num_points = *end_points_of_contours.last().unwrap_or(&0) + 1;
+        let num_points = end_points_of_contours.last().unwrap_or(&0) + 1;
 
         let flags = buffer.get_flags(num_points);
         let xs = buffer.get_coordinates(&flags, Self::X_SAME_POSITIVE, Self::X_SHORT);

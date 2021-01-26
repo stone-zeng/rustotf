@@ -207,7 +207,7 @@ impl ReadBuffer for CmapFormat4 {
         for i in 0..seg_count {
             let start = start_char_code[i] as u32;
             let end = end_char_code[i] as u32;
-            let filtered_char_range = (start..=end).filter(|c| *c < 0xFFFF);
+            let filtered_char_range = (start..=end).filter(|&c| c < 0xFFFF);
             let gid_seg: Vec<u32> = if id_range_offset[i] != 0 {
                 filtered_char_range
                     .map(|c| {

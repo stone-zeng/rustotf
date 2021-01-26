@@ -27,7 +27,8 @@ impl Font {
         let script_list_offset: u16 = buffer.get();
         let feature_list_offset: u16 = buffer.get();
         let lookup_list_offset: u16 = buffer.get();
-        let feature_variations_offset: Option<u32> = if _version == "1.1" {
+        // TODO:
+        let _feature_variations_offset: Option<u32> = if _version == "1.1" {
             Some(buffer.get())
         } else {
             None
@@ -62,8 +63,6 @@ impl Font {
                 buffer.get()
             })
             .collect();
-
-        println!("feature_variations_offset = {:?}", feature_variations_offset);
 
         self.GSUB = Some(Table_GSUB {
             _version,
@@ -100,18 +99,11 @@ pub struct Script {
 impl ReadBuffer for Script {
     fn read(buffer: &mut Buffer) -> Self {
         let script_start_offset = buffer.offset;
-
         let default_lang_sys_offset: u16 = buffer.get();
         let lang_sys_count: u16 = buffer.get();
         let lang_sys_records: Vec<LangSysRecord> = buffer.get_vec(lang_sys_count as usize);
-
-        let default_lang_sys = match default_lang_sys_offset {
-            0 => None,
-            _ => {
-                buffer.offset = script_start_offset + default_lang_sys_offset as usize;
-                Some(buffer.get())
-            }
-        };
+        let default_lang_sys =
+            buffer.get_or_none(script_start_offset, default_lang_sys_offset as usize);
         let lang_sys = lang_sys_records
             .iter()
             .map(|rec| {
@@ -121,7 +113,6 @@ impl ReadBuffer for Script {
                 (tag, buffer.get())
             })
             .collect();
-
         Self {
             default_lang_sys,
             lang_sys,

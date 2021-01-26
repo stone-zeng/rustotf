@@ -165,30 +165,22 @@ impl ReadBuffer for JstfPriority {
         let gpos_extension_enable_offset: u16 = buffer.get();
         let gpos_extension_disable_offset: u16 = buffer.get();
         let extension_jstf_max_offset: u16 = buffer.get();
-
-        // TODO:
-        macro_rules! _get_or_none {
+        macro_rules! _get {
             ($offset:expr) => {
-                if $offset != 0 {
-                    buffer.offset = start_offset + $offset as usize;
-                    Some(buffer.get())
-                } else {
-                    None
-                }
+                buffer.get_or_none(start_offset, $offset as usize)
             };
-        };
-
+        }
         Self {
-            gsub_shrinkage_enable: _get_or_none!(gsub_shrinkage_enable_offset),
-            gsub_shrinkage_disable: _get_or_none!(gsub_shrinkage_disable_offset),
-            gpos_shrinkage_enable: _get_or_none!(gpos_shrinkage_enable_offset),
-            gpos_shrinkage_disable: _get_or_none!(gpos_shrinkage_disable_offset),
-            shrinkage_jstf_max: _get_or_none!(shrinkage_jstf_max_offset),
-            gsub_extension_enable: _get_or_none!(gsub_extension_enable_offset),
-            gsub_extension_disable: _get_or_none!(gsub_extension_disable_offset),
-            gpos_extension_enable: _get_or_none!(gpos_extension_enable_offset),
-            gpos_extension_disable: _get_or_none!(gpos_extension_disable_offset),
-            extension_jstf_max: _get_or_none!(extension_jstf_max_offset),
+            gsub_shrinkage_enable: _get!(gsub_shrinkage_enable_offset),
+            gsub_shrinkage_disable: _get!(gsub_shrinkage_disable_offset),
+            gpos_shrinkage_enable: _get!(gpos_shrinkage_enable_offset),
+            gpos_shrinkage_disable: _get!(gpos_shrinkage_disable_offset),
+            shrinkage_jstf_max: _get!(shrinkage_jstf_max_offset),
+            gsub_extension_enable: _get!(gsub_extension_enable_offset),
+            gsub_extension_disable: _get!(gsub_extension_disable_offset),
+            gpos_extension_enable: _get!(gpos_extension_enable_offset),
+            gpos_extension_disable: _get!(gpos_extension_disable_offset),
+            extension_jstf_max: _get!(extension_jstf_max_offset),
         }
     }
 }

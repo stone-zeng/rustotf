@@ -232,14 +232,3 @@ impl ReadBuffer for BaseCoord {
         base_coord
     }
 }
-
-impl Buffer {
-    fn get_or_none<T: ReadBuffer>(&mut self, start_offset: usize, offset: usize) -> Option<T> {
-        if offset != 0 {
-            self.offset = start_offset + offset;
-            Some(self.get::<T>())
-        } else {
-            None
-        }
-    }
-}

@@ -196,26 +196,16 @@ impl ReadBuffer for MathKernInfo {
         let math_kern_coverage_offset: u16 = buffer.get();
         let math_kern_count: u16 = buffer.get();
         let mut math_kern: Vec<MathKernInfoRecord> = buffer.get_vec(math_kern_count as usize);
-
-        macro_rules! _get_math_kern {
-            ($offset:expr) => {
-                match $offset {
-                    0 => None,
-                    _ => {
-                        buffer.offset = start_offset + $offset as usize;
-                        Some(buffer.get())
-                    }
-                }
-            };
-        }
-
         math_kern.iter_mut().for_each(|rec| {
-            rec.top_right_math_kern = _get_math_kern!(rec.top_right_math_kern_offset);
-            rec.top_left_math_kern = _get_math_kern!(rec.top_left_math_kern_offset);
-            rec.bottom_right_math_kern = _get_math_kern!(rec.bottom_right_math_kern_offset);
-            rec.bottom_left_math_kern = _get_math_kern!(rec.bottom_left_math_kern_offset);
+            rec.top_right_math_kern =
+                buffer.get_or_none(start_offset, rec.top_right_math_kern_offset as usize);
+            rec.top_left_math_kern =
+                buffer.get_or_none(start_offset, rec.top_left_math_kern_offset as usize);
+            rec.bottom_right_math_kern =
+                buffer.get_or_none(start_offset, rec.bottom_right_math_kern_offset as usize);
+            rec.bottom_left_math_kern =
+                buffer.get_or_none(start_offset, rec.bottom_left_math_kern_offset as usize);
         });
-
         buffer.offset = start_offset + math_kern_coverage_offset as usize;
         let math_kern_coverage = buffer.get();
         Self {
@@ -332,13 +322,7 @@ impl ReadBuffer for MathGlyphConstruction {
         let glyph_assembly_offset: u16 = buffer.get();
         let variant_count: u16 = buffer.get();
         let math_glyph_variant_records = buffer.get_vec(variant_count as usize);
-        let glyph_assembly = match glyph_assembly_offset {
-            0 => None,
-            _ => {
-                buffer.offset = start_offset + glyph_assembly_offset as usize;
-                Some(buffer.get())
-            }
-        };
+        let glyph_assembly = buffer.get_or_none(start_offset, glyph_assembly_offset as usize);
         Self {
             glyph_assembly,
             math_glyph_variant_records,
