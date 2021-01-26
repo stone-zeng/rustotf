@@ -11,9 +11,9 @@ for url in \
     $gh_url/adobe-fonts/source-sans-pro/release/OTF/SourceSans3-Black.otf                                \
     $gh_url/adobe-fonts/source-sans-pro/release/WOFF/TTF/SourceSans3-ExtraLight.ttf.woff                 \
     $gh_url/adobe-fonts/source-sans-pro/release/WOFF/VAR/SourceSans3VF-Roman.ttf.woff                    \
-    $gh_url/adobe-fonts/source-serif/release/TTF/SourceSerifPro-LightIt.ttf                              \
-    $gh_url/adobe-fonts/source-serif/release/WOFF/OTF/SourceSerifPro-Bold.otf.woff                       \
-    $gh_url/adobe-fonts/source-serif/release/WOFF/VAR/SourceSerifVariable-Italic.otf.woff                \
+    $gh_url/adobe-fonts/source-serif/release/TTF/SourceSerif4-LightIt.ttf                                \
+    $gh_url/adobe-fonts/source-serif/release/WOFF/OTF/SourceSerif4Display-Bold.otf.woff                  \
+    $gh_url/adobe-fonts/source-serif/release/WOFF/VAR/SourceSerif4Variable-Italic.otf.woff               \
     $gh_url/alif-type/xits/master/XITSMath-Regular.otf                                                   \
     $gh_url/googlefonts/noto-emoji/master/fonts/NotoColorEmoji.ttf                                       \
     $gh_url/googlefonts/noto-fonts/master/hinted/ttf/NotoSans/NotoSans-SemiCondensed.ttf                 \
