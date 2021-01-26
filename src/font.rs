@@ -32,6 +32,7 @@ use crate::table::{
         base::Table_BASE,
         gsub::Table_GSUB,
         jstf::Table_JSTF,
+        math::Table_MATH,
     },
     otvar::{
         avar::Table_avar,
@@ -66,7 +67,7 @@ pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
     // TODO: for debug
     for i in &font_container.fonts {
         // println!("{:#?}", i.table_records);
-        println!("\"COLR\": {:#?}", i.COLR);
+        println!("\"MATH\": {:#?}", i.MATH);
     }
     Ok(())
 }
@@ -226,8 +227,8 @@ pub struct Font {
     pub GSUB: Option<Table_GSUB>,
     /// Justification data
     pub JSTF: Option<Table_JSTF>,
-    // /// Math layout data
-    // pub MATH: Option<Table_MATH>,
+    /// Math layout data
+    pub MATH: Option<Table_MATH>,
 
     // Tables used for OpenType font variations
 
@@ -396,7 +397,7 @@ impl Font {
         for tag_str in &[
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
             "CFF ", "VORG",
-            "BASE", "GSUB", "JSTF",
+            "BASE", "GSUB", "JSTF", "MATH",
             "EBLC", "EBDT", "EBSC",
             "CBLC", "CBDT",
             "COLR", "CPAL",
@@ -474,6 +475,7 @@ impl Font {
             "BASE" => self.parse_BASE(buffer),
             "GSUB" => self.parse_GSUB(buffer),
             "JSTF" => self.parse_JSTF(buffer),
+            "MATH" => self.parse_MATH(buffer),
             "avar" => self.parse_avar(buffer),
             // "cvar" => self.parse_cvar(buffer),
             "fvar" => self.parse_fvar(buffer),
