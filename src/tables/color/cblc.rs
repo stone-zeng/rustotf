@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::table::bitmap::eblc::Strike;
+use crate::tables::bitmap::eblc::Strike;
 use crate::util::Buffer;
 
 /// ## `CBLC` &mdash; Color Bitmap Location Table

@@ -1,7 +1,7 @@
 mod font;
 mod util;
 #[rustfmt::skip]
-mod table {
+mod tables {
     pub mod required {
         pub mod head;
         pub mod hhea;
@@ -61,7 +61,7 @@ mod table {
 pub use font::{read_font, Font, FontContainer};
 
 #[rustfmt::skip]
-pub use table::{
+pub use tables::{
     required::{
         head::Table_head,
         hhea::Table_hhea,

@@ -1,7 +1,7 @@
 use std::fmt;
 
 use crate::font::Font;
-use crate::table::cff::{cff_char_string::*, cff_data::*};
+use crate::tables::cff::{cff_char_string::*, cff_data::*};
 use crate::util::{u24, Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
 

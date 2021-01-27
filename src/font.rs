@@ -1,58 +1,4 @@
-#[rustfmt::skip]
-use crate::table::{
-    required::{
-        head::Table_head,
-        hhea::Table_hhea,
-        maxp::Table_maxp,
-        hmtx::Table_hmtx,
-        cmap::Table_cmap,
-        name::Table_name,
-        os_2::Table_OS_2,
-        post::Table_post,
-    },
-    ttf::{
-        loca::Table_loca,
-        glyf::Table_glyf,
-        cvt_::Table_cvt_,
-        fpgm::Table_fpgm,
-        prep::Table_prep,
-        gasp::Table_gasp,
-    },
-    cff::{
-        cff_::Table_CFF_,
-        // cff2::Table_CFF2,
-        vorg::Table_VORG,
-    },
-    bitmap::{
-        ebdt::Table_EBDT,
-        eblc::Table_EBLC,
-        ebsc::Table_EBSC,
-    },
-    layout::{
-        base::Table_BASE,
-        gsub::Table_GSUB,
-        jstf::Table_JSTF,
-        math::Table_MATH,
-    },
-    otvar::{
-        avar::Table_avar,
-        fvar::Table_fvar,
-        hvar::Table_HVAR,
-        mvar::Table_MVAR,
-    },
-    color::{
-        colr::Table_COLR,
-        cpal::Table_CPAL,
-        cbdt::Table_CBDT,
-        cblc::Table_CBLC,
-        sbix::Table_sbix,
-        svg_::Table_SVG_,
-    },
-    other::{
-        dsig::Table_DSIG,
-        ltsh::Table_LTSH,
-    },
-};
+use crate::tables::*;
 use crate::util::{Buffer, Tag};
 
 use std::collections::HashMap;
@@ -166,126 +112,126 @@ pub struct Font {
     // Required tables
 
     /// Font header.
-    pub head: Option<Table_head>,
+    pub head: Option<required::head::Table_head>,
     /// Horizontal header.
-    pub hhea: Option<Table_hhea>,
+    pub hhea: Option<required::hhea::Table_hhea>,
     /// Maximum profile.
-    pub maxp: Option<Table_maxp>,
+    pub maxp: Option<required::maxp::Table_maxp>,
     /// Horizontal metrics.
-    pub hmtx: Option<Table_hmtx>,
+    pub hmtx: Option<required::hmtx::Table_hmtx>,
     /// Character to glyph mapping.
-    pub cmap: Option<Table_cmap>,
+    pub cmap: Option<required::cmap::Table_cmap>,
     /// Naming table.
-    pub name: Option<Table_name>,
+    pub name: Option<required::name::Table_name>,
     /// OS/2 and Windows specific metrics.
-    pub OS_2: Option<Table_OS_2>,
+    pub OS_2: Option<required::os_2::Table_OS_2>,
     /// PostScript information.
-    pub post: Option<Table_post>,
+    pub post: Option<required::post::Table_post>,
 
     // Tables related to TrueType outlines
 
     /// Index to location.
-    pub loca: Option<Table_loca>,
+    pub loca: Option<ttf::loca::Table_loca>,
     /// Glyph data.
-    pub glyf: Option<Table_glyf>,
+    pub glyf: Option<ttf::glyf::Table_glyf>,
     /// Control Value Table (optional table).
-    pub cvt_: Option<Table_cvt_>,
+    pub cvt_: Option<ttf::cvt_::Table_cvt_>,
     /// Font program (optional table).
-    pub fpgm: Option<Table_fpgm>,
+    pub fpgm: Option<ttf::fpgm::Table_fpgm>,
     /// CVT Program (optional table).
-    pub prep: Option<Table_prep>,
+    pub prep: Option<ttf::prep::Table_prep>,
     /// Grid-fitting/Scan-conversion (optional table).
-    pub gasp: Option<Table_gasp>,
+    pub gasp: Option<ttf::gasp::Table_gasp>,
 
     // Tables Related to CFF Outlines
 
     /// Compact Font Format 1.0
-    pub CFF_: Option<Table_CFF_>,
+    pub CFF_: Option<cff::cff_::Table_CFF_>,
     // /// Compact Font Format 2.0
     // pub CFF2: Option<Table_CFF2>,
     /// Vertical Origin (optional table)
-    pub VORG: Option<Table_VORG>,
+    pub VORG: Option<cff::vorg::Table_VORG>,
 
     // Tables Related to Bitmap Glyphs
 
     /// Embedded bitmap data
-    pub EBDT: Option<Table_EBDT>,
+    pub EBDT: Option<bitmap::ebdt::Table_EBDT>,
     /// Embedded bitmap location data
-    pub EBLC: Option<Table_EBLC>,
+    pub EBLC: Option<bitmap::eblc::Table_EBLC>,
     /// Embedded bitmap scaling data
-    pub EBSC: Option<Table_EBSC>,
+    pub EBSC: Option<bitmap::ebsc::Table_EBSC>,
 
     // Advanced Typographic Tables
 
     /// Baseline data
-    pub BASE: Option<Table_BASE>,
+    pub BASE: Option<layout::base::Table_BASE>,
     // /// Glyph definition data
-    // pub GDEF: Option<Table_GDEF>,
+    // pub GDEF: Option<layout::gdef::Table_GDEF>,
     // /// Glyph positioning data
-    // pub GPOS: Option<Table_GPOS>,
+    // pub GPOS: Option<layout::gpos::Table_GPOS>,
     /// Glyph substitution data
-    pub GSUB: Option<Table_GSUB>,
+    pub GSUB: Option<layout::gsub::Table_GSUB>,
     /// Justification data
-    pub JSTF: Option<Table_JSTF>,
+    pub JSTF: Option<layout::jstf::Table_JSTF>,
     /// Math layout data
-    pub MATH: Option<Table_MATH>,
+    pub MATH: Option<layout::math::Table_MATH>,
 
     // Tables used for OpenType font variations
 
     /// Axis variations.
-    pub avar: Option<Table_avar>,
+    pub avar: Option<otvar::avar::Table_avar>,
     // /// CVT variations (TrueType outlines only)
-    // pub cvar: Option<Table_cvar>,
+    // pub cvar: Option<otvar::cvar::Table_cvar>,
     /// Font variations.
-    pub fvar: Option<Table_fvar>,
+    pub fvar: Option<otvar::fvar::Table_fvar>,
     // /// Glyph variations (TrueType outlines only)
-    // pub gvar: Option<Table_gvar>,
+    // pub gvar: Option<otvar::gvar::Table_gvar>,
     /// Horizontal metrics variations.
-    pub HVAR: Option<Table_HVAR>,
+    pub HVAR: Option<otvar::hvar::Table_HVAR>,
     /// Metrics variations.
-    pub MVAR: Option<Table_MVAR>,
+    pub MVAR: Option<otvar::mvar::Table_MVAR>,
     // /// Style attributes
-    // pub STAT: Option<Table_STAT>,
+    // pub STAT: Option<otvar::stat::Table_STAT>,
     // /// Vertical metrics variations
-    // pub VVAR: Option<Table_VVAR>,
+    // pub VVAR: Option<otvar::vvar::Table_VVAR>,
 
     // Tables Related to Color Fonts
 
     /// Color table
-    pub COLR: Option<Table_COLR>,
+    pub COLR: Option<color::colr::Table_COLR>,
     /// Color palette table
-    pub CPAL: Option<Table_CPAL>,
+    pub CPAL: Option<color::cpal::Table_CPAL>,
     /// Color bitmap data
-    pub CBDT: Option<Table_CBDT>,
+    pub CBDT: Option<color::cbdt::Table_CBDT>,
     /// Color bitmap location data
-    pub CBLC: Option<Table_CBLC>,
+    pub CBLC: Option<color::cblc::Table_CBLC>,
     /// Standard bitmap graphics
-    pub sbix: Option<Table_sbix>,
+    pub sbix: Option<color::sbix::Table_sbix>,
     /// The SVG (Scalable Vector Graphics) table
-    pub SVG_: Option<Table_SVG_>,
+    pub SVG_: Option<color::svg_::Table_SVG_>,
 
     // Other OpenType Tables
 
     /// Digital signature
-    pub DSIG: Option<Table_DSIG>,
+    pub DSIG: Option<other::dsig::Table_DSIG>,
     // /// Horizontal device metrics
-    // pub hdmx: Option<Table_hdmx>,
+    // pub hdmx: Option<other::hdmx::Table_hdmx>,
     // /// Kerning
-    // pub kern: Option<Table_kern>,
+    // pub kern: Option<other::kern::Table_kern>,
     /// Linear threshold data
-    pub LTSH: Option<Table_LTSH>,
+    pub LTSH: Option<other::ltsh::Table_LTSH>,
     // /// Merge
-    // pub MERG: Option<Table_MERG>,
+    // pub MERG: Option<other::merg::Table_MERG>,
     // /// Metadata
-    // pub meta: Option<Table_meta>,
+    // pub meta: Option<other::meta::Table_meta>,
     // /// PCL 5 data
-    // pub PCLT: Option<Table_PCLT>,
+    // pub PCLT: Option<other::pclt::Table_PCLT>,
     // /// Vertical device metrics
-    // pub VDMX: Option<Table_VDMX>,
+    // pub VDMX: Option<other::vdmx::Table_VDMX>,
     // /// Vertical Metrics header
-    // pub vhea: Option<Table_vhea>,
+    // pub vhea: Option<other::vhea::Table_vhea>,
     // /// Vertical Metrics
-    // pub vmtx: Option<Table_vmtx>,
+    // pub vmtx: Option<other::vmtx::Table_vmtx>,
 }
 
 impl Font {

@@ -1,7 +1,7 @@
 use std::mem::size_of;
 
 use crate::font::Font;
-use crate::table::bitmap::eblc::{BigGlyphMetrics, SmallGlyphMetrics};
+use crate::tables::bitmap::eblc::{BigGlyphMetrics, SmallGlyphMetrics};
 use crate::util::Buffer;
 
 /// ## `EBDT` &mdash; Embedded Bitmap Data Table

@@ -1,5 +1,5 @@
 use crate::font::Font;
-use crate::table::bitmap::ebdt::BitmapData;
+use crate::tables::bitmap::ebdt::BitmapData;
 use crate::util::Buffer;
 
 /// ## `CBDT` &mdash; Color Bitmap Data Table
