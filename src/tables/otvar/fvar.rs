@@ -14,42 +14,42 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_fvar {
-    _version: String,
+    version: String,
     axes_array_offset: u16,
     // Reserved `uint16` here.
-    _axis_count: u16,
-    _axis_size: u16,
-    _instance_count: u16,
-    _instance_size: u16,
-    _axes: Vec<VariationAxis>,
-    _instances: Vec<Instance>,
+    axis_count: u16,
+    axis_size: u16,
+    instance_count: u16,
+    instance_size: u16,
+    axes: Vec<VariationAxis>,
+    instances: Vec<Instance>,
 }
 
 impl Font {
     pub fn parse_fvar(&mut self, buffer: &mut Buffer) {
-        let _version = buffer.get_version::<u16>();
+        let version = buffer.get_version::<u16>();
         let axes_array_offset = buffer.get();
-        let _axis_count = {
+        let axis_count = {
             buffer.skip::<u16>(1);
             buffer.get()
         };
-        let _axis_size = buffer.get();
-        let _instance_count = buffer.get();
-        let _instance_size = buffer.get();
-        let _axes = buffer.get_vec(_axis_count);
-        let _instances = (0.._instance_count)
-            .map(|_| Instance::read(buffer, _axis_count as usize))
+        let axis_size = buffer.get();
+        let instance_count = buffer.get();
+        let instance_size = buffer.get();
+        let axes = buffer.get_vec(axis_count);
+        let instances = (0..instance_count)
+            .map(|_| Instance::read(buffer, axis_count as usize))
             .collect();
 
         self.fvar = Some(Table_fvar {
-            _version,
+            version,
             axes_array_offset,
-            _axis_count,
-            _axis_size,
-            _instance_count,
-            _instance_size,
-            _axes,
-            _instances,
+            axis_count,
+            axis_size,
+            instance_count,
+            instance_size,
+            axes,
+            instances,
         });
     }
 }

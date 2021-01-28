@@ -20,7 +20,7 @@ use crate::util::{Buffer, Tag};
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct Table_OS_2 {
-    _version: u16,
+    version: u16,
     // Version 0
     pub x_avg_char_width: i16,
     pub us_weight_class: u16,
@@ -71,7 +71,7 @@ impl Font {
     pub fn parse_OS_2(&mut self, buffer: &mut Buffer) {
         // Version 0
         let mut table = Table_OS_2 {
-            _version: buffer.get(),
+            version: buffer.get(),
             x_avg_char_width: buffer.get(),
             us_weight_class: buffer.get(),
             us_width_class: buffer.get(),
@@ -108,12 +108,12 @@ impl Font {
             table.us_win_descent = Some(buffer.get());
         }
         // Version 1
-        if table._version >= 1 {
+        if table.version >= 1 {
             table.ul_code_page_range1 = Some(buffer.get());
             table.ul_code_page_range2 = Some(buffer.get());
         }
         // Version 2, 3, 4
-        if table._version >= 2 {
+        if table.version >= 2 {
             table.sx_height = Some(buffer.get());
             table.s_cap_height = Some(buffer.get());
             table.us_default_char = Some(buffer.get());
@@ -121,7 +121,7 @@ impl Font {
             table.us_max_context = Some(buffer.get());
         }
         // Version 5
-        if table._version >= 5 {
+        if table.version >= 5 {
             table.us_lower_optical_point_size = Some(buffer.get());
             table.us_upper_optical_point_size = Some(buffer.get());
         }

@@ -14,7 +14,7 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_HVAR {
-    _version: String,
+    version: String,
     _item_variation_store_offset: u32,
     _advance_width_mapping_offset: u32,
     _lsb_mapping_offset: u32,
@@ -25,7 +25,7 @@ impl Font {
     #[allow(non_snake_case)]
     pub fn parse_HVAR(&mut self, buffer: &mut Buffer) {
         self.HVAR = Some(Table_HVAR {
-            _version: buffer.get_version::<u16>(),
+            version: buffer.get_version::<u16>(),
             _item_variation_store_offset: buffer.get(),
             _advance_width_mapping_offset: buffer.get(),
             _lsb_mapping_offset: buffer.get(),

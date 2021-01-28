@@ -12,7 +12,7 @@ use crate::util::{Buffer, Fixed, LongDateTime};
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_head {
-    _version: String,
+    version: String,
     pub font_revision: Fixed,
     pub checksum_adjustment: u32,
     pub magic_number: u32,
@@ -34,7 +34,7 @@ pub struct Table_head {
 impl Font {
     pub fn parse_head(&mut self, buffer: &mut Buffer) {
         self.head = Some(Table_head {
-            _version: buffer.get_version::<u16>(),
+            version: buffer.get_version::<u16>(),
             font_revision: buffer.get(),
             checksum_adjustment: buffer.get(),
             magic_number: buffer.get(),

@@ -13,23 +13,23 @@ use crate::util::{Buffer, ReadBuffer, Tag};
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_JSTF {
-    _version: String,
+    version: String,
     pub jstf_script_records: Vec<JstfScriptRecord>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_JSTF(&mut self, buffer: &mut Buffer) {
-        let jstf_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
+        let jstf_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
         let jstf_script_count: u16 = buffer.get();
         let mut jstf_script_records: Vec<JstfScriptRecord> = buffer.get_vec(jstf_script_count);
         jstf_script_records.iter_mut().for_each(|rec| {
-            buffer.set_offset_from(jstf_start_offset, rec.jstf_script_offset);
+            buffer.set_offset_from(jstf_start, rec.jstf_script_offset);
             rec.jstf_script = Some(buffer.get());
         });
         self.JSTF = Some(Table_JSTF {
-            _version,
+            version,
             jstf_script_records,
         });
     }
@@ -61,14 +61,14 @@ pub struct JstfScript {
 
 impl ReadBuffer for JstfScript {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset();
+        let start = buffer.offset();
         let extender_glyphs_offset: u16 = buffer.get();
         let default_jstf_lang_sys_offset: u16 = buffer.get();
         let jstf_lang_sys_count: u16 = buffer.get();
         let mut jstf_lang_sys_records: Vec<JstfLangSysRecord> = buffer.get_vec(jstf_lang_sys_count);
 
         let extender_glyphs = if extender_glyphs_offset != 0 {
-            buffer.set_offset_from(start_offset, extender_glyphs_offset);
+            buffer.set_offset_from(start, extender_glyphs_offset);
             let extender_glyph_count: u16 = buffer.get();
             buffer.get_vec(extender_glyph_count)
         } else {
@@ -76,9 +76,9 @@ impl ReadBuffer for JstfScript {
         };
 
         let default_jstf_lang_sys = if default_jstf_lang_sys_offset != 0 {
-            buffer.set_offset_from(start_offset, default_jstf_lang_sys_offset);
+            buffer.set_offset_from(start, default_jstf_lang_sys_offset);
             let mut rec: JstfLangSysRecord = buffer.get();
-            buffer.set_offset_from(start_offset, rec.jstf_lang_sys_offset);
+            buffer.set_offset_from(start, rec.jstf_lang_sys_offset);
             rec.jstf_lang_sys = buffer.get();
             Some(rec)
         } else {
@@ -86,7 +86,7 @@ impl ReadBuffer for JstfScript {
         };
 
         jstf_lang_sys_records.iter_mut().for_each(|rec| {
-            buffer.set_offset_from(start_offset, rec.jstf_lang_sys_offset);
+            buffer.set_offset_from(start, rec.jstf_lang_sys_offset);
             rec.jstf_lang_sys = buffer.get();
         });
 
@@ -122,13 +122,13 @@ pub struct JstfLangSys {
 
 impl ReadBuffer for JstfLangSys {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset();
+        let start = buffer.offset();
         let jstf_priority_count: u16 = buffer.get();
         let jstf_priority_offsets: Vec<u16> = buffer.get_vec(jstf_priority_count);
         let jstf_priorities: Vec<JstfPriority> = jstf_priority_offsets
             .iter()
             .map(|&offset| {
-                buffer.set_offset_from(start_offset, offset);
+                buffer.set_offset_from(start, offset);
                 buffer.get()
             })
             .collect();
@@ -152,7 +152,7 @@ pub struct JstfPriority {
 
 impl ReadBuffer for JstfPriority {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset();
+        let start = buffer.offset();
         let gsub_shrinkage_enable_offset: u16 = buffer.get();
         let gsub_shrinkage_disable_offset: u16 = buffer.get();
         let gpos_shrinkage_enable_offset: u16 = buffer.get();
@@ -164,16 +164,16 @@ impl ReadBuffer for JstfPriority {
         let gpos_extension_disable_offset: u16 = buffer.get();
         let extension_jstf_max_offset: u16 = buffer.get();
         Self {
-            gsub_shrinkage_enable: buffer.get_or_none(start_offset, gsub_shrinkage_enable_offset),
-            gsub_shrinkage_disable: buffer.get_or_none(start_offset, gsub_shrinkage_disable_offset),
-            gpos_shrinkage_enable: buffer.get_or_none(start_offset, gpos_shrinkage_enable_offset),
-            gpos_shrinkage_disable: buffer.get_or_none(start_offset, gpos_shrinkage_disable_offset),
-            shrinkage_jstf_max: buffer.get_or_none(start_offset, shrinkage_jstf_max_offset),
-            gsub_extension_enable: buffer.get_or_none(start_offset, gsub_extension_enable_offset),
-            gsub_extension_disable: buffer.get_or_none(start_offset, gsub_extension_disable_offset),
-            gpos_extension_enable: buffer.get_or_none(start_offset, gpos_extension_enable_offset),
-            gpos_extension_disable: buffer.get_or_none(start_offset, gpos_extension_disable_offset),
-            extension_jstf_max: buffer.get_or_none(start_offset, extension_jstf_max_offset),
+            gsub_shrinkage_enable: buffer.get_or_none(start, gsub_shrinkage_enable_offset),
+            gsub_shrinkage_disable: buffer.get_or_none(start, gsub_shrinkage_disable_offset),
+            gpos_shrinkage_enable: buffer.get_or_none(start, gpos_shrinkage_enable_offset),
+            gpos_shrinkage_disable: buffer.get_or_none(start, gpos_shrinkage_disable_offset),
+            shrinkage_jstf_max: buffer.get_or_none(start, shrinkage_jstf_max_offset),
+            gsub_extension_enable: buffer.get_or_none(start, gsub_extension_enable_offset),
+            gsub_extension_disable: buffer.get_or_none(start, gsub_extension_disable_offset),
+            gpos_extension_enable: buffer.get_or_none(start, gpos_extension_enable_offset),
+            gpos_extension_disable: buffer.get_or_none(start, gpos_extension_disable_offset),
+            extension_jstf_max: buffer.get_or_none(start, extension_jstf_max_offset),
         }
     }
 }

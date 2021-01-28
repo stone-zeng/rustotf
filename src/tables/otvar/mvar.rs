@@ -15,32 +15,32 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_MVAR {
-    _version: String,
+    version: String,
     // Reserved `uint16` here.
-    _value_record_size: u16,
-    _value_record_count: u16,
-    _item_variation_store_offset: u16,
-    _value_records: Vec<Value>,
+    value_record_size: u16,
+    value_record_count: u16,
+    item_variation_store_offset: u16,
+    value_records: Vec<Value>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_MVAR(&mut self, buffer: &mut Buffer) {
-        let _version = buffer.get_version::<u16>();
-        let _value_record_size = {
+        let version = buffer.get_version::<u16>();
+        let value_record_size = {
             buffer.skip::<u16>(1);
             buffer.get()
         };
-        let _value_record_count = buffer.get();
-        let _item_variation_store_offset = buffer.get();
-        let _value_records = buffer.get_vec(_value_record_count);
+        let value_record_count = buffer.get();
+        let item_variation_store_offset = buffer.get();
+        let value_records = buffer.get_vec(value_record_count);
 
         self.MVAR = Some(Table_MVAR {
-            _version,
-            _value_record_size,
-            _value_record_count,
-            _item_variation_store_offset,
-            _value_records,
+            version,
+            value_record_size,
+            value_record_count,
+            item_variation_store_offset,
+            value_records,
         });
     }
 }

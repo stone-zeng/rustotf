@@ -18,13 +18,13 @@ pub struct Table_glyf {
 
 impl Font {
     pub fn parse_glyf(&mut self, buffer: &mut Buffer) {
-        let start_offset = buffer.offset();
+        let start = buffer.offset();
         let loca_offsets = &self.loca.as_ref().unwrap().offsets;
         self.glyf = Some(Table_glyf {
             glyphs: loca_offsets
                 .iter()
                 .map(|&i| {
-                    buffer.set_offset_from(start_offset, i);
+                    buffer.set_offset_from(start, i);
                     buffer.get()
                 })
                 .collect(),

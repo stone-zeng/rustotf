@@ -13,7 +13,7 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_GSUB {
-    _version: String,
+    version: String,
     pub script_list: Vec<ScriptRecord>,
     pub feature_list: Vec<FeatureRecord>,
     pub lookup_list: Vec<Lookup>,
@@ -22,50 +22,51 @@ pub struct Table_GSUB {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_GSUB(&mut self, buffer: &mut Buffer) {
-        let gsub_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
+        let gsub_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
         let script_list_offset: u16 = buffer.get();
         let feature_list_offset: u16 = buffer.get();
         let lookup_list_offset: u16 = buffer.get();
         // TODO:
-        let _feature_variations_offset: Option<u32> = if _version == "1.1" {
+        #[allow(unused_variables)]
+        let feature_variations_offset: Option<u32> = if version == "1.1" {
             Some(buffer.get())
         } else {
             None
         };
 
-        let script_list_start_offset = gsub_start_offset + script_list_offset as usize;
-        buffer.set_offset(script_list_start_offset);
+        let script_list_start = gsub_start + script_list_offset as usize;
+        buffer.set_offset(script_list_start);
         let num_scripts: u16 = buffer.get();
         let mut script_list: Vec<ScriptRecord> = buffer.get_vec(num_scripts);
         script_list.iter_mut().for_each(|rec| {
-            buffer.set_offset_from(script_list_start_offset, rec.script_offset);
+            buffer.set_offset_from(script_list_start, rec.script_offset);
             rec.script = buffer.get();
         });
 
-        let feature_list_start_offset = gsub_start_offset + feature_list_offset as usize;
-        buffer.set_offset(feature_list_start_offset);
+        let feature_list_start = gsub_start + feature_list_offset as usize;
+        buffer.set_offset(feature_list_start);
         let num_features: u16 = buffer.get();
         let mut feature_list: Vec<FeatureRecord> = buffer.get_vec(num_features);
         feature_list.iter_mut().for_each(|rec| {
-            buffer.set_offset_from(feature_list_start_offset, rec.feature_offset);
+            buffer.set_offset_from(feature_list_start, rec.feature_offset);
             rec.feature = buffer.get();
         });
 
-        let lookup_list_start_offset = gsub_start_offset + lookup_list_offset as usize;
-        buffer.set_offset(lookup_list_start_offset);
+        let lookup_list_start = gsub_start + lookup_list_offset as usize;
+        buffer.set_offset(lookup_list_start);
         let num_lookups: u16 = buffer.get();
         let lookup_offsets: Vec<u16> = buffer.get_vec(num_lookups);
         let lookup_list = lookup_offsets
             .iter()
             .map(|&offset| {
-                buffer.set_offset_from(lookup_list_start_offset, offset);
+                buffer.set_offset_from(lookup_list_start, offset);
                 buffer.get()
             })
             .collect();
 
         self.GSUB = Some(Table_GSUB {
-            _version,
+            version,
             script_list,
             feature_list,
             lookup_list,
@@ -98,15 +99,15 @@ pub struct Script {
 
 impl ReadBuffer for Script {
     fn read(buffer: &mut Buffer) -> Self {
-        let script_start_offset = buffer.offset();
+        let script_start = buffer.offset();
         let default_lang_sys_offset: u16 = buffer.get();
         let lang_sys_count: u16 = buffer.get();
         let lang_sys_records: Vec<LangSysRecord> = buffer.get_vec(lang_sys_count);
-        let default_lang_sys = buffer.get_or_none(script_start_offset, default_lang_sys_offset);
+        let default_lang_sys = buffer.get_or_none(script_start, default_lang_sys_offset);
         let lang_sys = lang_sys_records
             .iter()
             .map(|rec| {
-                buffer.set_offset_from(script_start_offset, rec.lang_sys_offset);
+                buffer.set_offset_from(script_start, rec.lang_sys_offset);
                 // TODO: simplify
                 let tag = Tag::from(rec.lang_sys_tag.to_str());
                 (tag, buffer.get())

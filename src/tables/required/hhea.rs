@@ -14,7 +14,7 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_hhea {
-    _version: String,
+    version: String,
     pub ascender: i16,
     pub descender: i16,
     pub line_gap: i16,
@@ -33,7 +33,7 @@ pub struct Table_hhea {
 impl Font {
     pub fn parse_hhea(&mut self, buffer: &mut Buffer) {
         self.hhea = Some(Table_hhea {
-            _version: buffer.get_version::<u16>(),
+            version: buffer.get_version::<u16>(),
             ascender: buffer.get(),
             descender: buffer.get(),
             line_gap: buffer.get(),

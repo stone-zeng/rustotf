@@ -10,7 +10,7 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_SVG_ {
-    _version: u16,
+    version: u16,
     pub num_entries: u16,
     pub doc_records: Vec<SvgDocRecord>,
 }
@@ -18,17 +18,17 @@ pub struct Table_SVG_ {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_SVG_(&mut self, buffer: &mut Buffer) {
-        let svg_start_offset = buffer.offset();
-        let _version = buffer.get();
+        let svg_start = buffer.offset();
+        let version = buffer.get();
         let svg_doc_list_offset: u32 = buffer.get();
-        buffer.set_offset_from(svg_start_offset, svg_doc_list_offset);
-        let svg_doc_start_offset = buffer.offset();
+        buffer.set_offset_from(svg_start, svg_doc_list_offset);
+        let svg_doc_start = buffer.offset();
         let num_entries = buffer.get();
         let doc_records = (0..num_entries)
-            .map(|_| SvgDocRecord::read(buffer, svg_doc_start_offset))
+            .map(|_| SvgDocRecord::read(buffer, svg_doc_start))
             .collect();
         self.SVG_ = Some(Table_SVG_ {
-            _version,
+            version,
             num_entries,
             doc_records,
         })
@@ -43,13 +43,13 @@ pub struct SvgDocRecord {
 }
 
 impl SvgDocRecord {
-    fn read(buffer: &mut Buffer, start_offset: usize) -> Self {
+    fn read(buffer: &mut Buffer, start: usize) -> Self {
         let offset = buffer.offset();
         let start_glyph_id = buffer.get();
         let end_glyph_id = buffer.get();
         let svg_doc_offset: u32 = buffer.get();
         let svg_doc_length: u32 = buffer.get();
-        buffer.set_offset_from(start_offset, svg_doc_offset);
+        buffer.set_offset_from(start, svg_doc_offset);
         let svg_doc = Self::get_svg_doc(buffer, svg_doc_length as usize);
         buffer.set_offset(offset + 12); // u16 + u16 + u32 + u32
         Self {

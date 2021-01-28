@@ -17,9 +17,9 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CFF_ {
-    _version: String,
-    _header_size: u8,
-    _offset_size: u8,
+    version: String,
+    header_size: u8,
+    offset_size: u8,
     cff_fonts: Vec<CffFont>,
     global_subrs: Vec<CharString>,
 }
@@ -27,11 +27,11 @@ pub struct Table_CFF_ {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
-        let cff_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u8>();
-        let _header_size = buffer.get();
-        let _offset_size = buffer.get();
-        buffer.set_offset_from(cff_start_offset, _header_size);
+        let cff_start = buffer.offset();
+        let version = buffer.get_version::<u8>();
+        let header_size = buffer.get();
+        let offset_size = buffer.get();
+        buffer.set_offset_from(cff_start, header_size);
 
         let names = buffer.get::<Index>().to_string_vec();
         let top_dicts = buffer.get::<Index>().data;
@@ -47,16 +47,16 @@ impl Font {
             .zip(top_dicts.iter())
             .map(|(name, top_dict)| {
                 let mut cff = CffFont::new(name);
-                cff.parse(buffer, cff_start_offset, top_dict, &strings);
+                cff.parse(buffer, cff_start, top_dict, &strings);
                 cff.parse_char_strings(&mut global_subrs);
                 cff
             })
             .collect();
 
         self.CFF_ = Some(Table_CFF_ {
-            _version,
-            _header_size,
-            _offset_size,
+            version,
+            header_size,
+            offset_size,
             cff_fonts,
             global_subrs,
         });
@@ -387,7 +387,7 @@ impl CffFont {
     fn parse(
         &mut self,
         buffer: &mut Buffer,
-        cff_start_offset: usize,
+        cff_start: usize,
         top_dict: &Vec<u8>,
         strings: &Vec<String>,
     ) {
@@ -397,12 +397,12 @@ impl CffFont {
             0 => Encoding::Standard,
             1 => Encoding::Expert,
             _ => {
-                buffer.set_offset_from(cff_start_offset, self._encoding_offset);
+                buffer.set_offset_from(cff_start, self._encoding_offset);
                 buffer.get()
             }
         };
         // Char strings
-        buffer.set_offset_from(cff_start_offset, self._char_strings_offset);
+        buffer.set_offset_from(cff_start, self._char_strings_offset);
         let char_strings_index: Index = buffer.get();
         let num_glyphs = char_strings_index.count;
         self.char_strings = char_strings_index
@@ -437,7 +437,7 @@ impl CffFont {
                     .map(|&i| i.to_string())
                     .collect(),
                 offset => {
-                    buffer.set_offset_from(cff_start_offset, offset);
+                    buffer.set_offset_from(cff_start, offset);
                     let format: u8 = buffer.get();
                     match format {
                         0 => (0..num_glyphs)
@@ -451,23 +451,23 @@ impl CffFont {
             };
             // Private dict
             if self._private_size != 0 {
-                buffer.set_offset_from(cff_start_offset, self._private_offset);
+                buffer.set_offset_from(cff_start, self._private_offset);
                 self.private = Some(Private::read(buffer, self._private_size));
             }
         } else {
             // FD Array
-            buffer.set_offset_from(cff_start_offset, self._fd_array_offset.unwrap());
+            buffer.set_offset_from(cff_start, self._fd_array_offset.unwrap());
             buffer
                 .get::<Index>()
                 .data
                 .iter()
                 .for_each(|font_dict| self.init_fd_array(font_dict, strings));
             self.fd_array.iter_mut().for_each(|fd| {
-                buffer.set_offset_from(cff_start_offset, fd._private_offset);
+                buffer.set_offset_from(cff_start, fd._private_offset);
                 fd.private = Private::read(buffer, fd._private_size);
             });
             // FD Select
-            buffer.set_offset_from(cff_start_offset, self._fd_select_offset.unwrap());
+            buffer.set_offset_from(cff_start, self._fd_select_offset.unwrap());
             self.fd_select = Some(FDSelect::read(buffer, num_glyphs));
         }
     }
@@ -672,7 +672,7 @@ impl Private {
     }
 
     fn read(buffer: &mut Buffer, private_size: usize) -> Self {
-        let start_offset = buffer.offset();
+        let start = buffer.offset();
         let private_dict: Vec<u8> = buffer.get_vec(private_size);
         let mut private = Self::new();
         // We use an empty vector as a placeholder of strings to make the macro work.
@@ -700,7 +700,7 @@ impl Private {
             /* 21    */ private.nominal_width_x = _num!(),
         ]);
         if let Some(subrs_offset) = private._subrs_offset {
-            buffer.set_offset_from(start_offset, subrs_offset);
+            buffer.set_offset_from(start, subrs_offset);
             private.subrs = buffer
                 .get::<Index>()
                 .data

@@ -27,34 +27,34 @@ use encoding_rs;
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct Table_name {
-    _format: u16,
-    _count: u16,
-    _string_offset: u16,
-    _names: Vec<Name>,
-    _lang_tag_count: Option<u16>,
-    _lang_tags: Option<Vec<LangTag>>,
+    format: u16,
+    count: u16,
+    string_offset: u16,
+    names: Vec<Name>,
+    lang_tag_count: Option<u16>,
+    lang_tags: Option<Vec<LangTag>>,
 }
 
 impl Font {
     pub fn parse_name(&mut self, buffer: &mut Buffer) {
-        let _format = buffer.get();
-        let _count = buffer.get();
-        let _string_offset = buffer.get();
-        let mut _names = buffer.get_vec(_count);
+        let format = buffer.get();
+        let count = buffer.get();
+        let string_offset = buffer.get();
+        let names = buffer.get_vec(count);
         let mut table = Table_name {
-            _format,
-            _count,
-            _string_offset,
-            _names,
+            format,
+            count,
+            string_offset,
+            names,
             ..Default::default()
         };
-        if _format == 1 {
-            let _lang_tag_count = buffer.get();
-            let _lang_tags = buffer.get_vec(_lang_tag_count);
-            table._lang_tag_count = Some(_lang_tag_count);
-            table._lang_tags = Some(_lang_tags);
+        if format == 1 {
+            let lang_tag_count = buffer.get();
+            let lang_tags = buffer.get_vec(lang_tag_count);
+            table.lang_tag_count = Some(lang_tag_count);
+            table.lang_tags = Some(lang_tags);
         };
-        table._names.iter_mut().for_each(|x| x.parse(buffer));
+        table.names.iter_mut().for_each(|x| x.parse(buffer));
         self.name = Some(table);
     }
 }
@@ -65,14 +65,14 @@ struct Name {
     pub encoding_id: u16,
     pub language_id: u16,
     pub name_id: u16,
-    _length: u16,
-    _offset: u16,
+    length: u16,
+    offset: u16,
     pub string: String,
 }
 
 impl Name {
     fn parse(&mut self, buffer: &mut Buffer) {
-        let (start, end) = (self._offset, self._offset + self._length);
+        let (start, end) = (self.offset, self.offset + self.length);
         let data = buffer.slice(start as usize, end as usize);
 
         let (cow, _, _) = match (self.platform_id, self.encoding_id) {
@@ -109,8 +109,8 @@ impl ReadBuffer for Name {
             encoding_id: buffer.get(),
             language_id: buffer.get(),
             name_id: buffer.get(),
-            _length: buffer.get(),
-            _offset: buffer.get(),
+            length: buffer.get(),
+            offset: buffer.get(),
             ..Default::default()
         }
     }
@@ -118,18 +118,16 @@ impl ReadBuffer for Name {
 
 #[derive(Debug, Default)]
 struct LangTag {
-    _length: u16,
-    _offset: u16,
+    length: u16,
+    offset: u16,
     pub tag: String,
 }
 
 impl ReadBuffer for LangTag {
     fn read(buffer: &mut Buffer) -> Self {
-        let _length = buffer.get();
-        let _offset = buffer.get();
         Self {
-            _length,
-            _offset,
+            length: buffer.get(),
+            offset: buffer.get(),
             ..Default::default()
         }
     }

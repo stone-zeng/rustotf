@@ -17,23 +17,23 @@ use std::collections::HashMap;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_cmap {
-    _version: u16,
-    _num_tables: u16,
-    _encodings: Vec<Encoding>,
-    _subtables: HashMap<(u16, u16), CmapSubtable>,
+    version: u16,
+    num_tables: u16,
+    encodings: Vec<Encoding>,
+    subtables: HashMap<(u16, u16), CmapSubtable>,
     pub maps: HashMap<Encoding, Map>,
 }
 
 impl Font {
     pub fn parse_cmap(&mut self, buffer: &mut Buffer) {
-        let start_offset = buffer.offset();
-        let _version = buffer.get();
-        let _num_tables = buffer.get();
-        let _encodings: Vec<Encoding> = buffer.get_vec(_num_tables);
-        let _subtables = _encodings
+        let start = buffer.offset();
+        let version = buffer.get();
+        let num_tables = buffer.get();
+        let encodings: Vec<Encoding> = buffer.get_vec(num_tables);
+        let subtables = encodings
             .iter()
             .map(|i| {
-                buffer.set_offset_from(start_offset, i._offset);
+                buffer.set_offset_from(start, i.offset);
                 ((i.platform_id, i.encoding_id), buffer.get())
             })
             .collect();
@@ -42,10 +42,10 @@ impl Font {
         let maps: HashMap<Encoding, Map> = HashMap::new();
 
         self.cmap = Some(Table_cmap {
-            _version,
-            _num_tables,
-            _encodings,
-            _subtables,
+            version,
+            num_tables,
+            encodings,
+            subtables,
             maps,
         });
     }
@@ -55,39 +55,39 @@ impl Font {
 pub struct Encoding {
     pub platform_id: u16,
     pub encoding_id: u16,
-    _offset: u32,
+    offset: u32,
 }
 
 #[derive(Debug, Default)]
 struct CmapSubtable {
-    _format: u16,
-    _format_0_data: Option<CmapFormat0>,
-    _format_2_data: Option<CmapFormat2>,
-    _format_4_data: Option<CmapFormat4>,
-    _format_6_data: Option<CmapFormat6>,
-    _format_8_data: Option<CmapFormat8>,
-    _format_10_data: Option<CmapFormat10>,
-    _format_12_data: Option<CmapFormat12>,
-    _format_13_data: Option<CmapFormat13>,
-    _format_14_data: Option<CmapFormat14>,
+    format: u16,
+    format_0_data: Option<CmapFormat0>,
+    format_2_data: Option<CmapFormat2>,
+    format_4_data: Option<CmapFormat4>,
+    format_6_data: Option<CmapFormat6>,
+    format_8_data: Option<CmapFormat8>,
+    format_10_data: Option<CmapFormat10>,
+    format_12_data: Option<CmapFormat12>,
+    format_13_data: Option<CmapFormat13>,
+    format_14_data: Option<CmapFormat14>,
 }
 
 impl ReadBuffer for CmapSubtable {
     fn read(buffer: &mut Buffer) -> Self {
         let mut subtable = CmapSubtable {
-            _format: buffer.get(),
+            format: buffer.get(),
             ..Default::default()
         };
-        match subtable._format {
-            0 => subtable._format_0_data = Some(buffer.get()),
-            2 => subtable._format_2_data = Some(buffer.get()),
-            4 => subtable._format_4_data = Some(buffer.get()),
-            6 => subtable._format_6_data = Some(buffer.get()),
-            8 => subtable._format_8_data = Some(buffer.get()),
-            10 => subtable._format_10_data = Some(buffer.get()),
-            12 => subtable._format_12_data = Some(buffer.get()),
-            13 => subtable._format_13_data = Some(buffer.get()),
-            14 => subtable._format_14_data = Some(buffer.get()),
+        match subtable.format {
+            0 => subtable.format_0_data = Some(buffer.get()),
+            2 => subtable.format_2_data = Some(buffer.get()),
+            4 => subtable.format_4_data = Some(buffer.get()),
+            6 => subtable.format_6_data = Some(buffer.get()),
+            8 => subtable.format_8_data = Some(buffer.get()),
+            10 => subtable.format_10_data = Some(buffer.get()),
+            12 => subtable.format_12_data = Some(buffer.get()),
+            13 => subtable.format_13_data = Some(buffer.get()),
+            14 => subtable.format_14_data = Some(buffer.get()),
             _ => unreachable!(),
         }
         subtable

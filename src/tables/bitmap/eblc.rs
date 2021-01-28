@@ -14,21 +14,21 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_EBLC {
-    _version: String,
-    _num_strikes: u32,
+    version: String,
+    num_strikes: u32,
     pub strikes: Vec<Strike>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_EBLC(&mut self, buffer: &mut Buffer) {
-        let eblc_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
-        let _num_strikes = buffer.get();
-        let strikes = Strike::read_vec(buffer, _num_strikes as usize, eblc_start_offset);
+        let eblc_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
+        let num_strikes = buffer.get();
+        let strikes = Strike::read_vec(buffer, num_strikes as usize, eblc_start);
         self.EBLC = Some(Table_EBLC {
-            _version,
-            _num_strikes,
+            version,
+            num_strikes,
             strikes,
         })
     }
@@ -41,19 +41,19 @@ pub struct Strike {
 }
 
 impl Strike {
-    pub fn read_vec(buffer: &mut Buffer, num: usize, start_offset: usize) -> Vec<Self> {
+    pub fn read_vec(buffer: &mut Buffer, num: usize, start: usize) -> Vec<Self> {
         let bitmap_size_vec: Vec<BitmapSize> = buffer.get_vec(num);
         let mut strikes = Vec::new();
         for bitmap_size in bitmap_size_vec {
-            let index_sub_table_start_offset =
-                start_offset + bitmap_size._index_sub_table_offset as usize;
-            buffer.set_offset(index_sub_table_start_offset);
+            let index_sub_table_start =
+                start + bitmap_size._index_sub_table_offset as usize;
+            buffer.set_offset(index_sub_table_start);
             let index_sub_table_arrays: Vec<IndexSubTableArray> =
                 buffer.get_vec(bitmap_size._num_index_sub_tables);
             let index_sub_tables = index_sub_table_arrays
                 .iter()
                 .map(|i| {
-                    buffer.set_offset_from(index_sub_table_start_offset, i.additional_offset);
+                    buffer.set_offset_from(index_sub_table_start, i.additional_offset);
                     IndexSubTable::read(buffer, i)
                 })
                 .collect();

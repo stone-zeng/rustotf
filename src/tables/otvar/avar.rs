@@ -16,42 +16,42 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_avar {
-    _version: String,
+    version: String,
     // Reserved `uint16` here.
-    _axis_count: u16,
-    _axis_segment_maps: Vec<SegmentMaps>,
+    axis_count: u16,
+    axis_segment_maps: Vec<SegmentMaps>,
 }
 
 impl Font {
     pub fn parse_avar(&mut self, buffer: &mut Buffer) {
-        let _version = buffer.get_version::<u16>();
-        let _axis_count = {
+        let version = buffer.get_version::<u16>();
+        let axis_count = {
             buffer.skip::<u16>(1);
             buffer.get()
         };
-        let _axis_segment_maps = buffer.get_vec(_axis_count);
+        let axis_segment_maps = buffer.get_vec(axis_count);
 
         self.avar = Some(Table_avar {
-            _version,
-            _axis_count,
-            _axis_segment_maps,
+            version,
+            axis_count,
+            axis_segment_maps,
         });
     }
 }
 
 #[derive(Debug)]
 struct SegmentMaps {
-    _position_map_count: u16,
-    _axis_value_maps: Vec<AxisValueMap>,
+    position_map_count: u16,
+    axis_value_maps: Vec<AxisValueMap>,
 }
 
 impl ReadBuffer for SegmentMaps {
     fn read(buffer: &mut Buffer) -> Self {
-        let _position_map_count = buffer.get();
-        let _axis_value_maps = buffer.get_vec(_position_map_count);
+        let position_map_count = buffer.get();
+        let axis_value_maps = buffer.get_vec(position_map_count);
         Self {
-            _position_map_count,
-            _axis_value_maps,
+            position_map_count,
+            axis_value_maps,
         }
     }
 }

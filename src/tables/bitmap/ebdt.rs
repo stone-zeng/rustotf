@@ -16,22 +16,22 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_EBDT {
-    _version: String,
+    version: String,
     pub bitmap_data: Vec<Vec<BitmapData>>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_EBDT(&mut self, buffer: &mut Buffer) {
-        let ebdt_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
+        let ebdt_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
         let strikes = &self.EBLC.as_ref().unwrap().strikes;
         let bitmap_data = strikes
             .iter()
             .map(|strike| {
                 let mut strike_bitmap_data = Vec::new();
                 for index_sub_table in &strike.index_sub_tables {
-                    buffer.set_offset_from(ebdt_start_offset, index_sub_table.image_data_offset);
+                    buffer.set_offset_from(ebdt_start, index_sub_table.image_data_offset);
                     match index_sub_table.image_format {
                         1 | 2 => {
                             // TODO: only for index format 1 or 3
@@ -67,7 +67,7 @@ impl Font {
             })
             .collect();
         self.EBDT = Some(Table_EBDT {
-            _version,
+            version,
             bitmap_data,
         });
     }

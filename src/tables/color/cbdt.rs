@@ -14,22 +14,22 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CBDT {
-    _version: String,
+    version: String,
     pub bitmap_data: Vec<Vec<BitmapData>>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CBDT(&mut self, buffer: &mut Buffer) {
-        let cbdt_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
+        let cbdt_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
         let strikes = &self.CBLC.as_ref().unwrap().strikes;
         let bitmap_data = strikes
             .iter()
             .map(|strike| {
                 let mut strike_bitmap_data = Vec::new();
                 for index_sub_table in &strike.index_sub_tables {
-                    buffer.set_offset_from(cbdt_start_offset, index_sub_table.image_data_offset);
+                    buffer.set_offset_from(cbdt_start, index_sub_table.image_data_offset);
                     match index_sub_table.image_format {
                         17 => {
                             let len = index_sub_table.sbit_offsets.as_ref().unwrap().len() - 1;
@@ -51,7 +51,7 @@ impl Font {
             })
             .collect();
         self.CBDT = Some(Table_CBDT {
-            _version,
+            version,
             bitmap_data,
         });
     }

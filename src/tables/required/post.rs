@@ -12,7 +12,7 @@ use crate::util::{Buffer, Fixed};
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct Table_post {
-    _version: Fixed,
+    version: Fixed,
     pub italic_angle: Fixed,
     pub underline_position: i16,
     pub underline_thickness: i16,
@@ -33,7 +33,7 @@ pub struct Table_post {
 impl Font {
     pub fn parse_post(&mut self, buffer: &mut Buffer) {
         let mut table = Table_post {
-            _version: buffer.get(),
+            version: buffer.get(),
             italic_angle: buffer.get(),
             underline_position: buffer.get(),
             underline_thickness: buffer.get(),
@@ -44,13 +44,13 @@ impl Font {
             max_mem_type1: buffer.get(),
             ..Default::default()
         };
-        if table._version == 0x0002_0000 {
+        if table.version == 0x0002_0000 {
             let num_glyphs = buffer.get();
             table.num_glyphs = Some(num_glyphs);
             table.glyph_name_index = Some(buffer.get_vec(num_glyphs));
             table.names = Some(buffer.get_vec(num_glyphs));
         }
-        if table._version == 0x0002_5000 {
+        if table.version == 0x0002_5000 {
             let num_glyphs = buffer.get();
             table.num_glyphs = Some(num_glyphs);
             table.offset = Some(buffer.get_vec(num_glyphs));

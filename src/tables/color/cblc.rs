@@ -14,21 +14,21 @@ use crate::util::Buffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CBLC {
-    _version: String,
-    _num_strikes: u32,
+    version: String,
+    num_strikes: u32,
     pub strikes: Vec<Strike>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CBLC(&mut self, buffer: &mut Buffer) {
-        let cblc_start_offset = buffer.offset();
-        let _version = buffer.get_version::<u16>();
-        let _num_strikes = buffer.get();
-        let strikes = Strike::read_vec(buffer, _num_strikes as usize, cblc_start_offset);
+        let cblc_start = buffer.offset();
+        let version = buffer.get_version::<u16>();
+        let num_strikes = buffer.get();
+        let strikes = Strike::read_vec(buffer, num_strikes as usize, cblc_start);
         self.CBLC = Some(Table_CBLC {
-            _version,
-            _num_strikes,
+            version,
+            num_strikes,
             strikes,
         })
     }

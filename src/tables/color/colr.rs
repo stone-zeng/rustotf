@@ -12,25 +12,25 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_COLR {
-    _version: u16,
+    version: u16,
     pub color_glyphs: Vec<ColorGlyph>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_COLR(&mut self, buffer: &mut Buffer) {
-        let colr_start_offset = buffer.offset();
-        let _version = buffer.get();
+        let colr_start = buffer.offset();
+        let version = buffer.get();
         let num_base_glyph_records: u16 = buffer.get();
         let base_glyph_records_offset: u32 = buffer.get();
         let layer_records_offset: u32 = buffer.get();
         let num_layer_records: u16 = buffer.get();
 
-        buffer.set_offset_from(colr_start_offset, base_glyph_records_offset);
+        buffer.set_offset_from(colr_start, base_glyph_records_offset);
         let base_glyph_records: Vec<BaseGlyphRecord> =
             buffer.get_vec(num_base_glyph_records);
 
-        buffer.set_offset_from(colr_start_offset, layer_records_offset);
+        buffer.set_offset_from(colr_start, layer_records_offset);
         let layer_records: Vec<Layer> = buffer.get_vec(num_layer_records);
 
         let color_glyphs = base_glyph_records
@@ -47,7 +47,7 @@ impl Font {
             .collect();
 
         self.COLR = Some(Table_COLR {
-            _version,
+            version,
             color_glyphs,
         });
     }

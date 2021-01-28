@@ -13,7 +13,7 @@ use crate::util::{Buffer, Fixed};
 #[allow(non_camel_case_types)]
 #[derive(Debug, Default)]
 pub struct Table_maxp {
-    _version: Fixed,
+    version: Fixed,
     pub num_glyphs: u16,
     pub max_points: Option<u16>,
     pub max_contours: Option<u16>,
@@ -33,12 +33,12 @@ pub struct Table_maxp {
 impl Font {
     pub fn parse_maxp(&mut self, buffer: &mut Buffer) {
         let mut table = Table_maxp {
-            _version: buffer.get(),
+            version: buffer.get(),
             num_glyphs: buffer.get(),
             ..Default::default()
         };
         // Version 1.0
-        if table._version == 0x0001_0000 {
+        if table.version == 0x0001_0000 {
             table.max_points = Some(buffer.get());
             table.max_contours = Some(buffer.get());
             table.max_composite_points = Some(buffer.get());

@@ -44,7 +44,7 @@ impl Buffer {
 
     /// Get an option of type `T` values from the buffer.
     /// If `offset` is 0 (i.e. NULL), then it will return a `None`.
-    pub fn get_or_none<T, N>(&mut self, start_offset: usize, offset: N) -> Option<T>
+    pub fn get_or_none<T, N>(&mut self, start: usize, offset: N) -> Option<T>
     where
         T: ReadBuffer,
         N: TryInto<usize>,
@@ -53,7 +53,7 @@ impl Buffer {
             Ok(0) => None,
             Ok(offset) => {
                 // offset != 0
-                self.offset = start_offset + offset;
+                self.offset = start + offset;
                 Some(self.get::<T>())
             }
             Err(_) => unreachable!(),
@@ -88,9 +88,9 @@ impl Buffer {
         }
     }
 
-    pub fn set_offset_from<N: TryInto<usize>>(&mut self, start_offset: usize, offset: N) {
+    pub fn set_offset_from<N: TryInto<usize>>(&mut self, start: usize, offset: N) {
         match offset.try_into() {
-            Ok(offset) => self.offset = start_offset + offset,
+            Ok(offset) => self.offset = start + offset,
             Err(_) => unreachable!(),
         }
     }
@@ -126,7 +126,7 @@ impl Buffer {
     }
 
     // pub fn calc_checksum(&self, offset: u32, length: u32) -> u32 {
-    //     let _offset = offset as usize;
+    //     let offset = offset as usize;
     //     let padded_length = ((length + 3) & !3) as usize;
     //     (0..padded_length).step_by(4).fold(0, |acc, i| {
     //         acc.wrapping_add(BigEndian::read_u32(

@@ -15,7 +15,7 @@ use read_buffer_derive::ReadBuffer;
 #[allow(non_camel_case_types)]
 #[derive(Debug)]
 pub struct Table_CPAL {
-    _version: u16,
+    version: u16,
     pub num_palette_entries: u16,
     pub num_palettes: u16,
     pub num_color_records: u16,
@@ -25,8 +25,8 @@ pub struct Table_CPAL {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CPAL(&mut self, buffer: &mut Buffer) {
-        let cpal_start_offset = buffer.offset();
-        let _version = buffer.get();
+        let cpal_start = buffer.offset();
+        let version = buffer.get();
         let num_palette_entries = buffer.get();
         let num_palettes = buffer.get();
         let num_color_records = buffer.get();
@@ -40,13 +40,13 @@ impl Font {
         let mut palette_types_array_offset = 0u32;
         let mut palette_labels_array_offset = 0u32;
         let mut palette_entry_labels_array_offset = 0u32;
-        if _version == 1 {
+        if version == 1 {
             palette_types_array_offset = buffer.get();
             palette_labels_array_offset = buffer.get();
             palette_entry_labels_array_offset = buffer.get();
         }
 
-        buffer.set_offset_from(cpal_start_offset, color_records_array_offset);
+        buffer.set_offset_from(cpal_start, color_records_array_offset);
         let color_records_array: Vec<ColorRecord> = buffer.get_vec(num_color_records);
         let mut palettes: Vec<Palette> = (0..num_palettes)
             .map(|i| {
@@ -61,12 +61,12 @@ impl Font {
             })
             .collect();
 
-        if _version == 1 {
-            buffer.set_offset_from(cpal_start_offset, palette_types_array_offset);
+        if version == 1 {
+            buffer.set_offset_from(cpal_start, palette_types_array_offset);
             let palette_types = buffer.get_vec(num_palettes);
-            buffer.set_offset_from(cpal_start_offset, palette_labels_array_offset);
+            buffer.set_offset_from(cpal_start, palette_labels_array_offset);
             let palette_labels = buffer.get_vec(num_palettes);
-            buffer.set_offset_from(cpal_start_offset, palette_entry_labels_array_offset);
+            buffer.set_offset_from(cpal_start, palette_entry_labels_array_offset);
             let palette_entry_labels = buffer.get_vec(num_palettes);
 
             (0..num_palettes).for_each(|i| {
@@ -78,7 +78,7 @@ impl Font {
         }
 
         self.CPAL = Some(Table_CPAL {
-            _version,
+            version,
             num_palette_entries,
             num_palettes,
             num_color_records,
