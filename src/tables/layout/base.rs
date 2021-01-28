@@ -21,7 +21,7 @@ pub struct Table_BASE {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_BASE(&mut self, buffer: &mut Buffer) {
-        let base_start_offset = buffer.offset;
+        let base_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let horiz_axis_offset: u16 = buffer.get();
         let vert_axis_offset: u16 = buffer.get();
@@ -47,20 +47,20 @@ pub struct Axis {
 
 impl ReadBuffer for Axis {
     fn read(buffer: &mut Buffer) -> Self {
-        let axis_start_offset = buffer.offset;
+        let axis_start_offset = buffer.offset();
         let base_tag_list_offset: u16 = buffer.get();
         let base_script_list_offset: u16 = buffer.get();
 
-        buffer.offset = axis_start_offset + base_tag_list_offset as usize;
+        buffer.set_offset_from(axis_start_offset, base_tag_list_offset);
         let base_tag_count: u16 = buffer.get();
         let base_tag_list = buffer.get_vec(base_tag_count);
 
         let base_script_list_start_offset = axis_start_offset + base_script_list_offset as usize;
-        buffer.offset = base_script_list_start_offset;
+        buffer.set_offset(base_script_list_start_offset);
         let base_script_count: u16 = buffer.get();
         let mut base_script_list: Vec<BaseScriptRecord> = buffer.get_vec(base_script_count);
         base_script_list.iter_mut().for_each(|rec| {
-            buffer.offset = base_script_list_start_offset + rec.base_script_offset as usize;
+            buffer.set_offset_from(base_script_list_start_offset, rec.base_script_offset);
             rec.base_script = buffer.get();
         });
 
@@ -97,13 +97,13 @@ pub struct BaseScript {
 
 impl ReadBuffer for BaseScript {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let base_values_offset: u16 = buffer.get();
         let default_min_max_offset: u16 = buffer.get();
         let base_lang_sys_count: u16 = buffer.get();
         let mut base_lang_sys_records: Vec<BaseLangSysRecord> = buffer.get_vec(base_lang_sys_count);
         base_lang_sys_records.iter_mut().for_each(|rec| {
-            buffer.offset = start_offset + rec.min_max_offset as usize;
+            buffer.set_offset_from(start_offset, rec.min_max_offset);
             rec.min_max = Some(buffer.get());
         });
         Self {
@@ -139,14 +139,14 @@ pub struct BaseValues {
 
 impl ReadBuffer for BaseValues {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let default_baseline_index = buffer.get();
         let base_coord_count: u16 = buffer.get();
         let base_coord_offsets: Vec<u16> = buffer.get_vec(base_coord_count);
         let base_coords = base_coord_offsets
             .iter()
             .map(|&offset| {
-                buffer.offset = start_offset + offset as usize;
+                buffer.set_offset_from(start_offset, offset);
                 buffer.get()
             })
             .collect();
@@ -166,7 +166,7 @@ pub struct MinMax {
 
 impl ReadBuffer for MinMax {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let min_coord_offset: u16 = buffer.get();
         let max_coord_offset: u16 = buffer.get();
         let feat_min_max_count: u16 = buffer.get();
@@ -188,7 +188,7 @@ pub struct FeatureMinMaxRecord {
 
 impl ReadBuffer for FeatureMinMaxRecord {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let feature_table_tag = buffer.get();
         let min_coord_offset: u16 = buffer.get();
         let max_coord_offset: u16 = buffer.get();

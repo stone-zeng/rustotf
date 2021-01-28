@@ -19,18 +19,18 @@ pub struct Table_COLR {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_COLR(&mut self, buffer: &mut Buffer) {
-        let colr_start_offset = buffer.offset;
+        let colr_start_offset = buffer.offset();
         let _version = buffer.get();
         let num_base_glyph_records: u16 = buffer.get();
         let base_glyph_records_offset: u32 = buffer.get();
         let layer_records_offset: u32 = buffer.get();
         let num_layer_records: u16 = buffer.get();
 
-        buffer.offset = colr_start_offset + base_glyph_records_offset as usize;
+        buffer.set_offset_from(colr_start_offset, base_glyph_records_offset);
         let base_glyph_records: Vec<BaseGlyphRecord> =
             buffer.get_vec(num_base_glyph_records);
 
-        buffer.offset = colr_start_offset + layer_records_offset as usize;
+        buffer.set_offset_from(colr_start_offset, layer_records_offset);
         let layer_records: Vec<Layer> = buffer.get_vec(num_layer_records);
 
         let color_glyphs = base_glyph_records

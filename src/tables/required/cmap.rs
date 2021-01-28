@@ -26,14 +26,14 @@ pub struct Table_cmap {
 
 impl Font {
     pub fn parse_cmap(&mut self, buffer: &mut Buffer) {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let _version = buffer.get();
         let _num_tables = buffer.get();
         let _encodings: Vec<Encoding> = buffer.get_vec(_num_tables);
         let _subtables = _encodings
             .iter()
             .map(|i| {
-                buffer.offset = start_offset + i._offset as usize;
+                buffer.set_offset_from(start_offset, i._offset);
                 ((i.platform_id, i.encoding_id), buffer.get())
             })
             .collect();
@@ -142,8 +142,8 @@ impl ReadBuffer for CmapFormat2 {
             let entry_count = buffer.get();
             let id_delta = buffer.get();
             let id_range_offset = buffer.get();
-            let offset = buffer.offset;
-            buffer.offset += id_range_offset as usize - 2;
+            let offset = buffer.offset();
+            buffer.advance_offset(id_range_offset - 2);
             let gid_array = buffer
                 .get_vec(entry_count)
                 .iter()
@@ -156,7 +156,7 @@ impl ReadBuffer for CmapFormat2 {
                 id_range_offset,
                 gid_array,
             });
-            buffer.offset = offset;
+            buffer.set_offset(offset);
         }
         Self {
             length,
@@ -198,7 +198,7 @@ impl ReadBuffer for CmapFormat4 {
             buffer.get_vec(seg_count)
         };
         let id_delta = buffer.get_vec(seg_count);
-        let id_range_offset_begin_offset = buffer.offset;
+        let id_range_offset_begin_offset = buffer.offset();
         let id_range_offset = buffer.get_vec(seg_count);
 
         let mut gid_seg_array = Vec::new();
@@ -212,11 +212,12 @@ impl ReadBuffer for CmapFormat4 {
                 filtered_char_range
                     .map(|c| {
                         // TODO: otfcc is different from the C code in MS reference page.
-                        buffer.offset
+                        buffer.set_offset(
                             // Address of `id_range_offset[i]`...
-                            = id_range_offset_begin_offset + i * 2
+                            id_range_offset_begin_offset + i * 2
                             // ... plus some offset
-                            + (id_range_offset[i] as u32 + (c - start) * 2) as usize;
+                            + (id_range_offset[i] as u32 + (c - start) * 2) as usize
+                        );
                         ((buffer.get::<u16>() as i32 + id_delta[i] as i32) % 0xFFFF) as u32
                     })
                     .collect()

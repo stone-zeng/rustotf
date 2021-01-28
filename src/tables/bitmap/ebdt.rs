@@ -23,7 +23,7 @@ pub struct Table_EBDT {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_EBDT(&mut self, buffer: &mut Buffer) {
-        let ebdt_start_offset = buffer.offset;
+        let ebdt_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let strikes = &self.EBLC.as_ref().unwrap().strikes;
         let bitmap_data = strikes
@@ -31,7 +31,7 @@ impl Font {
             .map(|strike| {
                 let mut strike_bitmap_data = Vec::new();
                 for index_sub_table in &strike.index_sub_tables {
-                    buffer.offset = ebdt_start_offset + index_sub_table.image_data_offset as usize;
+                    buffer.set_offset_from(ebdt_start_offset, index_sub_table.image_data_offset);
                     match index_sub_table.image_format {
                         1 | 2 => {
                             // TODO: only for index format 1 or 3

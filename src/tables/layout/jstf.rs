@@ -20,12 +20,12 @@ pub struct Table_JSTF {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_JSTF(&mut self, buffer: &mut Buffer) {
-        let jstf_start_offset = buffer.offset;
+        let jstf_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let jstf_script_count: u16 = buffer.get();
         let mut jstf_script_records: Vec<JstfScriptRecord> = buffer.get_vec(jstf_script_count);
         jstf_script_records.iter_mut().for_each(|rec| {
-            buffer.offset = jstf_start_offset + rec.jstf_script_offset as usize;
+            buffer.set_offset_from(jstf_start_offset, rec.jstf_script_offset);
             rec.jstf_script = Some(buffer.get());
         });
         self.JSTF = Some(Table_JSTF {
@@ -61,14 +61,14 @@ pub struct JstfScript {
 
 impl ReadBuffer for JstfScript {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let extender_glyphs_offset: u16 = buffer.get();
         let default_jstf_lang_sys_offset: u16 = buffer.get();
         let jstf_lang_sys_count: u16 = buffer.get();
         let mut jstf_lang_sys_records: Vec<JstfLangSysRecord> = buffer.get_vec(jstf_lang_sys_count);
 
         let extender_glyphs = if extender_glyphs_offset != 0 {
-            buffer.offset = start_offset + extender_glyphs_offset as usize;
+            buffer.set_offset_from(start_offset, extender_glyphs_offset);
             let extender_glyph_count: u16 = buffer.get();
             buffer.get_vec(extender_glyph_count)
         } else {
@@ -76,9 +76,9 @@ impl ReadBuffer for JstfScript {
         };
 
         let default_jstf_lang_sys = if default_jstf_lang_sys_offset != 0 {
-            buffer.offset = start_offset + default_jstf_lang_sys_offset as usize;
+            buffer.set_offset_from(start_offset, default_jstf_lang_sys_offset);
             let mut rec: JstfLangSysRecord = buffer.get();
-            buffer.offset = start_offset + rec.jstf_lang_sys_offset as usize;
+            buffer.set_offset_from(start_offset, rec.jstf_lang_sys_offset);
             rec.jstf_lang_sys = buffer.get();
             Some(rec)
         } else {
@@ -86,7 +86,7 @@ impl ReadBuffer for JstfScript {
         };
 
         jstf_lang_sys_records.iter_mut().for_each(|rec| {
-            buffer.offset = start_offset + rec.jstf_lang_sys_offset as usize;
+            buffer.set_offset_from(start_offset, rec.jstf_lang_sys_offset);
             rec.jstf_lang_sys = buffer.get();
         });
 
@@ -122,13 +122,13 @@ pub struct JstfLangSys {
 
 impl ReadBuffer for JstfLangSys {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let jstf_priority_count: u16 = buffer.get();
         let jstf_priority_offsets: Vec<u16> = buffer.get_vec(jstf_priority_count);
         let jstf_priorities: Vec<JstfPriority> = jstf_priority_offsets
             .iter()
             .map(|&offset| {
-                buffer.offset = start_offset + offset as usize;
+                buffer.set_offset_from(start_offset, offset);
                 buffer.get()
             })
             .collect();
@@ -152,7 +152,7 @@ pub struct JstfPriority {
 
 impl ReadBuffer for JstfPriority {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let gsub_shrinkage_enable_offset: u16 = buffer.get();
         let gsub_shrinkage_disable_offset: u16 = buffer.get();
         let gpos_shrinkage_enable_offset: u16 = buffer.get();

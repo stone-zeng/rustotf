@@ -26,19 +26,19 @@ pub struct Table_MATH {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_MATH(&mut self, buffer: &mut Buffer) {
-        let math_start_offset = buffer.offset;
+        let math_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let math_constants_offset: u16 = buffer.get();
         let math_glyph_info_offset: u16 = buffer.get();
         let math_variants_offset: u16 = buffer.get();
 
-        buffer.offset = math_start_offset + math_constants_offset as usize;
+        buffer.set_offset_from(math_start_offset, math_constants_offset);
         let math_constants = buffer.get();
 
-        buffer.offset = math_start_offset + math_glyph_info_offset as usize;
+        buffer.set_offset_from(math_start_offset, math_glyph_info_offset);
         let math_glyph_info = buffer.get();
 
-        buffer.offset = math_start_offset + math_variants_offset as usize;
+        buffer.set_offset_from(math_start_offset, math_variants_offset);
         let math_variants = buffer.get();
 
         self.MATH = Some(Table_MATH {
@@ -120,7 +120,7 @@ pub struct MathGlyphInfo {
 
 impl ReadBuffer for MathGlyphInfo {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let math_italics_correction_info_offset: u16 = buffer.get();
         let math_top_accent_attachment_offset: u16 = buffer.get();
         let extended_shape_coverage_offset: u16 = buffer.get();
@@ -128,7 +128,7 @@ impl ReadBuffer for MathGlyphInfo {
 
         macro_rules! _get {
             ($offset:expr) => {{
-                buffer.offset = start_offset + $offset as usize;
+                buffer.set_offset_from(start_offset, $offset);
                 buffer.get()
             }};
         }
@@ -150,11 +150,11 @@ pub struct MathItalicsCorrectionInfo {
 
 impl ReadBuffer for MathItalicsCorrectionInfo {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let italics_correction_coverage_offset: u16 = buffer.get();
         let italics_correction_count: u16 = buffer.get();
         let italics_correction = buffer.get_vec(italics_correction_count);
-        buffer.offset = start_offset + italics_correction_coverage_offset as usize;
+        buffer.set_offset_from(start_offset, italics_correction_coverage_offset);
         let italics_correction_coverage = buffer.get();
         Self {
             italics_correction_coverage,
@@ -171,11 +171,11 @@ pub struct MathTopAccentAttachment {
 
 impl ReadBuffer for MathTopAccentAttachment {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let top_accent_attachment_coverage_offset: u16 = buffer.get();
         let top_accent_attachment_count: u16 = buffer.get();
         let top_accent_attachment = buffer.get_vec(top_accent_attachment_count);
-        buffer.offset = start_offset + top_accent_attachment_coverage_offset as usize;
+        buffer.set_offset_from(start_offset, top_accent_attachment_coverage_offset);
         let top_accent_attachment_coverage = buffer.get();
         Self {
             top_accent_attachment_coverage,
@@ -192,7 +192,7 @@ pub struct MathKernInfo {
 
 impl ReadBuffer for MathKernInfo {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let math_kern_coverage_offset: u16 = buffer.get();
         let math_kern_count: u16 = buffer.get();
         let mut math_kern: Vec<MathKernInfoRecord> = buffer.get_vec(math_kern_count);
@@ -206,7 +206,7 @@ impl ReadBuffer for MathKernInfo {
             rec.bottom_left_math_kern =
                 buffer.get_or_none(start_offset, rec.bottom_left_math_kern_offset);
         });
-        buffer.offset = start_offset + math_kern_coverage_offset as usize;
+        buffer.set_offset_from(start_offset, math_kern_coverage_offset);
         let math_kern_coverage = buffer.get();
         Self {
             math_kern_coverage,
@@ -270,7 +270,7 @@ pub struct MathVariants {
 
 impl ReadBuffer for MathVariants {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let min_connector_overlap = buffer.get();
         let vert_glyph_coverage_offset: u16 = buffer.get();
         let horiz_glyph_coverage_offset: u16 = buffer.get();
@@ -279,24 +279,24 @@ impl ReadBuffer for MathVariants {
         let vert_glyph_construction_offsets: Vec<u16> = buffer.get_vec(vert_glyph_count);
         let horiz_glyph_construction_offsets: Vec<u16> = buffer.get_vec(horiz_glyph_count);
         let vert_glyph_coverage = {
-            buffer.offset = start_offset + vert_glyph_coverage_offset as usize;
+            buffer.set_offset_from(start_offset, vert_glyph_coverage_offset);
             buffer.get()
         };
         let horiz_glyph_coverage = {
-            buffer.offset = start_offset + horiz_glyph_coverage_offset as usize;
+            buffer.set_offset_from(start_offset, horiz_glyph_coverage_offset);
             buffer.get()
         };
         let vert_glyph_constructions = vert_glyph_construction_offsets
             .iter()
             .map(|&offset| {
-                buffer.offset = start_offset + offset as usize;
+                buffer.set_offset_from(start_offset, offset);
                 buffer.get()
             })
             .collect();
         let horiz_glyph_constructions = horiz_glyph_construction_offsets
             .iter()
             .map(|&offset| {
-                buffer.offset = start_offset + offset as usize;
+                buffer.set_offset_from(start_offset, offset);
                 buffer.get()
             })
             .collect();
@@ -318,7 +318,7 @@ pub struct MathGlyphConstruction {
 
 impl ReadBuffer for MathGlyphConstruction {
     fn read(buffer: &mut Buffer) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let glyph_assembly_offset: u16 = buffer.get();
         let variant_count: u16 = buffer.get();
         let math_glyph_variant_records = buffer.get_vec(variant_count);

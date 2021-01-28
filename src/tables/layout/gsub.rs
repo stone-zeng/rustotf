@@ -22,7 +22,7 @@ pub struct Table_GSUB {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_GSUB(&mut self, buffer: &mut Buffer) {
-        let gsub_start_offset = buffer.offset;
+        let gsub_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let script_list_offset: u16 = buffer.get();
         let feature_list_offset: u16 = buffer.get();
@@ -35,31 +35,31 @@ impl Font {
         };
 
         let script_list_start_offset = gsub_start_offset + script_list_offset as usize;
-        buffer.offset = script_list_start_offset;
+        buffer.set_offset(script_list_start_offset);
         let num_scripts: u16 = buffer.get();
         let mut script_list: Vec<ScriptRecord> = buffer.get_vec(num_scripts);
         script_list.iter_mut().for_each(|rec| {
-            buffer.offset = script_list_start_offset + rec.script_offset as usize;
+            buffer.set_offset_from(script_list_start_offset, rec.script_offset);
             rec.script = buffer.get();
         });
 
         let feature_list_start_offset = gsub_start_offset + feature_list_offset as usize;
-        buffer.offset = feature_list_start_offset;
+        buffer.set_offset(feature_list_start_offset);
         let num_features: u16 = buffer.get();
         let mut feature_list: Vec<FeatureRecord> = buffer.get_vec(num_features);
         feature_list.iter_mut().for_each(|rec| {
-            buffer.offset = feature_list_start_offset + rec.feature_offset as usize;
+            buffer.set_offset_from(feature_list_start_offset, rec.feature_offset);
             rec.feature = buffer.get();
         });
 
         let lookup_list_start_offset = gsub_start_offset + lookup_list_offset as usize;
-        buffer.offset = lookup_list_start_offset;
+        buffer.set_offset(lookup_list_start_offset);
         let num_lookups: u16 = buffer.get();
         let lookup_offsets: Vec<u16> = buffer.get_vec(num_lookups);
         let lookup_list = lookup_offsets
             .iter()
             .map(|&offset| {
-                buffer.offset = lookup_list_start_offset + offset as usize;
+                buffer.set_offset_from(lookup_list_start_offset, offset);
                 buffer.get()
             })
             .collect();
@@ -98,7 +98,7 @@ pub struct Script {
 
 impl ReadBuffer for Script {
     fn read(buffer: &mut Buffer) -> Self {
-        let script_start_offset = buffer.offset;
+        let script_start_offset = buffer.offset();
         let default_lang_sys_offset: u16 = buffer.get();
         let lang_sys_count: u16 = buffer.get();
         let lang_sys_records: Vec<LangSysRecord> = buffer.get_vec(lang_sys_count);
@@ -106,7 +106,7 @@ impl ReadBuffer for Script {
         let lang_sys = lang_sys_records
             .iter()
             .map(|rec| {
-                buffer.offset = script_start_offset + rec.lang_sys_offset as usize;
+                buffer.set_offset_from(script_start_offset, rec.lang_sys_offset);
                 // TODO: simplify
                 let tag = Tag::from(rec.lang_sys_tag.to_str());
                 (tag, buffer.get())

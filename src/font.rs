@@ -34,7 +34,7 @@ impl FontContainer {
 
     pub fn init(&mut self) {
         let signature = self.buffer.get();
-        self.buffer.offset = 0;
+        self.buffer.set_offset(0);
         match signature {
             SIGNATURE_OTF | SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => {
                 self.otf_init()
@@ -65,7 +65,7 @@ impl FontContainer {
         }
 
         for offset in offset_table {
-            self.buffer.offset = offset as usize;
+            self.buffer.set_offset(offset);
             self.fonts.push(Font::load_sfnt(&mut self.buffer));
         }
     }
@@ -358,7 +358,7 @@ impl Font {
     }
 
     fn sfnt_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
-        buffer.offset = self.get_table_offset(tag);
+        buffer.set_offset(self.get_table_offset(tag));
         self._parse_table(tag, buffer);
     }
 
@@ -380,7 +380,7 @@ impl Font {
     }
 
     fn woff_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
-        buffer.offset = self.get_table_offset(tag);
+        buffer.set_offset(self.get_table_offset(tag));
         let comp_length = self.get_table_comp_len(tag);
         self._parse_table(tag, &mut buffer.zlib_decompress(comp_length));
     }

@@ -22,7 +22,7 @@ pub struct Table_DSIG {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_DSIG(&mut self, buffer: &mut Buffer) {
-        let dsig_start_offset = buffer.offset;
+        let dsig_start_offset = buffer.offset();
         let version = buffer.get();
         let num_signatures = buffer.get();
         let flags = buffer.get();
@@ -31,7 +31,7 @@ impl Font {
             .iter_mut()
             .for_each(|rec| match rec.format {
                 1 => {
-                    buffer.offset = dsig_start_offset + rec.signature_block_offset as usize;
+                    buffer.set_offset_from(dsig_start_offset, rec.signature_block_offset);
                     buffer.skip::<u16>(2);
                     let signature_length: u32 = buffer.get();
                     rec.signature = buffer.get_vec(signature_length);

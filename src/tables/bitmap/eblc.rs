@@ -22,7 +22,7 @@ pub struct Table_EBLC {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_EBLC(&mut self, buffer: &mut Buffer) {
-        let eblc_start_offset = buffer.offset;
+        let eblc_start_offset = buffer.offset();
         let _version = buffer.get_version::<u16>();
         let _num_strikes = buffer.get();
         let strikes = Strike::read_vec(buffer, _num_strikes as usize, eblc_start_offset);
@@ -47,13 +47,13 @@ impl Strike {
         for bitmap_size in bitmap_size_vec {
             let index_sub_table_start_offset =
                 start_offset + bitmap_size._index_sub_table_offset as usize;
-            buffer.offset = index_sub_table_start_offset;
+            buffer.set_offset(index_sub_table_start_offset);
             let index_sub_table_arrays: Vec<IndexSubTableArray> =
                 buffer.get_vec(bitmap_size._num_index_sub_tables);
             let index_sub_tables = index_sub_table_arrays
                 .iter()
                 .map(|i| {
-                    buffer.offset = index_sub_table_start_offset + i.additional_offset as usize;
+                    buffer.set_offset_from(index_sub_table_start_offset, i.additional_offset);
                     IndexSubTable::read(buffer, i)
                 })
                 .collect();

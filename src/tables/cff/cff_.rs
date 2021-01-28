@@ -27,11 +27,11 @@ pub struct Table_CFF_ {
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_CFF_(&mut self, buffer: &mut Buffer) {
-        let cff_start_offset = buffer.offset;
+        let cff_start_offset = buffer.offset();
         let _version = buffer.get_version::<u8>();
         let _header_size = buffer.get();
         let _offset_size = buffer.get();
-        buffer.offset = cff_start_offset + _header_size as usize;
+        buffer.set_offset_from(cff_start_offset, _header_size);
 
         let names = buffer.get::<Index>().to_string_vec();
         let top_dicts = buffer.get::<Index>().data;
@@ -397,12 +397,12 @@ impl CffFont {
             0 => Encoding::Standard,
             1 => Encoding::Expert,
             _ => {
-                buffer.offset = cff_start_offset + self._encoding_offset;
+                buffer.set_offset_from(cff_start_offset, self._encoding_offset);
                 buffer.get()
             }
         };
         // Char strings
-        buffer.offset = cff_start_offset + self._char_strings_offset;
+        buffer.set_offset_from(cff_start_offset, self._char_strings_offset);
         let char_strings_index: Index = buffer.get();
         let num_glyphs = char_strings_index.count;
         self.char_strings = char_strings_index
@@ -437,7 +437,7 @@ impl CffFont {
                     .map(|&i| i.to_string())
                     .collect(),
                 offset => {
-                    buffer.offset = cff_start_offset + offset as usize;
+                    buffer.set_offset_from(cff_start_offset, offset);
                     let format: u8 = buffer.get();
                     match format {
                         0 => (0..num_glyphs)
@@ -451,23 +451,23 @@ impl CffFont {
             };
             // Private dict
             if self._private_size != 0 {
-                buffer.offset = cff_start_offset + self._private_offset;
+                buffer.set_offset_from(cff_start_offset, self._private_offset);
                 self.private = Some(Private::read(buffer, self._private_size));
             }
         } else {
             // FD Array
-            buffer.offset = cff_start_offset + self._fd_array_offset.unwrap();
+            buffer.set_offset_from(cff_start_offset, self._fd_array_offset.unwrap());
             buffer
                 .get::<Index>()
                 .data
                 .iter()
                 .for_each(|font_dict| self.init_fd_array(font_dict, strings));
             self.fd_array.iter_mut().for_each(|fd| {
-                buffer.offset = cff_start_offset + fd._private_offset;
+                buffer.set_offset_from(cff_start_offset, fd._private_offset);
                 fd.private = Private::read(buffer, fd._private_size);
             });
             // FD Select
-            buffer.offset = cff_start_offset + self._fd_select_offset.unwrap();
+            buffer.set_offset_from(cff_start_offset, self._fd_select_offset.unwrap());
             self.fd_select = Some(FDSelect::read(buffer, num_glyphs));
         }
     }
@@ -672,7 +672,7 @@ impl Private {
     }
 
     fn read(buffer: &mut Buffer, private_size: usize) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let private_dict: Vec<u8> = buffer.get_vec(private_size);
         let mut private = Self::new();
         // We use an empty vector as a placeholder of strings to make the macro work.
@@ -700,7 +700,7 @@ impl Private {
             /* 21    */ private.nominal_width_x = _num!(),
         ]);
         if let Some(subrs_offset) = private._subrs_offset {
-            buffer.offset = start_offset + subrs_offset;
+            buffer.set_offset_from(start_offset, subrs_offset);
             private.subrs = buffer
                 .get::<Index>()
                 .data

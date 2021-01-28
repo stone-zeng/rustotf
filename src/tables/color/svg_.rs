@@ -12,20 +12,20 @@ use crate::util::Buffer;
 pub struct Table_SVG_ {
     _version: u16,
     pub num_entries: u16,
-    pub doc_records: Vec<SvgDocumentRecord>,
+    pub doc_records: Vec<SvgDocRecord>,
 }
 
 impl Font {
     #[allow(non_snake_case)]
     pub fn parse_SVG_(&mut self, buffer: &mut Buffer) {
-        let svg_start_offset = buffer.offset;
+        let svg_start_offset = buffer.offset();
         let _version = buffer.get();
         let svg_doc_list_offset: u32 = buffer.get();
-        buffer.offset = svg_start_offset + svg_doc_list_offset as usize;
-        let svg_doc_start_offset = buffer.offset;
+        buffer.set_offset_from(svg_start_offset, svg_doc_list_offset);
+        let svg_doc_start_offset = buffer.offset();
         let num_entries = buffer.get();
         let doc_records = (0..num_entries)
-            .map(|_| SvgDocumentRecord::read(buffer, svg_doc_start_offset))
+            .map(|_| SvgDocRecord::read(buffer, svg_doc_start_offset))
             .collect();
         self.SVG_ = Some(Table_SVG_ {
             _version,
@@ -36,22 +36,22 @@ impl Font {
 }
 
 #[derive(Debug)]
-pub struct SvgDocumentRecord {
+pub struct SvgDocRecord {
     pub start_glyph_id: u16,
     pub end_glyph_id: u16,
     pub svg_doc: String,
 }
 
-impl SvgDocumentRecord {
+impl SvgDocRecord {
     fn read(buffer: &mut Buffer, start_offset: usize) -> Self {
-        let offset = buffer.offset;
+        let offset = buffer.offset();
         let start_glyph_id = buffer.get();
         let end_glyph_id = buffer.get();
         let svg_doc_offset: u32 = buffer.get();
         let svg_doc_length: u32 = buffer.get();
-        buffer.offset = start_offset + svg_doc_offset as usize;
+        buffer.set_offset_from(start_offset, svg_doc_offset);
         let svg_doc = Self::get_svg_doc(buffer, svg_doc_length as usize);
-        buffer.offset = offset + 12; // u16 + u16 + u32 + u32
+        buffer.set_offset(offset + 12); // u16 + u16 + u32 + u32
         Self {
             start_glyph_id,
             end_glyph_id,
@@ -70,8 +70,11 @@ impl SvgDocumentRecord {
     }
 
     fn check_gzip_header(buffer: &mut Buffer) -> bool {
-        let header: Vec<u8> = buffer.get_vec(3);
-        buffer.offset -= 3; // 3 * u8
-        header == vec![0x1F, 0x8B, 0x08]
+        let start = buffer.offset();
+        let header: Vec<u8> = buffer.get_vec(GZIP_HEADER.len());
+        buffer.set_offset(start);
+        header == GZIP_HEADER
     }
 }
+
+const GZIP_HEADER: &[u8] = &[0x1F, 0x8B, 0x08];

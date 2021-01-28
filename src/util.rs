@@ -1,13 +1,14 @@
 use std::{convert::TryInto, fmt, io::Read, mem, str};
 
+use read_buffer_derive::ReadBuffer;
+
 use byteorder::{BigEndian, ByteOrder};
 use chrono::NaiveDateTime;
 use flate2::read::{GzDecoder, ZlibDecoder};
-use read_buffer_derive::ReadBuffer;
 
 pub struct Buffer {
     raw_buffer: Vec<u8>,
-    pub offset: usize,
+    offset: usize,
 }
 
 impl Buffer {
@@ -67,6 +68,31 @@ impl Buffer {
     /// Skip `n` * `size_of<T>` bytes for `offset`.
     pub fn skip<T>(&mut self, n: usize) {
         self.offset += n * mem::size_of::<T>();
+    }
+
+    pub fn offset(&self) -> usize {
+        self.offset
+    }
+
+    pub fn set_offset<N: TryInto<usize>>(&mut self, offset: N) {
+        match offset.try_into() {
+            Ok(offset) => self.offset = offset,
+            Err(_) => unreachable!(),
+        }
+    }
+
+    pub fn advance_offset<N: TryInto<usize>>(&mut self, offset: N) {
+        match offset.try_into() {
+            Ok(offset) => self.offset += offset,
+            Err(_) => unreachable!(),
+        }
+    }
+
+    pub fn set_offset_from<N: TryInto<usize>>(&mut self, start_offset: usize, offset: N) {
+        match offset.try_into() {
+            Ok(offset) => self.offset = start_offset + offset,
+            Err(_) => unreachable!(),
+        }
     }
 
     pub fn slice(&self, start: usize, end: usize) -> &[u8] {
@@ -147,7 +173,7 @@ pub trait ReadBuffer {
 
 impl ReadBuffer for u8 {
     fn read(buffer: &mut Buffer) -> Self {
-        let offset = buffer.offset;
+        let offset = buffer.offset();
         buffer.offset += mem::size_of::<u8>();
         buffer.raw_buffer[offset]
     }
@@ -155,7 +181,7 @@ impl ReadBuffer for u8 {
 
 impl ReadBuffer for i8 {
     fn read(buffer: &mut Buffer) -> Self {
-        let offset = buffer.offset;
+        let offset = buffer.offset();
         buffer.offset += mem::size_of::<i8>();
         buffer.raw_buffer[offset] as i8
     }
@@ -166,7 +192,7 @@ macro_rules! _generate_read {
     ($t:ty, $f:expr) => {
         impl ReadBuffer for $t {
             fn read(buffer: &mut Buffer) -> Self {
-                let offset = buffer.offset;
+                let offset = buffer.offset();
                 buffer.offset += mem::size_of::<$t>();
                 $f(&buffer.raw_buffer[offset..buffer.offset])
             }

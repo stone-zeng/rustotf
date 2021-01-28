@@ -16,7 +16,7 @@ pub struct Table_sbix {
 
 impl Font {
     pub fn parse_sbix(&mut self, buffer: &mut Buffer) {
-        let sbix_start_offset = buffer.offset;
+        let sbix_start_offset = buffer.offset();
         let num_glyphs = self.maxp.as_ref().unwrap().num_glyphs as usize;
         let _version: u16 = buffer.get();
         let _flags: u16 = buffer.get();
@@ -25,7 +25,7 @@ impl Font {
         let strikes = strike_offsets
             .iter()
             .map(|&strike_offset| {
-                buffer.offset = sbix_start_offset + strike_offset as usize;
+                buffer.set_offset_from(sbix_start_offset, strike_offset);
                 Strikes::read(buffer, num_glyphs)
             })
             .collect();
@@ -42,13 +42,13 @@ pub struct Strikes {
 
 impl Strikes {
     fn read(buffer: &mut Buffer, num_glyphs: usize) -> Self {
-        let start_offset = buffer.offset;
+        let start_offset = buffer.offset();
         let ppem = buffer.get();
         let ppi = buffer.get();
         let glyph_data_offsets: Vec<u32> = buffer.get_vec(num_glyphs + 1);
         let glyph_data = (0..num_glyphs)
             .map(|i| {
-                buffer.offset = start_offset + glyph_data_offsets[i] as usize;
+                buffer.set_offset_from(start_offset, glyph_data_offsets[i]);
                 let data_len = glyph_data_offsets[i + 1] - glyph_data_offsets[i];
                 GlyphData::read(buffer, data_len as usize)
             })
