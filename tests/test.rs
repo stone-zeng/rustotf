@@ -43,7 +43,7 @@ fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
 
     macro_rules! _assert {
         ($font:ident, $t:ident, $s:expr) => {
-            if $font.has_table($s) {
+            if $font.contains($s) {
                 println!("{}", $s);
                 assert!($font.$t.is_some())
             }

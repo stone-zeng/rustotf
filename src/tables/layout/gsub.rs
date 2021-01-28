@@ -108,9 +108,7 @@ impl ReadBuffer for Script {
             .iter()
             .map(|rec| {
                 buffer.set_offset_from(script_start, rec.lang_sys_offset);
-                // TODO: simplify
-                let tag = Tag::from(rec.lang_sys_tag.to_str());
-                (tag, buffer.get())
+                (rec.lang_sys_tag, buffer.get())
             })
             .collect();
         Self {

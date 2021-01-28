@@ -100,7 +100,7 @@ impl Font {
         };
         // Version 0 (Microsoft)
         // Need to check the table length.
-        if self.get_table_len(&Tag::from("OS/2")) >= 78 {
+        if self.get_table_len(Tag::new(b"OS/2")) >= 78 {
             table.s_typo_ascender = Some(buffer.get());
             table.s_typo_descender = Some(buffer.get());
             table.s_typo_line_gap = Some(buffer.get());

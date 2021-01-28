@@ -87,7 +87,7 @@ impl FontContainer {
 
     // TODO: some tables depend on other tables
     pub fn parse_table(&mut self, tag_str: &str) {
-        let tag = &Tag::from(tag_str);
+        let tag = Tag::from(tag_str);
         for font in &mut self.fonts {
             match font.format {
                 Format::SFNT => font.sfnt_parse_table(tag, &mut self.buffer),
@@ -331,51 +331,51 @@ impl Font {
 
     #[rustfmt::skip]
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
-        for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
-            let tag = &Tag::from(tag_str);
+        for tag_str in &[b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post"] {
+            let tag = Tag::new(tag_str);
             self.sfnt_parse_table(tag, buffer);
         }
         for tag_str in &[
-            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp",
-            "CFF ", "VORG",
-            "BASE", "GSUB", "JSTF", "MATH",
-            "EBLC", "EBDT", "EBSC",
-            "CBLC", "CBDT",
-            "COLR", "CPAL",
-            "sbix",
-            "SVG ",
-            "DSIG", "LTSH"
+            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp",
+            b"CFF ", b"VORG",
+            b"BASE", b"GSUB", b"JSTF", b"MATH",
+            b"EBLC", b"EBDT", b"EBSC",
+            b"CBLC", b"CBDT",
+            b"COLR", b"CPAL",
+            b"sbix",
+            b"SVG ",
+            b"DSIG", b"LTSH"
         ] {
-            let tag = &Tag::from(tag_str);
+            let tag = Tag::new(tag_str);
             if self.table_records.contains(tag) {
                 self.sfnt_parse_table(tag, buffer);
             }
         }
     }
 
-    fn sfnt_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
+    fn sfnt_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.set_offset(self.get_table_offset(tag));
         self._parse_table(tag, buffer);
     }
 
     fn woff_parse(&mut self, buffer: &mut Buffer) {
         for tag_str in &[
-            "head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post",
+            b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post",
         ] {
-            let tag = &Tag::from(tag_str);
+            let tag = Tag::new(tag_str);
             self.woff_parse_table(tag, buffer);
         }
         for tag_str in &[
-            "loca", "glyf", "cvt ", "fpgm", "prep", "gasp", "CFF ", "CFF2",
+            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp", b"CFF ", b"CFF2",
         ] {
-            let tag = &Tag::from(tag_str);
+            let tag = Tag::new(tag_str);
             if self.table_records.contains(tag) {
                 self.woff_parse_table(tag, buffer);
             }
         }
     }
 
-    fn woff_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
+    fn woff_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.set_offset(self.get_table_offset(tag));
         let comp_length = self.get_table_comp_len(tag);
         self._parse_table(tag, &mut buffer.zlib_decompress(comp_length));
@@ -387,76 +387,76 @@ impl Font {
     }
 
     #[allow(unused_variables)]
-    fn woff2_parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
+    fn woff2_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         unimplemented!()
     }
 
-    fn _parse_table(&mut self, tag: &Tag, buffer: &mut Buffer) {
-        match tag.to_str() {
-            "head" => self.parse_head(buffer),
-            "hhea" => self.parse_hhea(buffer),
-            "maxp" => self.parse_maxp(buffer),
-            "hmtx" => self.parse_hmtx(buffer),
-            "cmap" => self.parse_cmap(buffer),
-            "name" => self.parse_name(buffer),
-            "OS/2" => self.parse_OS_2(buffer),
-            "post" => self.parse_post(buffer),
-            "loca" => self.parse_loca(buffer),
-            "glyf" => self.parse_glyf(buffer),
-            "cvt " => self.parse_cvt_(buffer),
-            "fpgm" => self.parse_fpgm(buffer),
-            "prep" => self.parse_prep(buffer),
-            "gasp" => self.parse_gasp(buffer),
-            "CFF " => self.parse_CFF_(buffer),
-            // "CFF2" => self.parse_CFF2(buffer),
-            "VORG" => self.parse_VORG(buffer),
-            "EBDT" => self.parse_EBDT(buffer),
-            "EBLC" => self.parse_EBLC(buffer),
-            "EBSC" => self.parse_EBSC(buffer),
-            "BASE" => self.parse_BASE(buffer),
-            "GSUB" => self.parse_GSUB(buffer),
-            "JSTF" => self.parse_JSTF(buffer),
-            "MATH" => self.parse_MATH(buffer),
-            "avar" => self.parse_avar(buffer),
-            // "cvar" => self.parse_cvar(buffer),
-            "fvar" => self.parse_fvar(buffer),
-            // "gvar" => self.parse_gvar(buffer),
-            "HVAR" => self.parse_HVAR(buffer),
-            "MVAR" => self.parse_MVAR(buffer),
-            // "STAT" => self.parse_STAT(buffer),
-            // "VVAR" => self.parse_VVAR(buffer),
-            "COLR" => self.parse_COLR(buffer),
-            "CPAL" => self.parse_CPAL(buffer),
-            "CBDT" => self.parse_CBDT(buffer),
-            "CBLC" => self.parse_CBLC(buffer),
-            "sbix" => self.parse_sbix(buffer),
-            "SVG " => self.parse_SVG_(buffer),
-            "DSIG" => self.parse_DSIG(buffer),
-            "LTSH" => self.parse_LTSH(buffer),
+    fn _parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+        match tag.bytes() {
+            b"head" => self.parse_head(buffer),
+            b"hhea" => self.parse_hhea(buffer),
+            b"maxp" => self.parse_maxp(buffer),
+            b"hmtx" => self.parse_hmtx(buffer),
+            b"cmap" => self.parse_cmap(buffer),
+            b"name" => self.parse_name(buffer),
+            b"OS/2" => self.parse_OS_2(buffer),
+            b"post" => self.parse_post(buffer),
+            b"loca" => self.parse_loca(buffer),
+            b"glyf" => self.parse_glyf(buffer),
+            b"cvt " => self.parse_cvt_(buffer),
+            b"fpgm" => self.parse_fpgm(buffer),
+            b"prep" => self.parse_prep(buffer),
+            b"gasp" => self.parse_gasp(buffer),
+            b"CFF " => self.parse_CFF_(buffer),
+            // b"CFF2" => self.parse_CFF2(buffer),
+            b"VORG" => self.parse_VORG(buffer),
+            b"EBDT" => self.parse_EBDT(buffer),
+            b"EBLC" => self.parse_EBLC(buffer),
+            b"EBSC" => self.parse_EBSC(buffer),
+            b"BASE" => self.parse_BASE(buffer),
+            b"GSUB" => self.parse_GSUB(buffer),
+            b"JSTF" => self.parse_JSTF(buffer),
+            b"MATH" => self.parse_MATH(buffer),
+            b"avar" => self.parse_avar(buffer),
+            // b"cvar" => self.parse_cvar(buffer),
+            b"fvar" => self.parse_fvar(buffer),
+            // b"gvar" => self.parse_gvar(buffer),
+            b"HVAR" => self.parse_HVAR(buffer),
+            b"MVAR" => self.parse_MVAR(buffer),
+            // b"STAT" => self.parse_STAT(buffer),
+            // b"VVAR" => self.parse_VVAR(buffer),
+            b"COLR" => self.parse_COLR(buffer),
+            b"CPAL" => self.parse_CPAL(buffer),
+            b"CBDT" => self.parse_CBDT(buffer),
+            b"CBLC" => self.parse_CBLC(buffer),
+            b"sbix" => self.parse_sbix(buffer),
+            b"SVG " => self.parse_SVG_(buffer),
+            b"DSIG" => self.parse_DSIG(buffer),
+            b"LTSH" => self.parse_LTSH(buffer),
             _ => eprintln!("Table `{}` is not supported", tag),
         };
     }
 
     // TODO: consider Option<>
 
-    fn get(&self, tag: &Tag) -> &TableRecord {
+    fn get(&self, tag: Tag) -> &TableRecord {
         self.table_records.get(tag).unwrap()
     }
 
-    pub fn get_table_len(&self, tag: &Tag) -> usize {
+    pub fn get_table_len(&self, tag: Tag) -> usize {
         self.get(tag).length as usize
     }
 
-    pub fn get_table_offset(&self, tag: &Tag) -> usize {
+    pub fn get_table_offset(&self, tag: Tag) -> usize {
         self.get(tag).offset as usize
     }
 
-    pub fn get_table_comp_len(&self, tag: &Tag) -> usize {
+    pub fn get_table_comp_len(&self, tag: Tag) -> usize {
         self.get(tag).woff_comp_length as usize
     }
 
-    pub fn has_table(&self, tag_str: &str) -> bool {
-        self.table_records.contains(&Tag::from(tag_str))
+    pub fn contains(&self, s: &str) -> bool {
+        self.table_records.contains(Tag::from(s))
     }
 
     pub fn fmt_tables(&self, indent: &str) -> String {
@@ -490,15 +490,15 @@ struct TableRecords {
 }
 
 impl TableRecords {
-    fn get(&self, tag: &Tag) -> Option<&TableRecord> {
-        match self.tags.iter().position(|t| t == tag) {
+    fn get(&self, tag: Tag) -> Option<&TableRecord> {
+        match self.tags.iter().position(|&t| t == tag) {
             Some(pos) => Some(&self.records[pos]),
             _ => None,
         }
     }
 
-    fn contains(&self, tag: &Tag) -> bool {
-        self.tags.contains(tag)
+    fn contains(&self, tag: Tag) -> bool {
+        self.tags.contains(&tag)
     }
 }
 

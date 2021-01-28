@@ -22,7 +22,7 @@ pub struct Table_prep {
 
 impl Font {
     pub fn parse_prep(&mut self, buffer: &mut Buffer) {
-        let num = self.get_table_len(&Tag::from("prep")) / size_of::<u8>();
+        let num = self.get_table_len(Tag::new(b"prep")) / size_of::<u8>();
         self.prep = Some(Table_prep {
             values: buffer.get_vec(num),
         });

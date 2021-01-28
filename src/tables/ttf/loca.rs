@@ -20,7 +20,7 @@ pub struct Table_loca {
 impl Font {
     pub fn parse_loca(&mut self, buffer: &mut Buffer) {
         let index_to_loc_format = self.head.as_ref().unwrap().index_to_loc_format;
-        let loca_len = self.get_table_len(&Tag::from("loca"));
+        let loca_len = self.get_table_len(Tag::new(b"loca"));
         let offset_size = match index_to_loc_format {
             0 => size_of::<u16>(),
             1 => size_of::<u32>(),

@@ -19,7 +19,7 @@ pub struct Table_cvt_ {
 
 impl Font {
     pub fn parse_cvt_(&mut self, buffer: &mut Buffer) {
-        let num = self.get_table_len(&Tag::from("cvt ")) / size_of::<i16>();
+        let num = self.get_table_len(Tag::new(b"cvt ")) / size_of::<i16>();
         self.cvt_ = Some(Table_cvt_ {
             values: buffer.get_vec(num),
         });

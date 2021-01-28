@@ -1,4 +1,8 @@
-use std::{convert::TryInto, fmt, io::Read, mem, str};
+use std::convert::TryInto;
+use std::fmt;
+use std::io::Read;
+use std::mem;
+use std::str;
 
 use read_buffer_derive::ReadBuffer;
 
@@ -98,14 +102,6 @@ impl Buffer {
     pub fn slice(&self, start: usize, end: usize) -> &[u8] {
         &self.raw_buffer[(self.offset + start)..(self.offset + end)]
     }
-
-    // TODO: to be removed
-    // pub fn duplicate(self, offset: usize) -> Self {
-    //     Self {
-    //         raw_buffer: self.raw_buffer,
-    //         offset,
-    //     }
-    // }
 
     pub fn zlib_decompress(&self, comp_length: usize) -> Self {
         let comp_buffer = self.slice(0, comp_length);
@@ -286,34 +282,31 @@ impl fmt::Debug for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-#[derive(Default, Eq, PartialEq)]
-pub struct Tag {
-    _internal: [u8; 4],
-}
+#[derive(Default, Eq, PartialEq, Clone, Copy)]
+pub struct Tag([u8; 4]);
 
 impl Tag {
-    pub fn from(tag_str: &str) -> Self {
-        let mut bytes = tag_str.bytes();
-        Self {
-            _internal: [
-                bytes.next().unwrap(),
-                bytes.next().unwrap(),
-                bytes.next().unwrap(),
-                bytes.next().unwrap(),
-            ],
-        }
+    pub const fn new(bytes: &[u8; 4]) -> Self {
+        Self(*bytes)
+    }
+
+    pub fn from(s: &str) -> Self {
+        let bytes = s.as_bytes().try_into().unwrap();
+        Tag::new(bytes)
+    }
+
+    pub const fn bytes(&self) -> &[u8; 4] {
+        &self.0
     }
 
     pub fn to_str(&self) -> &str {
-        str::from_utf8(&self._internal).unwrap()
+        str::from_utf8(&self.0).unwrap()
     }
 }
 
 impl ReadBuffer for Tag {
     fn read(buffer: &mut Buffer) -> Self {
-        Self {
-            _internal: [buffer.get(), buffer.get(), buffer.get(), buffer.get()],
-        }
+        Self([buffer.get(), buffer.get(), buffer.get(), buffer.get()])
     }
 }
 

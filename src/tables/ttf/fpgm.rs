@@ -19,7 +19,7 @@ pub struct Table_fpgm {
 
 impl Font {
     pub fn parse_fpgm(&mut self, buffer: &mut Buffer) {
-        let num = self.get_table_len(&Tag::from("fpgm")) / size_of::<u8>();
+        let num = self.get_table_len(Tag::new(b"fpgm")) / size_of::<u8>();
         self.fpgm = Some(Table_fpgm {
             values: buffer.get_vec(num),
         });
