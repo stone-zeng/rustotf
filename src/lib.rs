@@ -58,7 +58,7 @@ mod tables {
     }
 }
 
-pub use font::{read_font, Font, FontContainer};
+pub use font::{Font, FontContainer};
 
 #[rustfmt::skip]
 pub use tables::{
@@ -115,11 +115,3 @@ pub use tables::{
         ltsh::Table_LTSH,
     },
 };
-
-// pub fn parse_args(args: &[String]) -> Result<&str, &str> {
-//     if args.len() > 1 {
-//         Ok(&args[1])
-//     } else {
-//         Err("not enough arguments")
-//     }
-// }

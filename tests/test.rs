@@ -1,5 +1,5 @@
 use rustotf::FontContainer;
-use std::fs;
+use std::io::Result;
 
 const FONTS_PATH: &str = "./tests/fonts/";
 
@@ -33,11 +33,10 @@ const WOFF_FONTS: &[&str] = &[
     "SourceSerif4Variable-Italic.otf.woff",
 ];
 
-fn check_font(font_file_path: &str, flag: &str) {
+fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
     println!("Checking font: {}", font_file_path);
 
-    let mut font_container = FontContainer::new(fs::read(font_file_path).unwrap());
-    font_container.init();
+    let mut font_container = FontContainer::read(font_file_path)?;
     assert_ne!(font_container.fonts.len(), 0);
 
     font_container.parse();
@@ -79,36 +78,42 @@ fn check_font(font_file_path: &str, flag: &str) {
         }
         _ => (),
     }
+
+    Ok(())
 }
 
 #[test]
-fn check_ttf() {
+fn check_ttf() -> Result<()> {
     for i in TTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name, "ttf");
+        check_font(&font_file_name, "ttf")?;
     }
+    Ok(())
 }
 
 #[test]
-fn check_otf() {
+fn check_otf() -> Result<()> {
     for i in OTF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name, "otf");
+        check_font(&font_file_name, "otf")?;
     }
+    Ok(())
 }
 
 #[test]
-fn check_ttc() {
+fn check_ttc() -> Result<()> {
     for i in TTC_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name, "");
+        check_font(&font_file_name, "")?;
     }
+    Ok(())
 }
 
 #[test]
-fn check_woff() {
+fn check_woff() -> Result<()> {
     for i in WOFF_FONTS {
         let font_file_name = [FONTS_PATH, i].join("");
-        check_font(&font_file_name, "");
+        check_font(&font_file_name, "")?;
     }
+    Ok(())
 }

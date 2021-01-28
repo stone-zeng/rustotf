@@ -325,6 +325,6 @@ impl fmt::Debug for Tag {
 
 impl fmt::Display for Tag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "\"{}\"", self.to_str())
+        write!(f, "{}", self.to_str())
     }
 }

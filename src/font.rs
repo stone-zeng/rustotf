@@ -2,21 +2,8 @@ use crate::tables::*;
 use crate::util::{Buffer, Tag};
 
 use std::collections::HashMap;
-use std::error::Error;
 use std::fs;
-
-pub fn read_font(font_file_path: &str) -> Result<(), Box<dyn Error>> {
-    // TODO: check extension.
-    let mut font_container = FontContainer::new(fs::read(font_file_path)?);
-    font_container.init();
-    font_container.parse();
-    // TODO: for debug
-    for i in &font_container.fonts {
-        // println!("{:#?}", i.table_records);
-        println!("\"MATH\": {:#?}", i.MATH);
-    }
-    Ok(())
-}
+use std::io;
 
 #[derive(Debug)]
 pub struct FontContainer {
@@ -25,14 +12,23 @@ pub struct FontContainer {
 }
 
 impl FontContainer {
-    pub fn new(raw_buffer: Vec<u8>) -> Self {
+    /// Read and initialize the `FontContainer` from `path`.
+    pub fn read(path: &str) -> io::Result<Self> {
+        let raw_buffer = fs::read(path)?;
+        let mut font_container = Self::new(raw_buffer);
+        font_container.init();
+        Ok(font_container)
+    }
+
+    /// Create an empty `FontContainer`.
+    fn new(raw_buffer: Vec<u8>) -> Self {
         Self {
             buffer: Buffer::new(raw_buffer),
             fonts: Vec::new(),
         }
     }
 
-    pub fn init(&mut self) {
+    fn init(&mut self) {
         let signature = self.buffer.get();
         self.buffer.set_offset(0);
         match signature {
@@ -235,29 +231,27 @@ pub struct Font {
 }
 
 impl Font {
-    #[allow(unused_variables)]
     fn load_sfnt(buffer: &mut Buffer) -> Self {
         let signature: u32 = buffer.get();
         let num_tables: u16 = buffer.get();
-        let search_range: u16 = buffer.get();
-        let entry_selector: u16 = buffer.get();
-        let range_shift: u16 = buffer.get();
+        // Skip searchRange, entrySelector and rangeShift.
+        buffer.skip::<u16>(3);
+        let table_records = (0..num_tables)
+            .map(|_| {
+                let tag = buffer.get();
+                let record = TableRecord {
+                    checksum: buffer.get(),
+                    offset: buffer.get(),
+                    length: buffer.get(),
+                    ..Default::default()
+                };
+                (tag, record)
+            })
+            .collect();
         Self {
             format: Format::SFNT,
             flavor: Self::get_flavor(signature),
-            table_records: (0..num_tables)
-                .map(|_| {
-                    (
-                        buffer.get(),
-                        TableRecord {
-                            checksum: buffer.get(),
-                            offset: buffer.get(),
-                            length: buffer.get(),
-                            ..Default::default()
-                        },
-                    )
-                })
-                .collect(),
+            table_records,
             ..Default::default()
         }
     }
@@ -333,9 +327,7 @@ impl Font {
             _ => unreachable!(),
         }
     }
-}
 
-impl Font {
     #[rustfmt::skip]
     fn sfnt_parse(&mut self, buffer: &mut Buffer) {
         for tag_str in &["head", "hhea", "maxp", "hmtx", "cmap", "name", "OS/2", "post"] {
@@ -464,6 +456,30 @@ impl Font {
 
     pub fn has_table(&self, tag_str: &str) -> bool {
         self.table_records.contains_key(&Tag::from(tag_str))
+    }
+
+    pub fn fmt_tables(&self, indent: &str) -> String {
+        #[rustfmt::skip]
+        let header = format!(
+            concat!(
+                "{0}", "Tag     Checksum      Length      Offset", "\n",
+                "{0}", "----  ----------  ----------  ----------", "\n",
+            ),
+            indent
+        );
+        let mut table_records_sorted: Vec<_> = self.table_records.iter().collect();
+        table_records_sorted.sort_by(|(_, a), (_, b)| a.offset.partial_cmp(&b.offset).unwrap());
+        let body = table_records_sorted
+            .iter()
+            .map(|(tag, rec)| {
+                format!(
+                    "{}{}  0x{:08X}  {:10}  {:10}",
+                    indent, tag, rec.checksum, rec.length, rec.offset
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!("{}{}", header, body)
     }
 }
 

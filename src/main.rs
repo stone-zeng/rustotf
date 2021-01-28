@@ -1,19 +1,20 @@
-// use rustotf;
-// use std::process;
-
 use clap::{crate_authors, crate_name, crate_version, App, Arg, ArgMatches};
+use rustotf::{Font, FontContainer};
+use std::io;
+use std::path::Path;
 
-fn main() {
+fn main() -> io::Result<()> {
     let matches = app().get_matches();
-    if let Some(input_file) = matches.value_of("input") {
+    if let Some(input_file_path) = matches.value_of("input") {
         let ttc_indices = parse_arg_ttc_indices(&matches);
         if matches.is_present("list") {
-            list_tables(input_file, ttc_indices);
+            list_tables(input_file_path, ttc_indices)?;
         } else {
             let tables = parse_arg_tables(&matches);
-            print_tables(input_file, ttc_indices, tables);
+            print_tables(input_file_path, ttc_indices, tables);
         }
     }
+    Ok(())
 }
 
 fn app() -> App<'static> {
@@ -86,12 +87,49 @@ fn parse_arg_tables(matches: &ArgMatches) -> Vec<&str> {
     }
 }
 
-#[allow(unused_variables)]
-fn list_tables(font_file: &str, ttc_indices: Vec<usize>) {
-    todo!()
+fn list_tables(font_file_path: &str, ttc_indices: Vec<usize>) -> io::Result<()> {
+    let font_container = FontContainer::read(font_file_path)?;
+    let font_num = font_container.fonts.len();
+    let indent = "    ";
+    match font_num {
+        0 => eprintln!("Invalid font files."),
+        1 => {
+            if !ttc_indices.is_empty() {
+                eprintln!("WARNING: Your font number specification will be ignored.");
+            }
+            println!("Listing table info for {:?}:\n", font_file_path);
+            println!("{}\n", font_container.fonts[0].fmt_tables(indent));
+        }
+        _ => {
+            println!("Listing table info for {:?}:\n", font_file_path);
+            let file_name = Path::new(font_file_path)
+                .file_name()
+                .unwrap()
+                .to_str()
+                .unwrap();
+            let print_font = |(i, font): (usize, &Font)| {
+                println!("{}#{}:\n{}\n", file_name, i, font.fmt_tables(indent))
+            };
+            if ttc_indices.is_empty() {
+                font_container.fonts.iter().enumerate().for_each(print_font);
+            } else {
+                ttc_indices
+                    .iter()
+                    .for_each(|&i| match font_container.fonts.get(i) {
+                        Some(font) => print_font((i, font)),
+                        _ => eprintln!(
+                            "The font number should be between 0 and {}, but you specify {}.",
+                            font_container.fonts.len() - 1,
+                            i
+                        ),
+                    })
+            }
+        }
+    }
+    Ok(())
 }
 
 #[allow(unused_variables)]
-fn print_tables(font_file: &str, ttc_indices: Vec<usize>, tables: Vec<&str>) {
+fn print_tables(font_file_path: &str, ttc_indices: Vec<usize>, tables: Vec<&str>) {
     todo!()
 }
