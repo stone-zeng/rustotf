@@ -1,9 +1,10 @@
 use crate::tables::*;
 use crate::util::{Buffer, Tag};
 
-use std::collections::HashMap;
 use std::fs;
 use std::io;
+use std::iter::{FromIterator, Zip};
+use std::slice::Iter;
 
 #[derive(Debug)]
 pub struct FontContainer {
@@ -103,7 +104,7 @@ impl FontContainer {
 pub struct Font {
     format: Format,
     flavor: Flavor,
-    table_records: HashMap<Tag, TableRecord>,
+    table_records: TableRecords,
 
     // Required tables
 
@@ -273,23 +274,23 @@ impl Font {
         let meta_orig_length: u32 = buffer.get();
         let priv_offset: u32 = buffer.get();
         let priv_length: u32 = buffer.get();
+        let table_records = (0..num_tables)
+            .map(|_| {
+                let tag = buffer.get();
+                let record = TableRecord {
+                    // The order is different from SFNT format
+                    offset: buffer.get(),
+                    woff_comp_length: buffer.get(),
+                    length: buffer.get(),
+                    checksum: buffer.get(),
+                };
+                (tag, record)
+            })
+            .collect();
         Self {
             format: Format::WOFF,
             flavor: Self::get_flavor(flavor),
-            table_records: (0..num_tables)
-                .map(|_| {
-                    (
-                        buffer.get(),
-                        TableRecord {
-                            // The order is different from SFNT format
-                            offset: buffer.get(),
-                            woff_comp_length: buffer.get(),
-                            length: buffer.get(),
-                            checksum: buffer.get(),
-                        },
-                    )
-                })
-                .collect(),
+            table_records,
             ..Default::default()
         }
     }
@@ -346,7 +347,7 @@ impl Font {
             "DSIG", "LTSH"
         ] {
             let tag = &Tag::from(tag_str);
-            if self.table_records.contains_key(tag) {
+            if self.table_records.contains(tag) {
                 self.sfnt_parse_table(tag, buffer);
             }
         }
@@ -368,7 +369,7 @@ impl Font {
             "loca", "glyf", "cvt ", "fpgm", "prep", "gasp", "CFF ", "CFF2",
         ] {
             let tag = &Tag::from(tag_str);
-            if self.table_records.contains_key(tag) {
+            if self.table_records.contains(tag) {
                 self.woff_parse_table(tag, buffer);
             }
         }
@@ -438,24 +439,24 @@ impl Font {
 
     // TODO: consider Option<>
 
-    fn _get_table_record(&self, tag: &Tag) -> &TableRecord {
+    fn get(&self, tag: &Tag) -> &TableRecord {
         self.table_records.get(tag).unwrap()
     }
 
     pub fn get_table_len(&self, tag: &Tag) -> usize {
-        self._get_table_record(tag).length as usize
+        self.get(tag).length as usize
     }
 
     pub fn get_table_offset(&self, tag: &Tag) -> usize {
-        self._get_table_record(tag).offset as usize
+        self.get(tag).offset as usize
     }
 
     pub fn get_table_comp_len(&self, tag: &Tag) -> usize {
-        self._get_table_record(tag).woff_comp_length as usize
+        self.get(tag).woff_comp_length as usize
     }
 
     pub fn has_table(&self, tag_str: &str) -> bool {
-        self.table_records.contains_key(&Tag::from(tag_str))
+        self.table_records.contains(&Tag::from(tag_str))
     }
 
     pub fn fmt_tables(&self, indent: &str) -> String {
@@ -467,10 +468,9 @@ impl Font {
             ),
             indent
         );
-        let mut table_records_sorted: Vec<_> = self.table_records.iter().collect();
-        table_records_sorted.sort_by(|(_, a), (_, b)| a.offset.partial_cmp(&b.offset).unwrap());
-        let body = table_records_sorted
-            .iter()
+        let body = self
+            .table_records
+            .into_iter()
             .map(|(tag, rec)| {
                 format!(
                     "{}{}  0x{:08X}  {:10}  {:10}",
@@ -480,6 +480,51 @@ impl Font {
             .collect::<Vec<_>>()
             .join("\n");
         format!("{}{}", header, body)
+    }
+}
+
+#[derive(Debug, Default)]
+struct TableRecords {
+    tags: Vec<Tag>,
+    records: Vec<TableRecord>,
+}
+
+impl TableRecords {
+    fn get(&self, tag: &Tag) -> Option<&TableRecord> {
+        match self.tags.iter().position(|t| t == tag) {
+            Some(pos) => Some(&self.records[pos]),
+            _ => None,
+        }
+    }
+
+    fn contains(&self, tag: &Tag) -> bool {
+        self.tags.contains(tag)
+    }
+}
+
+impl<'a> IntoIterator for &'a TableRecords {
+    type Item = (&'a Tag, &'a TableRecord);
+    type IntoIter = Zip<Iter<'a, Tag>, Iter<'a, TableRecord>>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.tags
+            .as_slice()
+            .into_iter()
+            .zip(self.records.as_slice().into_iter())
+    }
+}
+
+impl FromIterator<(Tag, TableRecord)> for TableRecords {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (Tag, TableRecord)>,
+    {
+        let mut res = TableRecords::default();
+        for (tag, record) in iter {
+            res.tags.push(tag);
+            res.records.push(record);
+        }
+        res
     }
 }
 

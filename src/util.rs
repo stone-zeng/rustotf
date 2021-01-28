@@ -286,7 +286,7 @@ impl fmt::Debug for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-#[derive(Default, Eq, PartialEq, Hash)]
+#[derive(Default, Eq, PartialEq)]
 pub struct Tag {
     _internal: [u8; 4],
 }
