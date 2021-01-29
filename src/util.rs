@@ -204,11 +204,8 @@ _generate_read!(i32, BigEndian::read_i32);
 _generate_read!(i64, BigEndian::read_i64);
 
 #[allow(non_camel_case_types)]
-#[derive(Clone, Copy, ReadBuffer)]
-pub struct u24 {
-    _1: u16,
-    _0: u8,
-}
+#[derive(Clone, Copy, Default, ReadBuffer)]
+pub struct u24(u16, u8);
 
 impl fmt::Debug for u24 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -218,43 +215,39 @@ impl fmt::Debug for u24 {
 
 impl From<u24> for usize {
     fn from(num: u24) -> Self {
-        ((num._1 as usize) << 8) + (num._0 as usize)
+        ((num.0 as usize) << 8) + (num.1 as usize)
     }
 }
 
 /// 32-bit signed fixed-point number (16.16).
-#[derive(Default, ReadBuffer)]
-pub struct Fixed {
-    _num: i32,
-}
+#[derive(Clone, Copy, Default, ReadBuffer)]
+pub struct Fixed(i32);
 
 impl fmt::Debug for Fixed {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:.3}", f64::from(self._num) / 65536.0)
+        write!(f, "{:.3}", f64::from(self.0) / 65536.0)
     }
 }
 
 impl PartialEq<i32> for Fixed {
     fn eq(&self, other: &i32) -> bool {
-        self._num == *other
+        self.0 == *other
     }
 }
 
 /// 16-bit signed fixed number with the low 14 bits of fraction (2.14).
 #[derive(Clone, Copy, Default, ReadBuffer)]
-pub struct F2Dot14 {
-    _num: i16,
-}
+pub struct F2Dot14(i16);
 
 impl fmt::Debug for F2Dot14 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:.3}", self._num as f64 / 16384.0)
+        write!(f, "{:.3}", self.0 as f64 / 16384.0)
     }
 }
 
 impl PartialEq<i16> for F2Dot14 {
     fn eq(&self, other: &i16) -> bool {
-        self._num == *other
+        self.0 == *other
     }
 }
 
@@ -262,7 +255,7 @@ impl PartialEq<i16> for F2Dot14 {
 /// The value is represented as a signed 64-bit integer.
 #[derive(ReadBuffer)]
 pub struct LongDateTime {
-    _num: i64,
+    num: i64,
 }
 
 impl LongDateTime {
@@ -272,7 +265,7 @@ impl LongDateTime {
 
 impl fmt::Debug for LongDateTime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let timestamp = self._num - Self::DATE_TIME_OFFSET;
+        let timestamp = self.num - Self::DATE_TIME_OFFSET;
         write!(f, "{}", NaiveDateTime::from_timestamp(timestamp, 0))
     }
 }
@@ -282,7 +275,7 @@ impl fmt::Debug for LongDateTime {
 ///
 /// **Note:** In Rust, `char` is a *Unicode scalar value* with a size of 4 bytes
 /// rather than 1, so it can't be used here.
-#[derive(Default, Eq, PartialEq, Clone, Copy)]
+#[derive(Clone, Copy, Default, Eq, PartialEq)]
 pub struct Tag([u8; 4]);
 
 impl Tag {

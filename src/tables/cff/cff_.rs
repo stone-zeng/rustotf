@@ -808,27 +808,24 @@ impl Default for Number {
 }
 
 #[derive(Default)]
-struct Delta {
-    _data: Vec<Number>,
-}
+struct Delta(Vec<Number>);
 
 impl Delta {
     fn new(array: Vec<Number>) -> Self {
-        Self {
-            _data: array
-                .iter()
-                .scan(0, |acc, x| {
-                    *acc += x.to_owned().int();
-                    Some(Number::Int(*acc))
-                })
-                .collect(),
-        }
+        let vec = array
+            .iter()
+            .scan(0, |acc, x| {
+                *acc += x.to_owned().int();
+                Some(Number::Int(*acc))
+            })
+            .collect();
+        Self(vec)
     }
 }
 
 impl fmt::Debug for Delta {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self._data)
+        write!(f, "{:?}", self.0)
     }
 }
 

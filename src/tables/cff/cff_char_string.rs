@@ -1,11 +1,9 @@
 #[derive(Debug)]
-pub struct CharString {
-    data: Vec<u8>,
-}
+pub struct CharString(Vec<u8>);
 
 impl CharString {
     pub fn from(data: Vec<u8>) -> Self {
-        Self { data }
+        Self(data)
     }
 
     #[allow(unused_variables)]
