@@ -227,7 +227,7 @@ impl Buffer {
         flags_vec
     }
 
-    fn get_coordinates(&mut self, flags: &Vec<u8>, flag1: u8, flag2: u8) -> Vec<i16> {
+    fn get_coordinates(&mut self, flags: &[u8], flag1: u8, flag2: u8) -> Vec<i16> {
         let flag3 = flag1 | flag2;
         flags
             .iter()
@@ -239,7 +239,7 @@ impl Buffer {
                 _ => unreachable!(),
             })
             .scan(0, |acc, x| {
-                *acc = *acc + x;
+                *acc += x;
                 Some(*acc)
             }) // Accumulate
             .collect()

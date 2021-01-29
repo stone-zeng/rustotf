@@ -509,8 +509,8 @@ impl<'a> IntoIterator for &'a TableRecords {
     fn into_iter(self) -> Self::IntoIter {
         self.tags
             .as_slice()
-            .into_iter()
-            .zip(self.records.as_slice().into_iter())
+            .iter()
+            .zip(self.records.as_slice().iter())
     }
 }
 

@@ -40,7 +40,7 @@ impl Font {
             .get::<Index>()
             .data
             .into_iter()
-            .map(|data| CharString::from(data))
+            .map(CharString::from)
             .collect();
         let cff_fonts = names
             .into_iter()
@@ -388,8 +388,8 @@ impl CffFont {
         &mut self,
         buffer: &mut Buffer,
         cff_start: usize,
-        top_dict: &Vec<u8>,
-        strings: &Vec<String>,
+        top_dict: &[u8],
+        strings: &[String],
     ) {
         self.parse_top_dict(top_dict, strings);
         // Encoding
@@ -408,7 +408,7 @@ impl CffFont {
         self.char_strings = char_strings_index
             .data
             .into_iter()
-            .map(|data| CharString::from(data))
+            .map(CharString::from)
             .collect();
         // Charset
         macro_rules! _get_charsets {
@@ -472,7 +472,7 @@ impl CffFont {
         }
     }
 
-    fn parse_top_dict(&mut self, top_dict: &Vec<u8>, strings: &Vec<String>) {
+    fn parse_top_dict(&mut self, top_dict: &[u8], strings: &[String]) {
         _parse_dict!(top_dict; strings; [
             /* 00    */ self.version = _string!(),
             /* 01    */ self.notice = _string!(),
@@ -519,7 +519,7 @@ impl CffFont {
         self.init_cid();
     }
 
-    fn init_fd_array(&mut self, font_dict: &Vec<u8>, strings: &Vec<String>) {
+    fn init_fd_array(&mut self, font_dict: &[u8], strings: &[String]) {
         let mut font_name = Default::default();
         let mut _private_size = 0;
         let mut _private_offset = 0;
@@ -705,7 +705,7 @@ impl Private {
                 .get::<Index>()
                 .data
                 .into_iter()
-                .map(|data| CharString::from(data))
+                .map(CharString::from)
                 .collect();
         }
         private
@@ -720,7 +720,7 @@ struct ROS {
 }
 
 impl ROS {
-    fn new(index_r: usize, index_o: usize, supplement: i32, strings: &Vec<String>) -> Self {
+    fn new(index_r: usize, index_o: usize, supplement: i32, strings: &[String]) -> Self {
         Self {
             registry: from_sid(index_r, strings),
             ordering: from_sid(index_o, strings),
@@ -818,7 +818,7 @@ impl Delta {
             _data: array
                 .iter()
                 .scan(0, |acc, x| {
-                    *acc = *acc + x.to_owned().int();
+                    *acc += x.to_owned().int();
                     Some(Number::Int(*acc))
                 })
                 .collect(),
@@ -894,7 +894,7 @@ impl ReadBuffer for Index {
     }
 }
 
-fn from_sid(sid: usize, strings: &Vec<String>) -> String {
+fn from_sid(sid: usize, strings: &[String]) -> String {
     let len = CFF_STANDARD_STRINGS.len();
     if sid < len {
         CFF_STANDARD_STRINGS[sid].to_string()

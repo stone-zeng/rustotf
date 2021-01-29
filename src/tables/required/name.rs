@@ -1,7 +1,7 @@
 use crate::font::Font;
 use crate::util::{Buffer, ReadBuffer};
 
-use encoding_rs;
+use encoding_rs::{BIG5, EUC_KR, GB18030, GBK, MACINTOSH, SHIFT_JIS, UTF_16BE, X_MAC_CYRILLIC};
 
 /// ## `name` &mdash; Naming Table
 ///
@@ -85,17 +85,17 @@ impl Name {
             | (0, 6)
             | (3, 0)
             | (3, 1)
-            | (3, 10) => encoding_rs::UTF_16BE.decode(data),
-            (1, 0) => encoding_rs::MACINTOSH.decode(data),
+            | (3, 10) => UTF_16BE.decode(data),
+            (1, 0) => MACINTOSH.decode(data),
             // (1, 1) is actually CP10001: Apple Japanese (x-mac-japanese)
-            (1, 1) | (3, 2) => encoding_rs::SHIFT_JIS.decode(data),
+            (1, 1) | (3, 2) => SHIFT_JIS.decode(data),
             // (1, 3) is actually CP10003: Apple Korean (x-mac-korean)
-            (1, 3) | (3, 5) => encoding_rs::EUC_KR.decode(data),
-            (1, 7) | (1, 29) => encoding_rs::X_MAC_CYRILLIC.decode(data),
-            (1, 25) => encoding_rs::GBK.decode(data),
-            (3, 3) => encoding_rs::GB18030.decode(data),
-            (3, 4) => encoding_rs::BIG5.decode(data),
-            _ => encoding_rs::UTF_16BE.decode(data),
+            (1, 3) | (3, 5) => EUC_KR.decode(data),
+            (1, 7) | (1, 29) => X_MAC_CYRILLIC.decode(data),
+            (1, 25) => GBK.decode(data),
+            (3, 3) => GB18030.decode(data),
+            (3, 4) => BIG5.decode(data),
+            _ => UTF_16BE.decode(data),
         };
         // Not check error yet
         self.string.push_str(&cow);
