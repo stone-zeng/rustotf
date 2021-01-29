@@ -1,3 +1,4 @@
+pub mod cli;
 mod font;
 mod util;
 #[rustfmt::skip]
