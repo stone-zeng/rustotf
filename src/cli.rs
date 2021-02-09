@@ -50,5 +50,8 @@ pub fn list_tables(input_path: &str, ttc_indices: Vec<usize>) -> io::Result<()> 
 
 #[allow(unused_variables)]
 pub fn print_tables(font_file_path: &str, ttc_indices: Vec<usize>, tables: Vec<&str>) {
-    todo!()
+    // TODO: it's now only a placeholder version
+    let mut font_container = FontContainer::read(font_file_path).unwrap();
+    font_container.parse();
+    println!("{:#?}", font_container);
 }

@@ -372,29 +372,24 @@ impl Font {
         }
     }
 
-    #[rustfmt::skip]
     fn parse_sfnt(&mut self, buffer: &mut Buffer) {
+        let required_tables = &[
+            b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post",
+        ];
+        let tables = &[
+            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp", // TrueType
+            b"CFF ", b"VORG", // CFF
+            b"BASE", b"GSUB", b"JSTF", b"MATH", // OpenType layout
+            b"EBLC", b"EBDT", b"EBSC", // Bitmap
+            b"CBLC", b"CBDT", b"COLR", b"CPAL", b"sbix", b"SVG ", // Color
+            b"DSIG", b"LTSH", // Other
+        ];
 
-        self.parse_head(buffer);
-        self.parse_hhea(buffer);
-        self.parse_maxp(buffer);
-        self.parse_hmtx(buffer);
-        self.parse_cmap(buffer);
-        self.parse_name(buffer);
-        self.parse_OS_2(buffer);
-        self.parse_post(buffer);
-
-        for tag_str in &[
-            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp",
-            b"CFF ", b"VORG",
-            b"BASE", b"GSUB", b"JSTF", b"MATH",
-            b"EBLC", b"EBDT", b"EBSC",
-            b"CBLC", b"CBDT",
-            b"COLR", b"CPAL",
-            b"sbix",
-            b"SVG ",
-            b"DSIG", b"LTSH"
-        ] {
+        for tag_str in required_tables {
+            let tag = Tag::new(tag_str);
+            self.parse_sfnt_table(tag, buffer);
+        }
+        for tag_str in tables {
             let tag = Tag::new(tag_str);
             if self.table_records.contains(&tag) {
                 self.parse_sfnt_table(tag, buffer);
@@ -408,15 +403,23 @@ impl Font {
     }
 
     fn parse_woff(&mut self, buffer: &mut Buffer) {
-        for tag_str in &[
+        let required_tables = &[
             b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post",
-        ] {
+        ];
+        let tables = &[
+            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp", // TrueType
+            b"CFF ", b"VORG", // CFF
+            b"BASE", b"GSUB", b"JSTF", b"MATH", // OpenType layout
+            b"EBLC", b"EBDT", b"EBSC", // Bitmap
+            b"CBLC", b"CBDT", b"COLR", b"CPAL", b"sbix", b"SVG ", // Color
+            b"DSIG", b"LTSH", // Other
+        ];
+
+        for tag_str in required_tables {
             let tag = Tag::new(tag_str);
             self.parse_woff_table(tag, buffer);
         }
-        for tag_str in &[
-            b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp", b"CFF ", b"CFF2",
-        ] {
+        for tag_str in tables {
             let tag = Tag::new(tag_str);
             if self.table_records.contains(&tag) {
                 self.parse_woff_table(tag, buffer);
@@ -426,9 +429,16 @@ impl Font {
 
     fn parse_woff_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.set_offset(self.get_table_offset(tag));
-        let comp_length = self.get_table_comp_len(tag);
-        let orig_buffer = &mut buffer.zlib_decompress(comp_length).unwrap();
-        self.parse_table_internal(tag, orig_buffer);
+        let len = self.get_table_len(tag);
+        let comp_len = self.get_table_comp_len(tag);
+        if comp_len < len {
+            match &mut buffer.zlib_decompress(comp_len) {
+                Ok(orig_buffer) => self.parse_table_internal(tag, orig_buffer),
+                Err(_) => panic!(),
+            }
+        } else {
+            self.parse_table_internal(tag, buffer);
+        }
     }
 
     #[allow(unused_variables)]

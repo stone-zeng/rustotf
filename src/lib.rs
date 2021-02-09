@@ -60,6 +60,7 @@ mod tables {
 }
 
 pub use font::{Font, FontContainer};
+pub use types::Tag;
 
 #[rustfmt::skip]
 pub use tables::{
