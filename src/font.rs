@@ -6,6 +6,11 @@ use std::io;
 use std::iter::{FromIterator, Zip};
 use std::slice::Iter;
 
+/// The container for a [OpenType]/[WOFF]/[WOFF2] font or font collection.
+///
+/// [OpenType]: https://docs.microsoft.com/en-us/typography/opentype/spec/
+/// [WOFF]: https://www.w3.org/TR/WOFF/
+/// [WOFF2]: https://www.w3.org/TR/WOFF2/
 #[derive(Debug)]
 pub struct FontContainer {
     buffer: Buffer,
@@ -13,42 +18,63 @@ pub struct FontContainer {
 }
 
 impl FontContainer {
-    /// Read and initialize the `FontContainer` from `path`.
+    /// Font Collection ID string: `ttcf`.
+    const SIGNATURE_TTC: u32 = 0x7474_6366;
+    /// The `signature` field in the WOFF (version 1) header MUST contain this "magic number" `wOFF`.
+    const SIGNATURE_WOFF: u32 = 0x774F_4646;
+    /// The `signature` field in the WOFF (version 2) header MUST contain this "magic number" `wOF2`.
+    const SIGNATURE_WOFF2: u32 = 0x774F_4632;
+
+    /// Read and initializes a font container from a file.
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if `path` does not already exist.
+    /// Other errors may also be returned according to [`fs::read`].
+    ///
+    /// # Examples
+    ///
+    /// ```no_run
+    /// use rustotf;
+    ///
+    /// fn main() -> std::io::Result<()> {
+    ///     let font = rustotf::FontContainer::read("font.ttf")?;
+    ///     Ok(())
+    /// }
+    /// ```
     pub fn read(path: &str) -> io::Result<Self> {
-        let raw_buffer = fs::read(path)?;
-        let mut font_container = Self::new(raw_buffer);
+        let bytes = fs::read(path)?;
+        let mut font_container = Self::new(bytes);
         font_container.init();
         Ok(font_container)
     }
 
-    /// Create an empty `FontContainer`.
-    fn new(raw_buffer: Vec<u8>) -> Self {
+    /// Create an empty font container.
+    fn new(bytes: Vec<u8>) -> Self {
         Self {
-            buffer: Buffer::new(raw_buffer),
+            buffer: Buffer::new(bytes),
             fonts: Vec::new(),
         }
     }
 
+    /// Initialize the font container.
     fn init(&mut self) {
         let signature = self.buffer.get();
         self.buffer.set_offset(0);
         match signature {
-            SIGNATURE_OTF | SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => {
-                self.otf_init()
-            }
-            SIGNATURE_TTC => self.ttc_init(),
-            SIGNATURE_WOFF => self.woff_init(),
-            SIGNATURE_WOFF2 => self.woff2_init(),
-            _ => unreachable!(),
+            Self::SIGNATURE_TTC => self.init_ttc(),
+            Self::SIGNATURE_WOFF => self.init_woff(),
+            Self::SIGNATURE_WOFF2 => self.init_woff2(),
+            _ => self.init_otf(),
         }
     }
 
-    fn otf_init(&mut self) {
+    fn init_otf(&mut self) {
         self.fonts.push(Font::load_sfnt(&mut self.buffer));
     }
 
     #[allow(unused_variables)]
-    fn ttc_init(&mut self) {
+    fn init_ttc(&mut self) {
         let ttc_tag: u32 = self.buffer.get();
         let major_version: u16 = self.buffer.get();
         let minor_version: u16 = self.buffer.get();
@@ -67,33 +93,42 @@ impl FontContainer {
         }
     }
 
-    fn woff_init(&mut self) {
+    fn init_woff(&mut self) {
         self.fonts.push(Font::load_woff(&mut self.buffer));
     }
 
-    fn woff2_init(&mut self) {
+    fn init_woff2(&mut self) {
         self.fonts.push(Font::load_woff2(&mut self.buffer));
     }
 
+    /// Parse all the tables in each font of the container.
     pub fn parse(&mut self) {
-        for font in &mut self.fonts {
-            match font.format {
-                Format::SFNT => font.sfnt_parse(&mut self.buffer),
-                Format::WOFF => font.woff_parse(&mut self.buffer),
-                Format::WOFF2 => font.woff2_parse(&mut self.buffer),
-            }
+        let buffer = &mut self.buffer;
+        self.fonts.iter_mut().for_each(|font| font.parse(buffer));
+    }
+
+    /// Parse all the tables in the font at `index` of the container.
+    pub fn parse_nth(&mut self, index: usize) {
+        match self.fonts.get_mut(index) {
+            Some(font) => font.parse(&mut self.buffer),
+            None => panic!(),
         }
     }
 
-    // TODO: some tables depend on other tables
-    pub fn parse_table(&mut self, tag_str: &str) {
-        let tag = Tag::from(tag_str);
-        for font in &mut self.fonts {
-            match font.format {
-                Format::SFNT => font.sfnt_parse_table(tag, &mut self.buffer),
-                Format::WOFF => font.woff_parse_table(tag, &mut self.buffer),
-                Format::WOFF2 => font.woff2_parse_table(tag, &mut self.buffer),
-            }
+    /// Parse the table with `tag` in each font of the container.
+    pub fn parse_table(&mut self, tag: Tag) {
+        // TODO: some tables depend on other tables
+        let buffer = &mut self.buffer;
+        self.fonts
+            .iter_mut()
+            .for_each(|font| font.parse_table(tag, buffer));
+    }
+
+    /// Parse the table with `tag` in the font at `index` of the container.
+    pub fn parse_table_nth(&mut self, tag: Tag, index: usize) {
+        match self.fonts.get_mut(index) {
+            Some(font) => font.parse_table(tag, &mut self.buffer),
+            None => panic!(),
         }
     }
 }
@@ -251,7 +286,7 @@ impl Font {
             .collect();
         Self {
             format: Format::SFNT,
-            flavor: Self::get_flavor(signature),
+            flavor: Flavor::from(signature),
             table_records,
             ..Default::default()
         }
@@ -289,7 +324,7 @@ impl Font {
             .collect();
         Self {
             format: Format::WOFF,
-            flavor: Self::get_flavor(flavor),
+            flavor: Flavor::from(flavor),
             table_records,
             ..Default::default()
         }
@@ -316,25 +351,39 @@ impl Font {
         let priv_length: u32 = buffer.get();
         Self {
             format: Format::WOFF2,
-            flavor: Self::get_flavor(flavor),
+            flavor: Flavor::from(flavor),
             ..Default::default()
         }
     }
 
-    fn get_flavor(flavor: u32) -> Flavor {
-        match flavor {
-            SIGNATURE_OTF => Flavor::CFF,
-            SIGNATURE_TTF | SIGNATURE_TTF_TRUE | SIGNATURE_TTF_TYP1 => Flavor::TTF,
-            _ => unreachable!(),
+    pub fn parse(&mut self, buffer: &mut Buffer) {
+        match self.format {
+            Format::SFNT => self.parse_sfnt(buffer),
+            Format::WOFF => self.parse_woff(buffer),
+            Format::WOFF2 => self.parse_woff2(buffer),
+        }
+    }
+
+    pub fn parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+        match self.format {
+            Format::SFNT => self.parse_sfnt_table(tag, buffer),
+            Format::WOFF => self.parse_woff_table(tag, buffer),
+            Format::WOFF2 => self.parse_woff2_table(tag, buffer),
         }
     }
 
     #[rustfmt::skip]
-    fn sfnt_parse(&mut self, buffer: &mut Buffer) {
-        for tag_str in &[b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post"] {
-            let tag = Tag::new(tag_str);
-            self.sfnt_parse_table(tag, buffer);
-        }
+    fn parse_sfnt(&mut self, buffer: &mut Buffer) {
+
+        self.parse_head(buffer);
+        self.parse_hhea(buffer);
+        self.parse_maxp(buffer);
+        self.parse_hmtx(buffer);
+        self.parse_cmap(buffer);
+        self.parse_name(buffer);
+        self.parse_OS_2(buffer);
+        self.parse_post(buffer);
+
         for tag_str in &[
             b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp",
             b"CFF ", b"VORG",
@@ -347,51 +396,52 @@ impl Font {
             b"DSIG", b"LTSH"
         ] {
             let tag = Tag::new(tag_str);
-            if self.table_records.contains(tag) {
-                self.sfnt_parse_table(tag, buffer);
+            if self.table_records.contains(&tag) {
+                self.parse_sfnt_table(tag, buffer);
             }
         }
     }
 
-    fn sfnt_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+    fn parse_sfnt_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.set_offset(self.get_table_offset(tag));
-        self._parse_table(tag, buffer);
+        self.parse_table_internal(tag, buffer);
     }
 
-    fn woff_parse(&mut self, buffer: &mut Buffer) {
+    fn parse_woff(&mut self, buffer: &mut Buffer) {
         for tag_str in &[
             b"head", b"hhea", b"maxp", b"hmtx", b"cmap", b"name", b"OS/2", b"post",
         ] {
             let tag = Tag::new(tag_str);
-            self.woff_parse_table(tag, buffer);
+            self.parse_woff_table(tag, buffer);
         }
         for tag_str in &[
             b"loca", b"glyf", b"cvt ", b"fpgm", b"prep", b"gasp", b"CFF ", b"CFF2",
         ] {
             let tag = Tag::new(tag_str);
-            if self.table_records.contains(tag) {
-                self.woff_parse_table(tag, buffer);
+            if self.table_records.contains(&tag) {
+                self.parse_woff_table(tag, buffer);
             }
         }
     }
 
-    fn woff_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+    fn parse_woff_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         buffer.set_offset(self.get_table_offset(tag));
         let comp_length = self.get_table_comp_len(tag);
-        self._parse_table(tag, &mut buffer.zlib_decompress(comp_length));
+        let orig_buffer = &mut buffer.zlib_decompress(comp_length).unwrap();
+        self.parse_table_internal(tag, orig_buffer);
     }
 
     #[allow(unused_variables)]
-    fn woff2_parse(&mut self, buffer: &mut Buffer) {
+    fn parse_woff2(&mut self, buffer: &mut Buffer) {
         unimplemented!()
     }
 
     #[allow(unused_variables)]
-    fn woff2_parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+    fn parse_woff2_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         unimplemented!()
     }
 
-    fn _parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
+    fn parse_table_internal(&mut self, tag: Tag, buffer: &mut Buffer) {
         match tag.bytes() {
             b"head" => self.parse_head(buffer),
             b"hhea" => self.parse_hhea(buffer),
@@ -456,7 +506,7 @@ impl Font {
     }
 
     pub fn contains(&self, s: &str) -> bool {
-        self.table_records.contains(Tag::from(s))
+        self.table_records.contains(&Tag::from(s))
     }
 
     pub fn fmt_tables(&self, indent: &str) -> String {
@@ -497,8 +547,8 @@ impl TableRecords {
         }
     }
 
-    fn contains(&self, tag: Tag) -> bool {
-        self.tags.contains(&tag)
+    fn contains(&self, tag: &Tag) -> bool {
+        self.tags.contains(tag)
     }
 }
 
@@ -547,6 +597,25 @@ enum Flavor {
     CFF,
 }
 
+impl Flavor {
+    /// For OpenType fonts containing CFF data (version 1 or 2), which is `OTTO`.
+    const SIGNATURE_OTF: u32 = 0x4F54_544F;
+    /// For OpenType fonts that contain TrueType outlines.
+    const SIGNATURE_TTF: u32 = 0x0001_0000;
+    /// The Apple specification for TrueType fonts allows for `true`. Should NOT be used.
+    const SIGNATURE_TTF_TRUE: u32 = 0x7472_7565;
+    /// The Apple specification for TrueType fonts allows for `typ1`. Should NOT be used.
+    const SIGNATURE_TTF_TYP1: u32 = 0x7479_7031;
+
+    fn from(flavor: u32) -> Self {
+        match flavor {
+            Self::SIGNATURE_OTF => Self::CFF,
+            Self::SIGNATURE_TTF | Self::SIGNATURE_TTF_TRUE | Self::SIGNATURE_TTF_TYP1 => Self::TTF,
+            _ => unreachable!(),
+        }
+    }
+}
+
 impl Default for Flavor {
     fn default() -> Self {
         Self::TTF
@@ -560,18 +629,3 @@ struct TableRecord {
     length: u32,
     woff_comp_length: u32,
 }
-
-/// For OpenType fonts containing CFF data (version 1 or 2), which is `OTTO`.
-const SIGNATURE_OTF: u32 = 0x4F54_544F;
-/// For OpenType fonts that contain TrueType outlines.
-const SIGNATURE_TTF: u32 = 0x0001_0000;
-/// The Apple specification for TrueType fonts allows for `true`. Should NOT be used.
-const SIGNATURE_TTF_TRUE: u32 = 0x7472_7565;
-/// The Apple specification for TrueType fonts allows for `typ1`. Should NOT be used.
-const SIGNATURE_TTF_TYP1: u32 = 0x7479_7031;
-/// Font Collection ID string: `ttcf`.
-const SIGNATURE_TTC: u32 = 0x7474_6366;
-/// The `signature` field in the WOFF (version 1) header MUST contain this "magic number" `wOFF`.
-const SIGNATURE_WOFF: u32 = 0x774F_4646;
-/// The `signature` field in the WOFF (version 2) header MUST contain this "magic number" `wOF2`.
-const SIGNATURE_WOFF2: u32 = 0x774F_4632;

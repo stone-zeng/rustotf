@@ -61,7 +61,7 @@ impl SvgDocRecord {
 
     fn get_svg_doc(buffer: &mut Buffer, len: usize) -> String {
         let utf8 = if len > 3 && Self::check_gzip_header(buffer) {
-            let mut orig_buffer = buffer.gz_decompress(len);
+            let mut orig_buffer = buffer.gz_decompress(len).unwrap();
             orig_buffer.get_vec(orig_buffer.len())
         } else {
             buffer.get_vec(len)
