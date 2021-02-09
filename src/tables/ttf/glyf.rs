@@ -1,7 +1,8 @@
 // use std::fmt;
 
 use crate::font::Font;
-use crate::util::{Buffer, F2Dot14, ReadBuffer};
+use crate::types::F2Dot14;
+use crate::util::{Buffer, ReadBuffer};
 
 /// ## `glyf` &mdash; Glyph Data
 ///

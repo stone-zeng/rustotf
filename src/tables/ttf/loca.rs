@@ -1,7 +1,8 @@
 use std::mem::size_of;
 
 use crate::font::Font;
-use crate::util::{Buffer, Tag};
+use crate::types::Tag;
+use crate::util::Buffer;
 
 /// ## `loca` &mdash; Index to Location
 ///

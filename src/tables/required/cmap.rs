@@ -1,7 +1,7 @@
 use crate::font::Font;
-use crate::util::{u24, Buffer, ReadBuffer};
+use crate::types::u24;
+use crate::util::{Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
-
 use std::collections::HashMap;
 
 /// ## `cmap` &mdash; Character to Glyph Index Mapping Table
@@ -216,7 +216,7 @@ impl ReadBuffer for CmapFormat4 {
                             // Address of `id_range_offset[i]`...
                             id_range_offset_begin_offset + i * 2
                             // ... plus some offset
-                            + (id_range_offset[i] as u32 + (c - start) * 2) as usize
+                            + (id_range_offset[i] as u32 + (c - start) * 2) as usize,
                         );
                         ((buffer.get::<u16>() as i32 + id_delta[i] as i32) % 0xFFFF) as u32
                     })

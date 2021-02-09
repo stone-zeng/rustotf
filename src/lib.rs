@@ -1,32 +1,32 @@
 pub mod cli;
 mod font;
+mod types;
 mod util;
-#[rustfmt::skip]
 mod tables {
     pub mod required {
+        pub mod cmap;
         pub mod head;
         pub mod hhea;
-        pub mod maxp;
         pub mod hmtx;
-        pub mod cmap;
+        pub mod maxp;
         pub mod name;
         pub mod os_2;
         pub mod post;
     }
     pub mod ttf {
-        pub mod loca;
-        pub mod glyf;
         pub mod cvt_;
         pub mod fpgm;
-        pub mod prep;
         pub mod gasp;
+        pub mod glyf;
+        pub mod loca;
+        pub mod prep;
     }
     pub mod cff {
         pub mod cff_;
         // pub mod cff2;
-        pub mod vorg;
         mod cff_char_string;
         mod cff_data;
+        pub mod vorg;
     }
     pub mod bitmap {
         pub mod ebdt;
@@ -46,10 +46,10 @@ mod tables {
         pub mod mvar;
     }
     pub mod color {
-        pub mod colr;
-        pub mod cpal;
         pub mod cbdt;
         pub mod cblc;
+        pub mod colr;
+        pub mod cpal;
         pub mod sbix;
         pub mod svg_;
     }

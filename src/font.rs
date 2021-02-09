@@ -1,6 +1,6 @@
 use crate::tables::*;
-use crate::util::{Buffer, Tag};
-
+use crate::types::Tag;
+use crate::util::Buffer;
 use std::fs;
 use std::io;
 use std::iter::{FromIterator, Zip};
@@ -34,7 +34,7 @@ impl FontContainer {
     ///
     /// # Examples
     ///
-    /// ```no_run
+    /// ```ignore
     /// use rustotf;
     ///
     /// fn main() -> std::io::Result<()> {

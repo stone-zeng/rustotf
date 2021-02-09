@@ -1,9 +1,9 @@
-use std::fmt;
-
 use crate::font::Font;
 use crate::tables::cff::{cff_char_string::*, cff_data::*};
-use crate::util::{u24, Buffer, ReadBuffer};
+use crate::types::u24;
+use crate::util::{Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
+use std::fmt;
 
 /// ## `CFF` &mdash; Compact Font Format table
 ///

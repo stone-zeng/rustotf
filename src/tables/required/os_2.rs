@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, Tag};
+use crate::types::Tag;
+use crate::util::Buffer;
 
 /// ## `OS/2` &mdash; OS/2 and Windows Metrics Table
 ///

@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, ReadBuffer, Tag};
+use crate::types::Tag;
+use crate::util::{Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
 
 /// ## `MVAR` &mdash; Metrics Variations Table

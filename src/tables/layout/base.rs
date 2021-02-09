@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, ReadBuffer, Tag};
+use crate::types::Tag;
+use crate::util::{Buffer, ReadBuffer};
 
 /// ## `BASE` &mdash; Baseline Table
 ///

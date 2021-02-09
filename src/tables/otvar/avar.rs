@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, F2Dot14, ReadBuffer};
+use crate::types::F2Dot14;
+use crate::util::{Buffer, ReadBuffer};
 use read_buffer_derive::ReadBuffer;
 
 /// ## `avar` &mdash; Axis Variations Table

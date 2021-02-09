@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, Fixed, LongDateTime};
+use crate::types::{Fixed, LongDateTime};
+use crate::util::Buffer;
 
 /// ## `head` &mdash; Font Header Table
 ///

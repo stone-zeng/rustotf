@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, Tag};
+use crate::types::Tag;
+use crate::util::Buffer;
 
 /// ## `sbix` &mdash; Standard Bitmap Graphics Table
 ///

@@ -1,5 +1,6 @@
 use crate::font::Font;
-use crate::util::{Buffer, Fixed};
+use crate::types::Fixed;
+use crate::util::Buffer;
 
 /// ## `maxp` &mdash; Maximum Profile
 ///
