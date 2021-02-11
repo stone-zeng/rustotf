@@ -146,6 +146,11 @@ impl FontContainer {
         self.fonts.len()
     }
 
+    /// Return `true` if the font container has no fonts.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Return a reference to a [`Font`] object at given position, or `None` if out of bounds.
     pub fn get(&self, pos: usize) -> Option<&Font> {
         self.fonts.get(pos)
@@ -570,7 +575,7 @@ impl Font {
         format!("{}{}", header, body)
     }
 
-    pub fn fmt_tables(&self, tables: &Vec<&str>) -> String {
+    pub fn fmt_tables(&self, tables: &[&str]) -> String {
         match tables.len() {
             0 => self
                 .table_records

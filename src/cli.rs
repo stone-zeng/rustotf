@@ -2,7 +2,7 @@ use crate::font::{Font, FontContainer};
 use std::io;
 use std::path::Path;
 
-pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result<()> {
+pub fn print_font_info(input_path: &str, ttc_indices: &[usize]) -> io::Result<()> {
     let font_container = FontContainer::read(input_path)?;
     let font_num = font_container.len();
     let indent = "    ";
@@ -44,11 +44,7 @@ pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result
     Ok(())
 }
 
-pub fn print_tables(
-    input_path: &str,
-    ttc_indices: &Vec<usize>,
-    tables: &Vec<&str>,
-) -> io::Result<()> {
+pub fn print_tables(input_path: &str, ttc_indices: &[usize], tables: &[&str]) -> io::Result<()> {
     let mut font_container = FontContainer::read(input_path)?;
     let font_num = font_container.len();
     let init = || println!("Dumping {:?}:\n", input_path);

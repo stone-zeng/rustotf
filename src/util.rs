@@ -12,10 +12,7 @@ pub struct Buffer {
 impl Buffer {
     /// Create a new `Buffer`.
     pub fn new(bytes: Vec<u8>) -> Self {
-        Self {
-            bytes: bytes,
-            offset: 0,
-        }
+        Self { bytes, offset: 0 }
     }
 
     /// Return the length of the buffer.
