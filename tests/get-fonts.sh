@@ -27,7 +27,7 @@ do
     font=$(basename $url)
     if [ "$1" == "-f" ] || [ ! -f $path/$font ]; then
         echo "Downloading $font..."
-        curl -L -o $path/$font $url
+        curl --location --silent --output $path/$font $url
         echo ""
     fi
 done

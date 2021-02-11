@@ -519,7 +519,7 @@ impl Font {
         self.table_records.contains(&Tag::from(s))
     }
 
-    pub fn fmt_tables(&self, indent: &str) -> String {
+    pub fn fmt_font_info(&self, indent: &str) -> String {
         #[rustfmt::skip]
         let header = format!(
             concat!(
@@ -540,6 +540,77 @@ impl Font {
             .collect::<Vec<_>>()
             .join("\n");
         format!("{}{}", header, body)
+    }
+
+    pub fn fmt_tables(&self, tables: &Vec<&str>) -> String {
+        match tables.len() {
+            0 => self
+                .table_records
+                .into_iter()
+                .map(|(&tag, _)| self.fmt_table(tag))
+                .collect(),
+            _ => tables
+                .iter()
+                .map(|&s| self.fmt_table(Tag::from(s)))
+                .collect(),
+        }
+    }
+
+    fn fmt_table(&self, tag: Tag) -> String {
+        macro_rules! fmt {
+            ($table:ident) => {{
+                match &self.$table {
+                    Some(t) => format!("{:#?}\n", t),
+                    _ => "".to_string(),
+                }
+            }};
+        }
+        match tag.bytes() {
+            b"head" => fmt!(head),
+            b"hhea" => fmt!(hhea),
+            b"maxp" => fmt!(maxp),
+            b"hmtx" => fmt!(hmtx),
+            b"cmap" => fmt!(cmap),
+            b"name" => fmt!(name),
+            b"OS/2" => fmt!(OS_2),
+            b"post" => fmt!(post),
+            b"loca" => fmt!(loca),
+            b"glyf" => fmt!(glyf),
+            b"cvt " => fmt!(cvt_),
+            b"fpgm" => fmt!(fpgm),
+            b"prep" => fmt!(prep),
+            b"gasp" => fmt!(gasp),
+            b"CFF " => fmt!(CFF_),
+            // b"CFF2" => fmt!(CFF2),
+            b"VORG" => fmt!(VORG),
+            b"EBDT" => fmt!(EBDT),
+            b"EBLC" => fmt!(EBLC),
+            b"EBSC" => fmt!(EBSC),
+            b"BASE" => fmt!(BASE),
+            b"GSUB" => fmt!(GSUB),
+            b"JSTF" => fmt!(JSTF),
+            b"MATH" => fmt!(MATH),
+            b"avar" => fmt!(avar),
+            // b"cvar" => fmt!(cvar),
+            b"fvar" => fmt!(fvar),
+            // b"gvar" => fmt!(gvar),
+            b"HVAR" => fmt!(HVAR),
+            b"MVAR" => fmt!(MVAR),
+            // b"STAT" => fmt!(STAT),
+            // b"VVAR" => fmt!(VVAR),
+            b"COLR" => fmt!(COLR),
+            b"CPAL" => fmt!(CPAL),
+            b"CBDT" => fmt!(CBDT),
+            b"CBLC" => fmt!(CBLC),
+            b"sbix" => fmt!(sbix),
+            b"SVG " => fmt!(SVG_),
+            b"DSIG" => fmt!(DSIG),
+            b"LTSH" => fmt!(LTSH),
+            _ => {
+                eprintln!("Table `{}` is not supported", tag);
+                "".to_string()
+            }
+        }
     }
 }
 

@@ -7,10 +7,10 @@ fn main() -> io::Result<()> {
     if let Some(input_path) = matches.value_of("input") {
         let ttc_indices = parse_arg_ttc_indices(&matches);
         if matches.is_present("list") {
-            cli::list_tables(input_path, ttc_indices)?;
+            cli::print_font_info(input_path, &ttc_indices)?;
         } else {
             let tables = parse_arg_tables(&matches);
-            cli::print_tables(input_path, ttc_indices, tables);
+            cli::print_tables(input_path, &ttc_indices, &tables)?;
         }
     }
     Ok(())
