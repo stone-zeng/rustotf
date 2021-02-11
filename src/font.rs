@@ -6,15 +6,24 @@ use std::io;
 use std::iter::{FromIterator, Zip};
 use std::slice::Iter;
 
-/// The container for a [OpenType]/[WOFF]/[WOFF2] font or font collection.
+/// The container of a OpenType/WOFF/WOFF2 font or font collection.
+///
+/// For an [OpenType] font (`.ttf` or `.otf`), the container is consist of a single [`Font`]
+/// object. The [OpenType Font Collection] (`.ttc` or `.otc`) is also allowed, where multiple
+/// OpenType font resources are stored in a single container.
+///
+/// The above fonts and font collections are stored in the so called SFNT container format.
+/// For web use, SFNT fonts are repackaged into the [WOFF] or [WOFF2] formats to reduce file size.
+/// Note that WOFF 1.0 does not support font collections.
 ///
 /// [OpenType]: https://docs.microsoft.com/en-us/typography/opentype/spec/
+/// [OpenType Font Collection]: https://docs.microsoft.com/en-us/typography/opentype/spec/otff#font-collections
 /// [WOFF]: https://www.w3.org/TR/WOFF/
 /// [WOFF2]: https://www.w3.org/TR/WOFF2/
 #[derive(Debug)]
 pub struct FontContainer {
     buffer: Buffer,
-    pub fonts: Vec<Font>,
+    fonts: Vec<Font>,
 }
 
 impl FontContainer {
@@ -38,7 +47,7 @@ impl FontContainer {
     /// use rustotf;
     ///
     /// fn main() -> std::io::Result<()> {
-    ///     let font = rustotf::FontContainer::read("font.ttf")?;
+    ///     let font = rustotf::FontContainer::read("SourceSerif4-Regular.otf")?;
     ///     Ok(())
     /// }
     /// ```
@@ -130,6 +139,25 @@ impl FontContainer {
             Some(font) => font.parse_table(tag, &mut self.buffer),
             None => panic!(),
         }
+    }
+
+    /// Return the number of [`Font`] objects in the container.
+    pub fn len(&self) -> usize {
+        self.fonts.len()
+    }
+
+    /// Return a reference to a [`Font`] object at given position, or `None` if out of bounds.
+    pub fn get(&self, pos: usize) -> Option<&Font> {
+        self.fonts.get(pos)
+    }
+}
+
+impl<'a> IntoIterator for &'a FontContainer {
+    type Item = &'a Font;
+    type IntoIter = Iter<'a, Font>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.fonts.iter()
     }
 }
 

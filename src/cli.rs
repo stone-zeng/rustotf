@@ -4,7 +4,7 @@ use std::path::Path;
 
 pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result<()> {
     let font_container = FontContainer::read(input_path)?;
-    let font_num = font_container.fonts.len();
+    let font_num = font_container.len();
     let indent = "    ";
     let init = || println!("Listing table info for {:?}:\n", input_path);
     match font_num {
@@ -14,7 +14,7 @@ pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result
                 eprintln!("WARNING: Your font number specification will be ignored.");
             }
             init();
-            println!("{}\n", font_container.fonts[0].fmt_font_info(indent));
+            println!("{}\n", font_container.get(0).unwrap().fmt_font_info(indent));
         }
         _ => {
             init();
@@ -23,9 +23,9 @@ pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result
                 println!("{}#{}:\n{}\n", file_name, i, font.fmt_font_info(indent))
             };
             if ttc_indices.is_empty() {
-                font_container.fonts.iter().enumerate().for_each(print_font);
+                font_container.into_iter().enumerate().for_each(print_font);
             } else {
-                let max_index = font_container.fonts.len() - 1;
+                let max_index = font_container.len() - 1;
                 let index_error = |i: usize| {
                     eprintln!(
                         "The font number should be between 0 and {}, but you specify {}.",
@@ -34,7 +34,7 @@ pub fn print_font_info(input_path: &str, ttc_indices: &Vec<usize>) -> io::Result
                 };
                 ttc_indices
                     .iter()
-                    .for_each(|&i| match font_container.fonts.get(i) {
+                    .for_each(|&i| match font_container.get(i) {
                         Some(font) => print_font((i, font)),
                         _ => index_error(i),
                     })
@@ -50,7 +50,7 @@ pub fn print_tables(
     tables: &Vec<&str>,
 ) -> io::Result<()> {
     let mut font_container = FontContainer::read(input_path)?;
-    let font_num = font_container.fonts.len();
+    let font_num = font_container.len();
     let init = || println!("Dumping {:?}:\n", input_path);
     // TODO: don't parse all the tables
     font_container.parse();
@@ -61,7 +61,7 @@ pub fn print_tables(
                 eprintln!("WARNING: Your font number specification will be ignored.");
             }
             init();
-            println!("{}", font_container.fonts[0].fmt_tables(&tables));
+            println!("{}", font_container.get(0).unwrap().fmt_tables(&tables));
         }
         _ => {
             init();
@@ -70,9 +70,9 @@ pub fn print_tables(
                 println!("{}#{}:\n{}", file_name, i, font.fmt_tables(&tables));
             };
             if ttc_indices.is_empty() {
-                font_container.fonts.iter().enumerate().for_each(print_font);
+                font_container.into_iter().enumerate().for_each(print_font);
             } else {
-                let max_index = font_container.fonts.len() - 1;
+                let max_index = font_container.len() - 1;
                 let index_error = |i: usize| {
                     eprintln!(
                         "The font number should be between 0 and {}, but you specify {}.",
@@ -81,7 +81,7 @@ pub fn print_tables(
                 };
                 ttc_indices
                     .iter()
-                    .for_each(|&i| match font_container.fonts.get(i) {
+                    .for_each(|&i| match font_container.get(i) {
                         Some(font) => print_font((i, font)),
                         _ => index_error(i),
                     })

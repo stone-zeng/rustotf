@@ -37,7 +37,7 @@ fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
     println!("Checking font: {}", font_file_path);
 
     let mut font_container = FontContainer::read(font_file_path)?;
-    assert_ne!(font_container.fonts.len(), 0);
+    assert_ne!(font_container.len(), 0);
 
     font_container.parse();
 
@@ -53,7 +53,7 @@ fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
         };
     }
 
-    font_container.fonts.iter().for_each(|font| {
+    font_container.into_iter().for_each(|font| {
         _assert!(font, head);
         _assert!(font, hhea);
         _assert!(font, maxp);
@@ -66,13 +66,13 @@ fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
 
     match flag {
         "ttf" => {
-            font_container.fonts.iter().for_each(|font| {
+            font_container.into_iter().for_each(|font| {
                 _assert!(font, loca);
                 _assert!(font, glyf);
             });
         }
         "otf" => {
-            font_container.fonts.iter().for_each(|font| {
+            font_container.into_iter().for_each(|font| {
                 _assert!(font, CFF_, "CFF ");
             });
         }
