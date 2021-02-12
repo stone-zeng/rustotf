@@ -1,6 +1,6 @@
 use crate::tables::*;
-use crate::types::Tag;
-use crate::util::Buffer;
+use crate::types::{u32_var, Tag};
+use crate::util::{Buffer, ReadBuffer};
 use std::fs;
 use std::io;
 use std::iter::{FromIterator, Zip};
@@ -84,7 +84,7 @@ impl FontContainer {
 
     #[allow(unused_variables)]
     fn init_ttc(&mut self) {
-        let ttc_tag: u32 = self.buffer.get();
+        let ttc_tag: u32 = self.buffer.get(); // "ttcf"
         let major_version: u16 = self.buffer.get();
         let minor_version: u16 = self.buffer.get();
         let num_fonts: u32 = self.buffer.get();
@@ -106,8 +106,18 @@ impl FontContainer {
         self.fonts.push(Font::load_woff(&mut self.buffer));
     }
 
+    #[allow(unused_variables)]
     fn init_woff2(&mut self) {
-        self.fonts.push(Font::load_woff2(&mut self.buffer));
+        let signature: u32 = self.buffer.get();
+        let flavor: u32 = self.buffer.get();
+        match flavor {
+            // TODO: WOFF2 collections
+            Self::SIGNATURE_TTC => unimplemented!(),
+            _ => {
+                self.buffer.set_offset(0);
+                self.fonts.push(Font::load_woff2(&mut self.buffer));
+            }
+        }
     }
 
     /// Parse all the tables in each font of the container.
@@ -363,7 +373,6 @@ impl Font {
         }
     }
 
-    // TODO: WOFF2
     #[allow(unused_variables)]
     fn load_woff2(buffer: &mut Buffer) -> Self {
         let signature: u32 = buffer.get();
@@ -382,9 +391,25 @@ impl Font {
         let meta_orig_length: u32 = buffer.get();
         let priv_offset: u32 = buffer.get();
         let priv_length: u32 = buffer.get();
+        let table_entries: Vec<Woff2TableEntry> = buffer.get_vec(num_tables);
+        let table_records = table_entries
+            .iter()
+            .map(|entry| {
+                let tag = entry.tag;
+                // TODO: checksum and offset in WOFF2
+                let record = TableRecord {
+                    checksum: 0,
+                    offset: 0,
+                    length: entry.orig_len,
+                    woff_comp_length: entry.transform_len,
+                };
+                (tag, record)
+            })
+            .collect();
         Self {
             format: Format::WOFF2,
             flavor: Flavor::from(flavor),
+            table_records,
             ..Default::default()
         }
     }
@@ -742,4 +767,119 @@ struct TableRecord {
     offset: u32,
     length: u32,
     woff_comp_length: u32,
+}
+
+// TODO:
+#[allow(dead_code)]
+struct Woff2TableEntry {
+    tag: Tag,
+    flags: u8,
+    orig_len: u32,
+    transform_len: u32,
+}
+
+impl Woff2TableEntry {
+    fn to_tag(flag: u8) -> Tag {
+        match flag {
+            0 => Tag::new(b"cmap"),
+            1 => Tag::new(b"head"),
+            2 => Tag::new(b"hhea"),
+            3 => Tag::new(b"hmtx"),
+            4 => Tag::new(b"maxp"),
+            5 => Tag::new(b"name"),
+            6 => Tag::new(b"OS/2"),
+            7 => Tag::new(b"post"),
+            8 => Tag::new(b"cvt "),
+            9 => Tag::new(b"fpgm"),
+            10 => Tag::new(b"glyf"),
+            11 => Tag::new(b"loca"),
+            12 => Tag::new(b"prep"),
+            13 => Tag::new(b"CFF "),
+            14 => Tag::new(b"VORG"),
+            15 => Tag::new(b"EBDT"),
+            16 => Tag::new(b"EBLC"),
+            17 => Tag::new(b"gasp"),
+            18 => Tag::new(b"hdmx"),
+            19 => Tag::new(b"kern"),
+            20 => Tag::new(b"LTSH"),
+            21 => Tag::new(b"PCLT"),
+            22 => Tag::new(b"VDMX"),
+            23 => Tag::new(b"vhea"),
+            24 => Tag::new(b"vmtx"),
+            25 => Tag::new(b"BASE"),
+            26 => Tag::new(b"GDEF"),
+            27 => Tag::new(b"GPOS"),
+            28 => Tag::new(b"GSUB"),
+            29 => Tag::new(b"EBSC"),
+            30 => Tag::new(b"JSTF"),
+            31 => Tag::new(b"MATH"),
+            32 => Tag::new(b"CBDT"),
+            33 => Tag::new(b"CBLC"),
+            34 => Tag::new(b"COLR"),
+            35 => Tag::new(b"CPAL"),
+            36 => Tag::new(b"SVG "),
+            37 => Tag::new(b"sbix"),
+            38 => Tag::new(b"acnt"),
+            39 => Tag::new(b"avar"),
+            40 => Tag::new(b"bdat"),
+            41 => Tag::new(b"bloc"),
+            42 => Tag::new(b"bsln"),
+            43 => Tag::new(b"cvar"),
+            44 => Tag::new(b"fdsc"),
+            45 => Tag::new(b"feat"),
+            46 => Tag::new(b"fmtx"),
+            47 => Tag::new(b"fvar"),
+            48 => Tag::new(b"gvar"),
+            49 => Tag::new(b"hsty"),
+            50 => Tag::new(b"just"),
+            51 => Tag::new(b"lcar"),
+            52 => Tag::new(b"mort"),
+            53 => Tag::new(b"morx"),
+            54 => Tag::new(b"opbd"),
+            55 => Tag::new(b"prop"),
+            56 => Tag::new(b"trak"),
+            57 => Tag::new(b"Zapf"),
+            58 => Tag::new(b"Silf"),
+            59 => Tag::new(b"Glat"),
+            60 => Tag::new(b"Gloc"),
+            61 => Tag::new(b"Feat"),
+            62 => Tag::new(b"Sill"),
+            _ => unreachable!(),
+        }
+    }
+}
+
+impl ReadBuffer for Woff2TableEntry {
+    fn read(buffer: &mut Buffer) -> Self {
+        let flags = buffer.get();
+        let table_flag = flags & 0x3F;
+        let trans_version: u8 = flags >> 6;
+        let tag = match table_flag {
+            0..=62 => Self::to_tag(table_flag),
+            _ => {
+                let raw_tag: u32 = buffer.get();
+                Tag::from(raw_tag)
+            }
+        };
+        let orig_len: u32_var = buffer.get();
+        let transform_len: u32_var = if tag == b"glyf" || tag == b"loca" {
+            if trans_version == 3 {
+                orig_len
+            } else {
+                buffer.get()
+            }
+        } else {
+            if trans_version == 0 {
+                orig_len
+            } else {
+                buffer.get()
+            }
+        };
+        Self {
+            tag,
+            flags,
+            orig_len: orig_len.into(),
+            transform_len: transform_len.into(),
+        }
+    }
 }

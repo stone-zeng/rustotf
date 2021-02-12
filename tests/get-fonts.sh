@@ -8,6 +8,8 @@ for url in \
     $gh_url/adobe-fonts/source-han-sans/release/OTC/SourceHanSans-Heavy.ttc                              \
     $gh_url/adobe-fonts/source-han-sans/release/OTF/SimplifiedChinese/SourceHanSansSC-Regular.otf        \
     $gh_url/adobe-fonts/source-han-serif/release/OTC/SourceHanSerif-Regular.ttc                          \
+    $gh_url/adobe-fonts/source-code-pro/release/WOFF2/OTF/SourceCodePro-Medium.otf.woff2                 \
+    $gh_url/adobe-fonts/source-code-pro/release/WOFF2/VAR/SourceCodeVariable-Italic.ttf.woff2            \
     $gh_url/adobe-fonts/source-sans-pro/release/OTF/SourceSans3-Black.otf                                \
     $gh_url/adobe-fonts/source-sans-pro/release/WOFF/TTF/SourceSans3-ExtraLight.ttf.woff                 \
     $gh_url/adobe-fonts/source-sans-pro/release/WOFF/VAR/SourceSans3VF-Roman.ttf.woff                    \

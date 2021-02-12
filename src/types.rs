@@ -115,29 +115,6 @@ impl Tag {
         Self(*bytes)
     }
 
-    /// Construct a tag from a string `s`.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// # use rustotf::Tag;
-    /// let tag = Tag::from("gsub");
-    /// assert_eq!(tag, Tag::new(b"gsub"));
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panic if the length of `s` is not 4.
-    ///
-    /// ```should_panic
-    /// # use rustotf::Tag;
-    /// let tag_cff = Tag::from("CFF"); // should use "CFF "
-    /// ```
-    pub fn from(s: &str) -> Self {
-        let bytes = s.as_bytes().try_into().unwrap();
-        Tag::new(bytes)
-    }
-
     /// Return the underlying `u8` array of the tag.
     ///
     /// # Examples
@@ -165,9 +142,55 @@ impl Tag {
     }
 }
 
-impl ReadBuffer for Tag {
-    fn read(buffer: &mut Buffer) -> Self {
-        Self([buffer.get(), buffer.get(), buffer.get(), buffer.get()])
+impl From<u32> for Tag {
+    /// Construct a tag from a 32-bit unsigned integer `n`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rustotf::Tag;
+    /// let tag = Tag::from(0x63767420);
+    /// assert_eq!(tag, Tag::new(b"cvt "));
+    /// ```
+    fn from(n: u32) -> Self {
+        let bytes = &[
+            (n >> 24 & 0xFF) as u8,
+            (n >> 16 & 0xFF) as u8,
+            (n >> 8 & 0xFF) as u8,
+            (n & 0xFF) as u8,
+        ];
+        Tag::new(bytes)
+    }
+}
+
+impl From<&str> for Tag {
+    /// Construct a tag from a string `s`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use rustotf::Tag;
+    /// let tag = Tag::from("gsub");
+    /// assert_eq!(tag, Tag::new(b"gsub"));
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panic if the length of `s` is not 4.
+    ///
+    /// ```should_panic
+    /// # use rustotf::Tag;
+    /// let tag_cff = Tag::from("CFF"); // should use "CFF "
+    /// ```
+    fn from(s: &str) -> Self {
+        let bytes = s.as_bytes().try_into().unwrap();
+        Tag::new(bytes)
+    }
+}
+
+impl PartialEq<&[u8; 4]> for Tag {
+    fn eq(&self, other: &&[u8; 4]) -> bool {
+        self.0 == **other
     }
 }
 
@@ -181,4 +204,81 @@ impl fmt::Display for Tag {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.to_str())
     }
+}
+
+impl ReadBuffer for Tag {
+    fn read(buffer: &mut Buffer) -> Self {
+        Self([buffer.get(), buffer.get(), buffer.get(), buffer.get()])
+    }
+}
+
+/// `255UInt16` in WOFF2 specification. Variable-length encoding of a 16-bit unsigned integer
+/// for optimized intermediate font data storage.
+#[allow(non_camel_case_types)]
+pub struct u16_var(u16);
+
+impl fmt::Debug for u16_var {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+/// `UIntBase128` in WOFF2 specification. Variable-length encoding of a 32-bit unsigned integer
+/// for optimized intermediate font data storage.
+#[allow(non_camel_case_types)]
+#[derive(Clone, Copy, Default)]
+pub struct u32_var(u32);
+
+impl PartialEq<u32> for u32_var {
+    fn eq(&self, other: &u32) -> bool {
+        self.0 == *other
+    }
+}
+
+impl Into<u32> for u32_var {
+    fn into(self) -> u32 {
+        self.0
+    }
+}
+
+impl fmt::Debug for u32_var {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+impl ReadBuffer for u32_var {
+    fn read(buffer: &mut Buffer) -> Self {
+        let mut res = 0;
+        for i in 0..5 {
+            let byte: u8 = buffer.get();
+            // No leading 0's
+            if i == 0 && byte == 0x80 {
+                panic!()
+            }
+            // If any of top 7 bits are set then << 7 would overflow
+            if res & 0xFE00_0000 != 0 {
+                panic!()
+            }
+            res = (res << 7) | ((byte & 0x7F) as u32);
+            // Spin until most significant bit of data byte is false
+            if byte & 0x80 == 0 {
+                return Self(res);
+            }
+        }
+        panic!()
+    }
+}
+
+#[test]
+fn test_u32_var_success() {
+    let mut buffer = Buffer::new(vec![0x3F]);
+    assert_eq!(buffer.get::<u32_var>(), 63);
+}
+
+#[test]
+#[should_panic]
+fn test_u32_var_panic() {
+    let mut buffer = Buffer::new(vec![0x80, 0x3F]);
+    assert_eq!(buffer.get::<u32_var>(), 63);
 }
