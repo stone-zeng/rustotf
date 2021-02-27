@@ -4,6 +4,7 @@ use std::io::Result;
 const FONTS_PATH: &str = "./tests/fonts/";
 
 const TTF_FONTS: &[&str] = &[
+    "AdobeVFPrototype.ttf",
     "cozette_bitmap.ttf",
     "NotoColorEmoji.ttf",
     "NotoSans-SemiCondensed.ttf",
@@ -13,17 +14,22 @@ const TTF_FONTS: &[&str] = &[
 ];
 
 const OTF_FONTS: &[&str] = &[
+    "AdobeVFPrototype.otf",
     "CJKRadicals-Regular.otf",
     "emojione-svg.otf",
+    "FDArrayTest257.otf",
+    "FDArrayTest65535.otf",
     "SourceHanSansSC-Regular.otf",
     "SourceSans3-Black.otf",
     "XITSMath-Regular.otf",
 ];
 
 const TTC_FONTS: &[&str] = &[
+    "iosevka.ttc",
+    "SourceHanNotoCJK.ttc",
     "SourceHanSans-Heavy.ttc",
     "SourceHanSerif-Regular.ttc",
-    "SourceHanNotoCJK.ttc",
+    "SourceHanVFProto.ttc",
 ];
 
 const WOFF_FONTS: &[&str] = &[
@@ -31,6 +37,12 @@ const WOFF_FONTS: &[&str] = &[
     "SourceSans3VF-Roman.ttf.woff",
     "SourceSerif4Display-Bold.otf.woff",
     "SourceSerif4Variable-Italic.otf.woff",
+];
+
+#[allow(dead_code)]
+const WOFF2_FONTS: &[&str] = &[
+    "SourceCodePro-Medium.otf.woff2",
+    "SourceCodeVariable-Italic.ttf.woff2",
 ];
 
 fn check_font(font_file_path: &str, flag: &str) -> Result<()> {
