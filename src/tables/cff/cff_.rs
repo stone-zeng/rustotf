@@ -169,7 +169,7 @@ macro_rules! _parse_dict {
                 let supplement = temp.pop().unwrap().int();
                 let index_o = temp.pop().unwrap().int() as usize;
                 let index_r = temp.pop().unwrap().int() as usize;
-                ROS::new(index_r, index_o, supplement, $strings)
+                Ros::new(index_r, index_o, supplement, $strings)
             }};
         }
 
@@ -342,7 +342,7 @@ pub struct CffFont {
     _private_offset: usize,
     private: Option<Private>,
     // CID
-    ros: Option<ROS>,
+    ros: Option<Ros>,
     cid_font_version: Option<Number>,
     cid_font_revision: Option<Number>,
     cid_font_type: Option<i32>,
@@ -713,13 +713,13 @@ impl Private {
 }
 
 #[derive(Debug)]
-struct ROS {
+struct Ros {
     registry: String,
     ordering: String,
     supplement: i32,
 }
 
-impl ROS {
+impl Ros {
     fn new(index_r: usize, index_o: usize, supplement: i32, strings: &[String]) -> Self {
         Self {
             registry: from_sid(index_r, strings),

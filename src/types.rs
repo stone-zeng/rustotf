@@ -235,12 +235,6 @@ impl PartialEq<u32> for u32_var {
     }
 }
 
-impl Into<u32> for u32_var {
-    fn into(self) -> u32 {
-        self.0
-    }
-}
-
 impl fmt::Debug for u32_var {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.0)
@@ -267,6 +261,12 @@ impl ReadBuffer for u32_var {
             }
         }
         panic!()
+    }
+}
+
+impl From<u32_var> for u32 {
+    fn from(n: u32_var) -> Self {
+        n.0
     }
 }
 

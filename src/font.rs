@@ -328,7 +328,7 @@ impl Font {
             })
             .collect();
         Self {
-            format: Format::SFNT,
+            format: Format::Sfnt,
             flavor: Flavor::from(signature),
             table_records,
             ..Default::default()
@@ -358,7 +358,7 @@ impl Font {
                 let record = TableRecord {
                     // The order is different from SFNT format
                     offset: buffer.get(),
-                    woff_comp_length: buffer.get(),
+                    comp_length: buffer.get(),
                     length: buffer.get(),
                     checksum: buffer.get(),
                 };
@@ -366,7 +366,7 @@ impl Font {
             })
             .collect();
         Self {
-            format: Format::WOFF,
+            format: Format::Woff,
             flavor: Flavor::from(flavor),
             table_records,
             ..Default::default()
@@ -401,13 +401,13 @@ impl Font {
                     checksum: 0,
                     offset: 0,
                     length: entry.orig_len,
-                    woff_comp_length: entry.transform_len,
+                    comp_length: entry.transform_len,
                 };
                 (tag, record)
             })
             .collect();
         Self {
-            format: Format::WOFF2,
+            format: Format::Woff2,
             flavor: Flavor::from(flavor),
             table_records,
             ..Default::default()
@@ -416,17 +416,17 @@ impl Font {
 
     pub fn parse(&mut self, buffer: &mut Buffer) {
         match self.format {
-            Format::SFNT => self.parse_sfnt(buffer),
-            Format::WOFF => self.parse_woff(buffer),
-            Format::WOFF2 => self.parse_woff2(buffer),
+            Format::Sfnt => self.parse_sfnt(buffer),
+            Format::Woff => self.parse_woff(buffer),
+            Format::Woff2 => self.parse_woff2(buffer),
         }
     }
 
     pub fn parse_table(&mut self, tag: Tag, buffer: &mut Buffer) {
         match self.format {
-            Format::SFNT => self.parse_sfnt_table(tag, buffer),
-            Format::WOFF => self.parse_woff_table(tag, buffer),
-            Format::WOFF2 => self.parse_woff2_table(tag, buffer),
+            Format::Sfnt => self.parse_sfnt_table(tag, buffer),
+            Format::Woff => self.parse_woff_table(tag, buffer),
+            Format::Woff2 => self.parse_woff2_table(tag, buffer),
         }
     }
 
@@ -570,7 +570,7 @@ impl Font {
     }
 
     pub fn get_table_comp_len(&self, tag: Tag) -> usize {
-        self.get(tag).woff_comp_length as usize
+        self.get(tag).comp_length as usize
     }
 
     pub fn contains(&self, s: &str) -> bool {
@@ -719,21 +719,21 @@ impl FromIterator<(Tag, TableRecord)> for TableRecords {
 
 #[derive(Debug)]
 enum Format {
-    SFNT,
-    WOFF,
-    WOFF2,
+    Sfnt,
+    Woff,
+    Woff2,
 }
 
 impl Default for Format {
     fn default() -> Self {
-        Self::SFNT
+        Self::Sfnt
     }
 }
 
 #[derive(Debug)]
 enum Flavor {
-    TTF,
-    CFF,
+    Ttf,
+    Cff,
 }
 
 impl Flavor {
@@ -748,8 +748,8 @@ impl Flavor {
 
     fn from(flavor: u32) -> Self {
         match flavor {
-            Self::SIGNATURE_OTF => Self::CFF,
-            Self::SIGNATURE_TTF | Self::SIGNATURE_TTF_TRUE | Self::SIGNATURE_TTF_TYP1 => Self::TTF,
+            Self::SIGNATURE_OTF => Self::Cff,
+            Self::SIGNATURE_TTF | Self::SIGNATURE_TTF_TRUE | Self::SIGNATURE_TTF_TYP1 => Self::Ttf,
             _ => unreachable!(),
         }
     }
@@ -757,7 +757,7 @@ impl Flavor {
 
 impl Default for Flavor {
     fn default() -> Self {
-        Self::TTF
+        Self::Ttf
     }
 }
 
@@ -766,7 +766,7 @@ struct TableRecord {
     checksum: u32,
     offset: u32,
     length: u32,
-    woff_comp_length: u32,
+    comp_length: u32,
 }
 
 // TODO:
