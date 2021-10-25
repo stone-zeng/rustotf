@@ -441,7 +441,7 @@ impl CffFont {
                     let format: u8 = buffer.get();
                     match format {
                         0 => (0..num_glyphs)
-                            .map(|_| from_sid(buffer.get::<u16>() as usize, &strings))
+                            .map(|_| from_sid(buffer.get::<u16>() as usize, strings))
                             .collect(),
                         1 => _get_charsets!(u8),
                         2 => _get_charsets!(u16),

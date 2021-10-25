@@ -57,13 +57,13 @@ pub fn print_tables(input_path: &str, ttc_indices: &[usize], tables: &[&str]) ->
                 eprintln!("WARNING: Your font number specification will be ignored.");
             }
             init();
-            println!("{}", font_container.get(0).unwrap().fmt_tables(&tables));
+            println!("{}", font_container.get(0).unwrap().fmt_tables(tables));
         }
         _ => {
             init();
             let file_name = Path::new(input_path).file_name().unwrap().to_str().unwrap();
             let print_font = |(i, font): (usize, &Font)| {
-                println!("{}#{}:\n{}", file_name, i, font.fmt_tables(&tables));
+                println!("{}#{}:\n{}", file_name, i, font.fmt_tables(tables));
             };
             if ttc_indices.is_empty() {
                 font_container.into_iter().enumerate().for_each(print_font);

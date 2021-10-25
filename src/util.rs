@@ -112,14 +112,14 @@ impl fmt::Debug for Buffer {
 }
 
 pub trait AsUsize {
-    fn as_usize(self) -> usize;
+    fn as_usize(&self) -> usize;
 }
 
 macro_rules! generate_as_usize {
     ($t:ty) => {
         impl AsUsize for $t {
-            fn as_usize(self) -> usize {
-                self as usize
+            fn as_usize(&self) -> usize {
+                *self as usize
             }
         }
     };
